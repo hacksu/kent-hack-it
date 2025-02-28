@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'; // Wh
 import { Login } from './pages/login' // custom js that returns HTML
 import { Home } from './pages/home'
 
+// index.html handles the html format of the page layout to a certain point
 function App() {
   return (
     // HTML content is loaded based on the route loaded
