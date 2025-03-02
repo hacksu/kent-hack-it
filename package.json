@@ -2,11 +2,13 @@
   "name": "kent-hack-it",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
+    "cors": "^2.8.5",
     "express": "^4.21.2",
     "mongoose": "^8.11.0",
     "react": "^19.0.0",

@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import yaml from "yaml";
 import mongoose from 'mongoose';
+import { json } from "stream/consumers";
 
 const secrets = yaml.parse(
   fs.readFileSync(path.resolve("../../secrets.yaml"), {
@@ -21,10 +22,7 @@ function MongoURI() {
 }
 
 // Connect to MongoDB
-mongoose.connect(MongoURI(), {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
+mongoose.connect(MongoURI()).then(() => {
     console.log('Connected to MongoDB');
 }).catch(err => {
     console.error('MongoDB connection error:', err);
@@ -35,12 +33,13 @@ const UserSchema = new mongoose.Schema({
     _id: String,
     userId: String,
     username: String,
+    password: String,
     email: String,
     teamId: String,
     joinedAt: Date
 });
 // the final argument is the specific collection to link the schema to when performing read/write
-const UserCollection = mongoose.model('User', UserSchema, 'user');
+const UserCollection = mongoose.model('Users', UserSchema, 'users');
 
 // query the user collection and display the JSON result
 async function GetUsers() {
@@ -48,3 +47,45 @@ async function GetUsers() {
     return userData;
 }
 export default GetUsers;
+
+async function DoesExist(username, email) {
+    const findUser = await UserCollection.findOne({"username":username});
+    const findEmail = await UserCollection.findOne({"email":email});
+    console.log(`FindUser: ${findUser} | FindEmail: ${findEmail}`);
+    return findUser !== null || findEmail !== null ? true : false;
+}
+
+async function RegisterUser(username, password, email, teamName) {
+    // check input to attempt protecting from NoSQL Injection (most likely a more secure way)
+    if (typeof username !== "string" || typeof password !== "string" || typeof email !== "string" || typeof teamName !== "string") {
+        return "Failed to add User!";
+    }
+
+    console.log(`DoesExist -> ${await DoesExist(username, email)}`);
+
+    if (await DoesExist(username, email)) {
+        return "Failed to add User!";
+    }
+
+    console.log(`Attempting to add: ${username}`);
+
+    // declare the values we want to insert in the mongodb
+    const userId = crypto.randomUUID();
+    const teamId = teamName;
+    const joinedAt = Date.now();
+
+    const addUser = await UserCollection.insertOne({
+        _id: userId,
+        userId,
+        username,
+        password,
+        email,
+        teamId,
+        joinedAt
+    });
+
+    if (addUser) { console.log("User Added Successfully!"); } else { console.log("Failed to add User!"); }
+    return addUser ? "User Added Successfully!" : "Failed to add User!";
+}
+
+export { GetUsers, RegisterUser };

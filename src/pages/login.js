@@ -1,7 +1,7 @@
 import '../App.css';
-import { Link } from 'react-router-dom'; // needed to interact with the React App BrowserRouter
-
 import { useState } from 'react'; // needed to allow for form interaction
+
+import Navbar from '../components/navbar.js'
 
 export function Login() {
   const [username, SetUsername] = useState(""); // variable pair to modify a variable based on a funct-name
@@ -16,12 +16,7 @@ export function Login() {
   return (
     <div className="App">
       <header className="App-header">
-        <nav>
-          <ul>
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/login">Login</Link></li>
-          </ul>
-        </nav>
+        <Navbar/> {/* Custom React Component to maintain DRY code */}
         <p>This is the Login Page</p>
         <div className='Login-Form'>
           <form onSubmit={HandleLogin}>
