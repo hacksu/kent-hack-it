@@ -1,24 +1,16 @@
 // Used for establishing a connection to a database
 // and interacting with the database
-import fs from "fs";
-import path from "path";
-import yaml from "yaml";
 import mongoose from 'mongoose';
-import { json } from "stream/consumers";
-
-const secrets = yaml.parse(
-  fs.readFileSync(path.resolve("../../secrets.yaml"), {
-    encoding: "utf-8",
-  })
-);
+import dotenv from "dotenv";
+dotenv.config();
 
 // returns a string concatination of the URL
 function MongoURI() {
-    const db_user = secrets.db_user;
-    const db_pass = secrets.db_pass;
-    const db_table = secrets.database;
+    const db_user = process.env.DB_USER;
+    const db_pass = process.env.DB_PASS;
+    const db_name = process.env.DB_NAME;
 
-    return "mongodb://" + db_user + ":" + db_pass + "@localhost:27017/" + db_table;
+    return "mongodb://" + db_user + ":" + db_pass + "@localhost:27017/" + db_name;
 }
 
 // Connect to MongoDB
