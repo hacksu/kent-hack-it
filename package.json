@@ -17,6 +17,10 @@
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
+  "engines": {
+    "node": ">=18.19.1",
+    "npm": ">=9.2.0"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
