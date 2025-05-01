@@ -8,16 +8,13 @@ export function Register() {
   const [username, SetUsername] = useState(""); // variable pair to modify a variable based on a funct-name
   const [password, SetPassword] = useState("");
   const [email, SetEmail] = useState("");
-  const [teamName, SetTeamName] = useState("");
 
   // internal lambda
   const HandleRegisteration = async (event) => {
       event.preventDefault();
 
-      alert(`username: ${username}\npassword: ${password}`);
-
       try {
-        const response = await fetch("http://localhost:4000/users", {
+        const response = await fetch("http://localhost:4000/register", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -26,8 +23,7 @@ export function Register() {
             {
               "username": username,
               "password": password,
-              "email": email,
-              "teamName": teamName
+              "email": email
             }
           ),
         });
@@ -53,34 +49,63 @@ export function Register() {
   const msg = searchParams.get("msg"); // Get "msg" parameter from URL
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <Navbar/> {/* Custom React Component to maintain DRY code */}
-        <p>This is the Register Page</p>
-        {msg === "success" && <p style={{ color: "green" }}>Registration successful!</p>}
-        {msg === "fail" && <p style={{ color: "red" }}>Registration Failed!</p>}
-        <div className='Register-Form'>
-          <form onSubmit={HandleRegisteration}>
-            <label>Username:
-              <input type="text" id="username" placeholder="Username" value={username} onChange={(e) => SetUsername(e.target.value)}/>
-            </label><br></br>
+      <div className="App">
+        <Navbar /> {/* Custom React Component to maintain DRY code */}
+        <header className="App-header">
+          <div className="container mt-5">
+            <div className="row justify-content-center">
+              <div className="col-md-6">
+                <div className="card shadow">
+                  <div className="card-body">
+                    <h3 className="card-title text-center mb-4">Register</h3>
+                    {msg === "success" && <p style={{ color: "green" }}>Registration successful!</p>}
+                    {msg === "fail" && <p style={{ color: "red" }}>Registration Failed!</p>}
+                    <form onSubmit={HandleRegisteration}>
+                      <div className="mb-3">
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="username"
+                          placeholder="Enter username"
+                          value={username}
+                          onChange={(e) => SetUsername(e.target.value)}
+                        />
+                      </div>
 
-            <label>Password:
-              <input type="password" id="password" value={password} onChange={(e) => SetPassword(e.target.value)}/>
-            </label><br></br>
+                      <div className="mb-3">
+                        <input
+                          type="password"
+                          className="form-control"
+                          id="password"
+                          placeholder="Enter password"
+                          value={password}
+                          onChange={(e) => SetPassword(e.target.value)}
+                        />
+                      </div>
 
-            <label>Email:
-              <input type="text" id="email" value={email} onChange={(e) => SetEmail(e.target.value)}/>
-            </label><br></br>
+                      <div className="mb-3">
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="email"
+                          placeholder="Enter email"
+                          value={email}
+                          onChange={(e) => SetEmail(e.target.value)}
+                        />
+                      </div>
 
-            <label>Team Name:
-              <input type="text" id="teamName" value={teamName} onChange={(e) => SetTeamName(e.target.value)}/>
-            </label><br></br>
-
-            <input type="submit" />
-          </form>
-        </div>
-      </header>
-    </div>
+                      <div className="d-grid">
+                        <button type="submit" className="btn btn-primary">
+                          Register
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+      </div>
   );
 }

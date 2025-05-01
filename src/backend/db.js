@@ -2,6 +2,7 @@
 // and interacting with the database
 import mongoose from 'mongoose';
 import dotenv from "dotenv";
+import crypto from 'crypto';
 dotenv.config();
 
 // returns a string concatination of the URL
@@ -20,25 +21,47 @@ mongoose.connect(MongoURI()).then(() => {
     console.error('MongoDB connection error:', err);
 });
 
+
+//==================================================================================================
+
 // Define the schma
 const UserSchema = new mongoose.Schema({
-    _id: String,
-    userId: String,
     username: String,
-    password: String,
     email: String,
-    teamId: String,
-    joinedAt: Date
+    password: String, // sha-256 salted hex-string
+    completions: Array, // [ "Scrambled", "BitLocker-1", ... ]
+    team: String, // "None" | "xX_RaTT3rs_Xx"
+    created_at: Date
 });
 // the final argument is the specific collection to link the schema to when performing read/write
 const UserCollection = mongoose.model('Users', UserSchema, 'users');
 
-// query the user collection and display the JSON result
-async function GetUsers() {
-    const userData = await UserCollection.find();
-    return userData;
+const TeamSchema = new mongoose.Schema({
+    name: String,
+    members: Array, // [ "yoyojesus", "ender", ... ]
+    completions: Array, // [ "Perplexed", "Guess-My-Cheese", ... ]
+    created_at: Date
+});
+const TeamCollection = mongoose.model('Teams', TeamSchema, 'teams');
+
+const ChallengeSchema = new mongoose.Schema({
+    name: String,
+    description: String,
+    catagory: String, 
+    difficulty: String,
+    user_rates: Array, // [ 3, 3, 4, 5, 1, 2, ... ] 1-5 stars
+    rating: Number, // shows the avg of user_rates (maybe only show whole int or one-decimal place)
+    points: Number,
+});
+const ChallengeCollection = mongoose.model('Challenges', ChallengeSchema, 'challenges');
+
+//==================================================================================================
+
+async function GetChallenges() {
+    const challenges = await ChallengeCollection.find();
+    return challenges;
 }
-export default GetUsers;
+export default GetChallenges;
 
 async function DoesExist(username, email) {
     const findUser = await UserCollection.findOne({"username":username});
@@ -47,9 +70,9 @@ async function DoesExist(username, email) {
     return findUser !== null || findEmail !== null ? true : false;
 }
 
-async function RegisterUser(username, password, email, teamName) {
+async function RegisterUser(username, password, email) {
     // check input to attempt protecting from NoSQL Injection (most likely a more secure way)
-    if (typeof username !== "string" || typeof password !== "string" || typeof email !== "string" || typeof teamName !== "string") {
+    if (typeof username !== "string" || typeof password !== "string" || typeof email !== "string") {
         return "Failed to add User!";
     }
 
@@ -61,23 +84,47 @@ async function RegisterUser(username, password, email, teamName) {
 
     console.log(`Attempting to add: ${username}`);
 
-    // declare the values we want to insert in the mongodb
-    const userId = crypto.randomUUID();
-    const teamId = teamName;
-    const joinedAt = Date.now();
+    // salted passwords are very lit
+    const SALT = process.env.SALT;
+    const salted_password = SALT + password;
+    const hashed_passwd = crypto.createHash('sha256').update(salted_password).digest('hex');
 
-    const addUser = await UserCollection.insertOne({
-        _id: userId,
-        userId,
+    const addUser = await UserCollection.create({
         username,
-        password,
         email,
-        teamId,
-        joinedAt
+        password: hashed_passwd,
+        completions: [],
+        team: "None",
+        created_at: Date.now()
     });
 
     if (addUser) { console.log("User Added Successfully!"); } else { console.log("Failed to add User!"); }
     return addUser ? "User Added Successfully!" : "Failed to add User!";
 }
 
-export { GetUsers, RegisterUser };
+async function LoginUser(username, password) {
+    // check input to attempt protecting from NoSQL Injection (most likely a more secure way)
+    if (typeof username !== "string" || typeof password !== "string") {
+        return "Login Failed!";
+    }
+
+    // Find the profile data based on username given
+    const userRecord = await UserCollection.findOne({ username });
+    if (!userRecord) {
+        console.log("User not found!");
+        return "Login Failed!";
+    }
+
+    // salted passwords are very lit
+    const SALT = process.env.SALT;
+    const salted_password = SALT + password;
+    const hashed_passwd = crypto.createHash('sha256').update(salted_password).digest('hex');
+
+    // compare the hashes of the given to whats linked in the db
+    const userAuth = (hashed_passwd === userRecord.password);
+
+    if (userAuth) { console.log("Good Auth!"); } else { console.log("Bad Auth!"); }
+    return userAuth ? "Login Successful!" : "Login Failed!";
+}
+
+export { LoginUser, RegisterUser };
