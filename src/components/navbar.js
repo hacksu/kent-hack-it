@@ -1,5 +1,50 @@
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'; // needed to interact with the React App BrowserRouter
+
+const HandleLogout = async (event) =>  {
+  event.preventDefault();
+
+  try {
+    const response = await fetch("http://localhost:4000/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: 'include'  // ensures cookies are sent
+    });
+
+    const data = await response.json();
+    if (data.message === "Logged out!") {
+      // Cookie Cleared!
+      window.location.href = "/login";
+    }
+  } catch (error) {
+    console.error("Error sending request:", error);
+  }
+}
+
 function Navbar() {
+  const [authenticated, SetAuthenticated] = useState(false);
+
+  // runs periodically
+  useEffect(() => {
+    async function VerifySession() {
+      // ask the backend if this session is valid
+      try {
+        const response = await fetch("http://localhost:4000/user/verify", {
+          method: "GET",
+          credentials: 'include'  // ensures cookies are sent
+        });
+  
+        const data = await response.json();
+        SetAuthenticated((data.authenticated === true));
+      } catch (error) {
+        console.error("Error sending request:", error);
+      }
+    }
+    VerifySession();
+  });
+
   return (
       <nav className="navbar navbar-expand-lg navbar-light bg-light">
           <div className="container-fluid">
@@ -13,12 +58,26 @@ function Navbar() {
                       <li className="nav-item">
                           <Link className="nav-link" to="/">Home</Link>
                       </li>
-                      <li className="nav-item">
-                          <Link className="nav-link" to="/login">Login</Link>
-                      </li>
-                      <li className="nav-item">
-                          <Link className="nav-link" to="/register">Register</Link>
-                      </li>
+
+                      {authenticated ? (
+                          <li className="nav-item">
+                              <button 
+                                  className="nav-link"
+                                  onClick={HandleLogout}
+                              >
+                                  Logout
+                              </button>
+                          </li>
+                      ) : (
+                          <>
+                              <li className="nav-item">
+                                  <Link className="nav-link" to="/login">Login</Link>
+                              </li>
+                              <li className="nav-item">
+                                  <Link className="nav-link" to="/register">Register</Link>
+                              </li>
+                          </>
+                      )}
                   </ul>
               </div>
           </div>

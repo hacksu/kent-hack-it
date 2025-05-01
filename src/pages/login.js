@@ -24,15 +24,16 @@ export function Login() {
               "password": password
             }
           ),
+          credentials: 'include'  // ensures cookies are sent
         });
 
         // get the response output from the above fetch call
-        const data = await response.text();
-        console.log("Server Response:", data);
+        const data = await response.json();
+        console.log("Server Response:", data.message);
         
-        if (data === "Login Successful!") {
-          // reload the page with a parameter
-          window.location.href = "/login?msg=success";
+        if (data.message === "Login Successful!") {
+          // reload the page with a parameter (gets a JWT cookie!)
+          window.location.href = "/";
         } else {
           // reload the page with a parameter
           window.location.href = "/login?msg=fail";

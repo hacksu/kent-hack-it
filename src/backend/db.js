@@ -1,8 +1,9 @@
 // Used for establishing a connection to a database
 // and interacting with the database
 import mongoose from 'mongoose';
-import dotenv from "dotenv";
+import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import dotenv from "dotenv";
 dotenv.config();
 
 // returns a string concatination of the URL
@@ -21,6 +22,7 @@ mongoose.connect(MongoURI()).then(() => {
     console.error('MongoDB connection error:', err);
 });
 
+const jwt_secret = process.env.JWT_SECRET;
 
 //==================================================================================================
 
@@ -54,6 +56,32 @@ const ChallengeSchema = new mongoose.Schema({
     points: Number,
 });
 const ChallengeCollection = mongoose.model('Challenges', ChallengeSchema, 'challenges');
+
+//==================================================================================================
+
+async function GenerateJWT(username, email) {
+    // every JWT made will always be to a valid user profile (username & email pair ALWAYS exists!)
+    if (!email) {
+        console.log("No Email Found!");
+        return null;
+    }
+
+    // Payload can include user info
+    const payload = {
+        "username": username,
+        "email": email
+    };
+    
+    // Options like token expiry
+    const options = {
+        expiresIn: '24h', // token expires in 24 hours
+    };
+    
+    // Create the token
+    const token = jwt.sign(payload, jwt_secret, options);
+    console.log(`Here's Your JWT! ${token}`);
+    return token;
+}
 
 //==================================================================================================
 
@@ -123,8 +151,21 @@ async function LoginUser(username, password) {
     // compare the hashes of the given to whats linked in the db
     const userAuth = (hashed_passwd === userRecord.password);
 
-    if (userAuth) { console.log("Good Auth!"); } else { console.log("Bad Auth!"); }
-    return userAuth ? "Login Successful!" : "Login Failed!";
+    if (userAuth) {
+        console.log("Good Auth!");
+        const jwt_token = await GenerateJWT(userRecord.username, userRecord.email);
+
+        return {
+            "message": "Login Successful!",
+            "token": jwt_token
+        }
+    } else {
+        console.log("Bad Auth!");
+
+        return {
+            "message": "Login Failed!"
+        }
+    }
 }
 
 export { LoginUser, RegisterUser };

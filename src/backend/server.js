@@ -1,7 +1,9 @@
-import express from 'express';
-import rateLimit from 'express-rate-limit';
-import cors from 'cors';
 import GetChallenges, { LoginUser, RegisterUser } from './db.js';
+import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
+import express from 'express';
+import cors from 'cors';
 
 const app = express();
 const port = 4000; // NOT AN OPEN PORT BACKEND BE FILTERED (ONLY ACCESSIBLE BY LOCAL-HOST)
@@ -9,7 +11,15 @@ const port = 4000; // NOT AN OPEN PORT BACKEND BE FILTERED (ONLY ACCESSIBLE BY L
 // Allows data to be sent from post requests
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // middleware to handle JSON
-app.use(cors()); // allow requests from different origins
+app.use(cookieParser()); // Access cookies
+
+// backend will handle setting JWT Cookies so the Frontend never
+// sees the tokens passed from a response
+app.use(cors({
+    origin: 'http://localhost:3000',  // React app origin
+    credentials: true                // allow cookies
+}));
+
 app.disable('x-powered-by');
 
 // Apply rate limiting to all requests (help prevent malicious brute-forcing)
@@ -55,10 +65,63 @@ app.post('/login', async (req, res) => {
         const userData = req.body;
         console.log(`Recv: ${userData}`);
 
-        const login = await LoginUser(userData.username, userData.password);
-        res.send(login);
+        const loginResp = await LoginUser(userData.username, userData.password);
+        
+        if (loginResp.token) {
+            console.log(`[*] LoginResp.token => ${loginResp.token}`);
+
+            res.cookie('khi_token', loginResp.token, {
+                httpOnly: true,
+                secure: false,           // set to true if using HTTPS
+                sameSite: 'lax',         // or 'none' if cross-site and using HTTPS
+                maxAge: 24000 * 60 * 60  // 24 hours
+            });
+        }
+
+        // send response back to frontend
+        res.json({
+            "message": loginResp.message
+        });
     } catch (error) {
         console.error("Error sending request:", error);
+    }
+});
+
+function ClearCookie(res) {
+    res.clearCookie('khi_token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax'
+    });
+}
+
+app.post('/logout', (req, res) => {
+    ClearCookie(res);
+    res.json({ message: 'Logged out!' });
+});
+
+// backend end point to use the Cookie JWT to verify the user
+// is properly authenticated
+app.get('/user/verify', (req, res) => {
+    const token = req.cookies.khi_token;
+
+    if (!token) {
+        console.log("No Token Found! Bad Session!");
+        ClearCookie(res);
+        return res.json({ authenticated: false });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log(`Session for ${decoded.username} is valid!`);
+        return res.json({
+            authenticated: true,
+            username: decoded.username
+        });
+    } catch (err) {
+        console.error('Invalid token:', err);
+        ClearCookie(res);
+        return res.json({ authenticated: false });
     }
 });
 
