@@ -10,6 +10,7 @@
     "@testing-library/user-event": "^13.5.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
     "mongoose": "^8.11.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
