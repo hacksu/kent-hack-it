@@ -1,9 +1,30 @@
-import GetChallenges, { LoginUser, RegisterUser } from './db.js';
+import GetChallenges, { LoginUser, RegisterUser,
+    GetUserProfile, GetTeamInfo } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import express from 'express';
 import cors from 'cors';
+
+//==================================================================================================
+async function DecodeJWT(token) {
+    if (!token) {
+        console.log("No Token Found!");
+        ClearCookie(res);
+        return null;
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log(`Token for ${decoded.username} is valid!`);
+        return decoded;
+    } catch (err) {
+        console.error('Invalid token:', err);
+        ClearCookie(res);
+        return null;
+    }
+}
+//==================================================================================================
 
 const app = express();
 const port = 4000; // NOT AN OPEN PORT BACKEND BE FILTERED (ONLY ACCESSIBLE BY LOCAL-HOST)
@@ -102,26 +123,49 @@ app.post('/logout', (req, res) => {
 
 // backend end point to use the Cookie JWT to verify the user
 // is properly authenticated
-app.get('/user/verify', (req, res) => {
+app.get('/user/verify', async (req, res) => {
     const token = req.cookies.khi_token;
+    const validJWT = await DecodeJWT(token);
 
-    if (!token) {
-        console.log("No Token Found! Bad Session!");
-        ClearCookie(res);
-        return res.json({ authenticated: false });
-    }
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log(`Session for ${decoded.username} is valid!`);
+    if (validJWT) {
         return res.json({
             authenticated: true,
-            username: decoded.username
+            username: validJWT.username
         });
-    } catch (err) {
-        console.error('Invalid token:', err);
-        ClearCookie(res);
+    } else {
         return res.json({ authenticated: false });
+    }
+});
+
+app.get('/user/info', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const validJWT = await DecodeJWT(token);
+
+    if (validJWT) {
+        const userData = await GetUserProfile(validJWT.username);
+        
+        if (userData === null) {
+            return res.json(null);
+        }
+
+        // { username, team, is_leader }
+        return res.json(userData);
+    } else {
+        return res.json({ authenticated: false });
+    }
+});
+
+app.post('/team', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(token);
+
+    if (validJWT) {
+        const teamData = await GetTeamInfo(data.teamName);
+        // null | { ... }
+        return res.json(teamData);
+    } else {
+        return res.json(null);
     }
 });
 
