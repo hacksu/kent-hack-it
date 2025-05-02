@@ -72,14 +72,21 @@ function Navbar() {
                       </li>
 
                       {authenticated ? (
+                        <>
+                          <li className="nav-item">
+                              <Link className="nav-link" to="/profile">
+                                Profile
+                              </Link>
+                          </li>
                           <li className="nav-item">
                               <button 
                                   className="nav-link"
                                   onClick={HandleLogout}
                               >
-                                  Logout
+                                Logout
                               </button>
                           </li>
+                        </>
                       ) : (
                           <>
                               <li className="nav-item">
