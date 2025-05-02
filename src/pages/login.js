@@ -47,15 +47,10 @@ export function Login() {
   const [searchParams] = useSearchParams();
   const msg = searchParams.get("msg"); // Get "msg" parameter from URL
 
-  const [navbarHeight, setNavbarHeight] = useState(0);
-
   return (
     <div className="App">
-      <Navbar onHeightChange={setNavbarHeight} />
-      <header
-        className="App-header"
-        style={{ minHeight: `calc(100vh - ${navbarHeight}px)` }}
-      >
+      <Navbar />
+      <header className="App-header">
         <div className="container mt-5">
           <div className="row justify-content-center">
             <div className="col-md-6">
