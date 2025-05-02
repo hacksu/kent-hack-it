@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import '../App.css';
 import Navbar, { VerifySession, LogoutUser } from '../components/navbar.js';
 
@@ -11,7 +12,6 @@ export function Challenges() {
     async function Verify() {
       const authenticated = await VerifySession();
       if (authenticated === false) {
-        // send request to backend so the cookie is cleared
         LogoutUser();
       }
     }
@@ -71,22 +71,31 @@ export function Challenges() {
 
         <div className="row justify-content-center">
           {currentChallenges.map((challenge, idx) => (
-            <div className="col-12 col-sm-6 col-md-3 col-lg-3 mb-3" key={idx} style={{ maxWidth: '250px' }}>
-              <div className="card h-100 shadow-sm p-2">
-                <div className="card-body p-2">
-                  <h6 className="card-title mb-1">{challenge.name}</h6>
-                  <small className="text-muted">
-                    {challenge.category} | Difficulty: {challenge.difficulty}
-                  </small>
-                  <p className="card-text small mt-2">{challenge.description}</p>
-                  <p className="card-text small mb-1">
-                    ⭐ {challenge.rating.toFixed(1)} / 5
-                  </p>
-                  <p className="card-text small">
-                    Points: {challenge.points}
-                  </p>
+            <div
+              className="col-12 col-sm-6 col-md-3 col-lg-3 mb-3"
+              key={idx}
+              style={{ maxWidth: '250px' }}
+            >
+              <Link
+                to={`/challenge?id=${challenge._id}`}
+                className="text-decoration-none text-dark"
+              >
+                <div className="card h-100 shadow-sm p-2">
+                  <div className="card-body p-2">
+                    <h6 className="card-title mb-1">{challenge.name}</h6>
+                    <small className="text-muted">
+                      {challenge.category} | Difficulty: {challenge.difficulty}
+                    </small>
+                    <p className="card-text small mt-2">{challenge.description}</p>
+                    <p className="card-text small mb-1">
+                      ⭐ {challenge.rating.toFixed(1)} / 5
+                    </p>
+                    <p className="card-text small">
+                      Points: {challenge.points}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </Link>
             </div>
           ))}
         </div>
