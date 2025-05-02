@@ -26,13 +26,20 @@ const jwt_secret = process.env.JWT_SECRET;
 
 //==================================================================================================
 
+/*
+#######################################################################
+    For ARRAYS we should store the '_id' attributes of the objects
+    this way when updates occur we do not lose data connections!
+#######################################################################
+*/
+
 // Define the schma
 const UserSchema = new mongoose.Schema({
     username: String,
     email: String,
     password: String, // sha-256 salted hex-string
     completions: Array, // [ "Scrambled", "BitLocker-1", ... ]
-    team: String, // "None" | "xX_RaTT3rs_Xx"
+    team: String, // "None" | "xX_RaTT3rs_Xx" <-- '_id'
     created_at: Date
 });
 // the final argument is the specific collection to link the schema to when performing read/write
@@ -40,6 +47,7 @@ const UserCollection = mongoose.model('Users', UserSchema, 'users');
 
 const TeamSchema = new mongoose.Schema({
     name: String,
+    team_leader: String, // "yoyojesus" <-- '_id'
     members: Array, // [ "yoyojesus", "ender", ... ]
     completions: Array, // [ "Perplexed", "Guess-My-Cheese", ... ]
     created_at: Date
@@ -59,8 +67,34 @@ const ChallengeCollection = mongoose.model('Challenges', ChallengeSchema, 'chall
 
 //==================================================================================================
 
+// Function designed to attempt to sanitize strings
+function SanitizeString(input) {
+    // Force to string
+    const str = String(input);
+
+    // Only allow letters, numbers, underscores, hyphens
+    // help prevent someone from using: '{"$ne": ""}' which can
+    // lead to NoSQL Injection
+    const allowedPattern = /^[a-zA-Z0-9_-]+$/;
+
+    // Invalid string input string detected
+    if (!allowedPattern.test(str)) {
+        return null;
+    }
+
+    // this string is clean we can use it
+    return str;
+}
+
 async function GenerateJWT(username, email) {
-    // every JWT made will always be to a valid user profile (username & email pair ALWAYS exists!)
+    username = SanitizeString(username);
+    email = SanitizeString(email);
+    if (username === null || email === null) {
+        return null;
+    }
+
+    // every JWT made will always be to a valid user profile
+    // (username & email pair ALWAYS exists!)
     if (!email) {
         console.log("No Email Found!");
         return null;
@@ -92,16 +126,27 @@ async function GetChallenges() {
 export default GetChallenges;
 
 async function DoesExist(username, email) {
+    username = SanitizeString(username);
+    email = SanitizeString(email);
+
+    if (username === null || email === null) {
+        return false;
+    }
+
     const findUser = await UserCollection.findOne({"username":username});
     const findEmail = await UserCollection.findOne({"email":email});
+
     console.log(`FindUser: ${findUser} | FindEmail: ${findEmail}`);
     return findUser !== null || findEmail !== null ? true : false;
 }
 
 async function RegisterUser(username, password, email) {
-    // check input to attempt protecting from NoSQL Injection (most likely a more secure way)
-    if (typeof username !== "string" || typeof password !== "string" || typeof email !== "string") {
-        return "Failed to add User!";
+    username = SanitizeString(username);
+    password = SanitizeString(password);
+    email = SanitizeString(email);
+
+    if (username === null || password === null || email === null) {
+        return "Login Failed!";
     }
 
     console.log(`DoesExist -> ${await DoesExist(username, email)}`);
@@ -131,8 +176,10 @@ async function RegisterUser(username, password, email) {
 }
 
 async function LoginUser(username, password) {
-    // check input to attempt protecting from NoSQL Injection (most likely a more secure way)
-    if (typeof username !== "string" || typeof password !== "string") {
+    username = SanitizeString(username);
+    password = SanitizeString(password);
+
+    if (username === null || password === null) {
         return "Login Failed!";
     }
 
