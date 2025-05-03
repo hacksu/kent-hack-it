@@ -33,7 +33,9 @@ export function Login() {
         
         if (data.message === "Login Successful!") {
           // reload the page with a parameter (gets a JWT cookie!)
-          window.location.href = "/";
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 100);  // 100 ms delay gives the browser time to store the cookie
         } else {
           // reload the page with a parameter
           window.location.href = "/login?msg=fail";
