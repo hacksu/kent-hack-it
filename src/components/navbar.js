@@ -79,12 +79,11 @@ function Navbar() {
                               </Link>
                           </li>
                           <li className="nav-item">
-                              <button 
-                                  className="nav-link"
-                                  onClick={HandleLogout}
-                              >
-                                Logout
-                              </button>
+                            <Link className="nav-link"
+                                  to="#"
+                                  onClick={HandleLogout}>
+                              Logout
+                            </Link>
                           </li>
                         </>
                       ) : (
