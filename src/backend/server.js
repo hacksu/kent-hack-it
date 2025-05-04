@@ -1,5 +1,6 @@
 import GetChallenges, { LoginUser, RegisterUser,
-    GetUserProfile, GetTeamInfo } from './db.js';
+    GetUserProfile, GetTeamInfo, SendTeamRequest,
+    CreateTeam, UpdateTeam, DoesExist } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
@@ -7,7 +8,7 @@ import express from 'express';
 import cors from 'cors';
 
 //==================================================================================================
-async function DecodeJWT(token) {
+async function DecodeJWT(res, token) {
     if (!token) {
         console.log("No Token Found!");
         ClearCookie(res);
@@ -17,6 +18,7 @@ async function DecodeJWT(token) {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         console.log(`Token for ${decoded.username} is valid!`);
+        // { username, email }
         return decoded;
     } catch (err) {
         console.error('Invalid token:', err);
@@ -43,6 +45,13 @@ app.use(cors({
 
 app.disable('x-powered-by');
 
+/*
+######################################################
+        Needs revisiting at some point (limiter)
+######################################################
+*/
+
+/*
 // Apply rate limiting to all requests (help prevent malicious brute-forcing)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -57,6 +66,7 @@ app.use(limiter);
 
 // Apply to specific route
 // app.use('/login', limiter);
+*/
 
 app.get('/', (req, res) => {
     res.send("You've Reached the Back-End!\n");
@@ -88,21 +98,31 @@ app.post('/login', async (req, res) => {
 
         const loginResp = await LoginUser(userData.username, userData.password);
         
+        console.log(`loginResp --> ${loginResp}`);
+
         if (loginResp.token) {
             console.log(`[*] LoginResp.token => ${loginResp.token}`);
+            console.log(`[*] LoginResp.message => ${loginResp.message}`);
 
             res.cookie('khi_token', loginResp.token, {
                 httpOnly: true,
                 secure: false,           // set to true if using HTTPS
                 sameSite: 'lax',         // or 'none' if cross-site and using HTTPS
+                path: '/',
                 maxAge: 24000 * 60 * 60  // 24 hours
             });
-        }
 
-        // send response back to frontend
-        res.json({
-            "message": loginResp.message
-        });
+            // send response back to frontend
+            res.json({
+                "message": loginResp.message
+            });
+        } else {
+            // send response back to frontend
+            console.log("No Token Generated. . .");
+            res.json({
+                "message": loginResp.message
+            });
+        }
     } catch (error) {
         console.error("Error sending request:", error);
     }
@@ -125,13 +145,24 @@ app.post('/logout', (req, res) => {
 // is properly authenticated
 app.get('/user/verify', async (req, res) => {
     const token = req.cookies.khi_token;
-    const validJWT = await DecodeJWT(token);
+    // make sure the JWT is valid
+    const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        return res.json({
-            authenticated: true,
-            username: validJWT.username
-        });
+        // pull username and email from JWT
+        // and check if it exists in the DB
+        const username = validJWT.username;
+        const email = validJWT.email;
+
+        const userExists = await DoesExist(username, email);
+        if (userExists) {
+            return res.json({
+                authenticated: true,
+                username: validJWT.username
+            });
+        } else {
+            return res.json({ authenticated: false });
+        }
     } else {
         return res.json({ authenticated: false });
     }
@@ -139,7 +170,7 @@ app.get('/user/verify', async (req, res) => {
 
 app.get('/user/info', async (req, res) => {
     const token = req.cookies.khi_token;
-    const validJWT = await DecodeJWT(token);
+    const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
         const userData = await GetUserProfile(validJWT.username);
@@ -149,21 +180,78 @@ app.get('/user/info', async (req, res) => {
         }
 
         // { username, team, is_leader }
+        console.log(`User Info --> ${JSON.stringify(userData)}`);
         return res.json(userData);
     } else {
         return res.json({ authenticated: false });
     }
 });
 
-app.post('/team', async (req, res) => {
+app.post('/team/info', async (req, res) => {
     const token = req.cookies.khi_token;
     const data = req.body;
-    const validJWT = await DecodeJWT(token);
+    const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const teamData = await GetTeamInfo(data.teamName);
-        // null | { ... }
-        return res.json(teamData);
+        console.log(`[*] Getting Info for Team: ${data.team_name}`);
+        if (data.team_name) {
+            const teamData = await GetTeamInfo(data.team_name);
+            // null | { ... }
+            console.log(`Team Info --> "${teamData}"`);
+            return res.json(teamData);
+        } else {
+            return res.json(null);
+        }
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/team/request', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(res, token);
+
+    if (validJWT) {
+        const teamRequest = await SendTeamRequest(data.sender, data.team_name);
+        return res.json(teamRequest);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/team/create', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(res, token);
+
+    if (validJWT) {
+        const team_name = data.team_name;
+        const team_creator = validJWT.username;
+
+        console.log(`[*] team create post-data --> ${data}`);
+        console.log(`[*] Attempting to create Team: ${team_name}`);
+        const teamCreate = await CreateTeam(team_creator, team_name);
+        // { message }
+        return res.json(teamCreate);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/team/update', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(res, token);
+
+    if (validJWT) {
+        const new_team_name = data.team_name;
+        const team_creator = validJWT.username;
+
+        console.log("[*] Attempting to update Team");
+        const teamUpdate = await UpdateTeam(team_creator, new_team_name);
+        // { message }
+        return res.json(teamUpdate);
     } else {
         return res.json(null);
     }

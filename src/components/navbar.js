@@ -52,7 +52,7 @@ function Navbar() {
       SetAuthenticated(await VerifySession());
     }
     Verify();
-  }, []);
+  }, []); // [] means execute this once on page-load
 
   return (
       <nav className="navbar navbar-expand-lg navbar-light bg-light">

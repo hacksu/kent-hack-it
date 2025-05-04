@@ -27,7 +27,7 @@ export function Challenges() {
       }
     }
     FetchChallenges();
-  }, []);
+  }, []); // run once on page-load
 
   const indexOfLast = currentPage * challengesPerPage;
   const indexOfFirst = indexOfLast - challengesPerPage;
