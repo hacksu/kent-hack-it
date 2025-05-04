@@ -2,6 +2,9 @@ import '../App.css';
 import { useState, useEffect } from 'react';
 import Navbar, { GetBackendHost } from '../components/navbar.js'
 
+import LeaderView from '../components/leader_view.js';
+import MemberView from '../components/member_view.js';
+
 const Team = ({ onShowProfile }) => {
   const [joinedTeamName, SetJoinedTeamName] = useState("");
   const [profileData, SetProfileData] = useState(null);
@@ -79,9 +82,7 @@ const Team = ({ onShowProfile }) => {
     // eslint-disable-next-line
   }, [joinedTeamName]); // executes when joinedTeamName changes state
 
-  const SendJoinRequest = async (event) => {
-    event.preventDefault();
-
+  const SendJoinRequest = async () => {
     try {
       const response = await fetch(`http://${GetBackendHost()}/team/request`, {
         method: "POST",
@@ -101,9 +102,7 @@ const Team = ({ onShowProfile }) => {
       console.error("Error sending request:", error);
     }
   };
-  const CreateNewTeam = async (event) => {
-    event.preventDefault();
-
+  const CreateNewTeam = async () => {
     try {
       const response = await fetch(`http://${GetBackendHost()}/team/create`, {
         method: "POST",
@@ -122,9 +121,7 @@ const Team = ({ onShowProfile }) => {
       console.error("Error sending request:", error);
     }
   };
-  const UpdateTeamName = async (event) => {
-    event.preventDefault();
-
+  const UpdateTeamName = async () => {
     try {
       const response = await fetch(`http://${GetBackendHost()}/team/update`, {
         method: "POST",
@@ -147,13 +144,6 @@ const Team = ({ onShowProfile }) => {
     } catch (error) {
       console.error("Error sending request:", error);
     }
-  };
-
-  const RemoveMember = async (event) => {
-    event.preventDefault();
-  };
-  const AddMember = async (sender_id, checksum) => {
-    alert(sender_id);
   };
 
   return (
@@ -259,153 +249,18 @@ const Team = ({ onShowProfile }) => {
                     ) : teamData ? (
                       isLeader === true ? (
                         <>
-                          {/*
-                              A Team-Leader can Update Team Details:
-                                - Add/Remove Members
-                                - Change Team Name
-                          */}
-
-                          <div className="container mt-4">
-                            <div className="card shadow">
-                              <div className="card-body">
-                                <h3 className="card-title text-center mb-3">Team: {teamData.name}</h3>
-    
-                                <div className="mb-4">
-                                  <label className="form-label">Change Team Name:</label>
-                                  <div className="input-group">
-                                    <input
-                                      type="text"
-                                      className="form-control"
-                                      value={newTeamName}
-                                      onChange={(e) => SetNewTeamName(e.target.value)}
-                                    />
-                                    <button
-                                      className="btn btn-primary"
-                                      onClick={UpdateTeamName}
-                                    >
-                                      Update
-                                    </button>
-                                  </div>
-                                </div>
-                                <hr />
-    
-                                <p><strong>Team Leader:</strong> {teamData.team_leader}</p>
-    
-                                <div className="mb-3">
-                                  <h5>Members:</h5>
-                                  <ul className="list-group">
-                                    {teamData.members && teamData.members.length > 0 ? (
-                                      teamData.members.map((member, index) => (
-                                        <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
-                                          {member}
-                                          <button
-                                            className="btn btn-sm btn-danger"
-                                            onClick={() => RemoveMember(member)}
-                                            disabled={member === teamData.team_leader}
-                                          >
-                                            Remove
-                                          </button>
-                                        </li>
-                                      ))
-                                    ) : (
-                                      <li className="list-group-item text-muted">No members</li>
-                                    )}
-                                  </ul>
-                                </div>
-                                <hr />
-    
-                                <div>
-                                  <h5>Completions:</h5>
-                                  <ul className="list-group">
-                                    {teamData.completions && teamData.completions.length > 0 ? (
-                                      teamData.completions.map((challenge, index) => (
-                                        <li key={index} className="list-group-item">
-                                          {challenge}
-                                        </li>
-                                      ))
-                                    ) : (
-                                      <li className="list-group-item text-muted">No completions yet</li>
-                                    )}
-                                  </ul>
-                                </div>
-                                <hr />
-
-                                {/*
-                                      join_requests => { _id, sender_name, checksum }
-                                */}
-                                {teamData.join_requests && teamData.join_requests.length > 0 ? (
-                                  <div className="mt-4">
-                                    <h5>Join Requests:</h5>
-                                    {teamData.join_requests.map((request, index) => (
-                                      <div key={index} className="mb-2">
-                                        <button
-                                          className="btn btn-warning"
-                                          onClick={() => {
-                                            if (window.confirm(`Are you sure?`)) {
-                                              AddMember(request._id, request.checksum);
-                                            }
-                                          }}
-                                        >
-                                          Accept Request: {request.sender_name}
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className="mt-4">
-                                    <p>No Requests at this time.</p>
-                                  </div>
-                                )}
-                                <hr />
-
-                              </div>
-                            </div>
-                          </div>
+                          {/* TEAM-LEADER VIEW */}
+                          <LeaderView
+                            TEAM_DATA={teamData}
+                            UpdateTeamName={() => UpdateTeamName()}
+                            newTeamName={newTeamName} 
+                            SetNewTeamName={SetNewTeamName}
+                          />
                         </>
                       ) : (
                         <>
-                          {/*
-                              A team-member can ONLY view team details
-                          */}
-                          <div className="container mt-4">
-                            <div className="card shadow">
-                              <div className="card-body">
-                                <h3 className="card-title text-center mb-3">{teamData.name}</h3>
-    
-                                <p><strong>Team Leader:</strong> {teamData.team_leader}</p>
-    
-                                <div className="mb-3">
-                                  <h5>Members:</h5>
-                                  <ul className="list-group">
-                                    {teamData.members && teamData.members.length > 0 ? (
-                                      teamData.members.map((member, index) => (
-                                        <li key={index} className="list-group-item">
-                                          {member}
-                                        </li>
-                                      ))
-                                    ) : (
-                                      <li className="list-group-item text-muted">No members</li>
-                                    )}
-                                  </ul>
-                                </div>
-    
-                                <div>
-                                  <h5>Completions:</h5>
-                                  <ul className="list-group">
-                                    {teamData.completions && teamData.completions.length > 0 ? (
-                                      teamData.completions.map((challenge, index) => (
-                                        <li key={index} className="list-group-item">
-                                          {challenge}
-                                        </li>
-                                      ))
-                                    ) : (
-                                      <li className="list-group-item text-muted">No completions yet</li>
-                                    )}
-                                  </ul>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                          {/* MEMBER-LEADER VIEW */}
+                          <MemberView TEAM_DATA={teamData}/>
                         </>
                       )
                     ) : (
