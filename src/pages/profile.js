@@ -1,7 +1,7 @@
 import '../App.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Team from './team.js'
-import Navbar from '../components/navbar.js'
+import Navbar, { VerifySession } from '../components/navbar.js'
 
 export function Profile() {
   const [username, SetUsername] = useState("");
@@ -13,6 +13,16 @@ export function Profile() {
   const ShowTeamPage = () => {
     SetPageIndex(1);
   };
+
+  useEffect(() => {
+    async function Verify() {
+      const authenticated = await VerifySession();
+      if (authenticated === false) {
+        window.location.href = "/login"
+      }
+    }
+    Verify();
+  }, []); // run once on page-load
 
   return (
     <>
