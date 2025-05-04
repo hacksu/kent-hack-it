@@ -197,7 +197,7 @@ app.post('/team/info', async (req, res) => {
         if (data.team_name) {
             const teamData = await GetTeamInfo(data.team_name);
             // null | { ... }
-            console.log(`Team Info --> "${teamData}"`);
+            console.log(`Team Info --> "${JSON.stringify(teamData)}"`);
             return res.json(teamData);
         } else {
             return res.json(null);
@@ -251,6 +251,7 @@ app.post('/team/update', async (req, res) => {
         console.log("[*] Attempting to update Team");
         const teamUpdate = await UpdateTeam(team_creator, new_team_name);
         // { message }
+        console.log(JSON.stringify(teamUpdate));
         return res.json(teamUpdate);
     } else {
         return res.json(null);

@@ -333,10 +333,14 @@ async function GetTeamInfo(teamName) {
     if (teamRecord) {
         const leader_record = await UserCollection.findOne({ _id: teamRecord.team_leader_id });
         const members_list = await FetchMemberNames(teamRecord.members);
+
+        if (leader_record) {
+            console.log(`[*] ${leader_record.username} Leads --> ${teamRecord.name}`);
+        }
         
         return {
             "name": teamRecord.name,
-            "team_leader": leader_record.name,
+            "team_leader": leader_record.username,
             "members": members_list,
             "completions": teamRecord.completions,
         };
@@ -419,11 +423,16 @@ async function UpdateTeam(team_creator, new_team_name) {
     // linked to them
     const leader_record = await UserCollection.findOne({ username: team_creator });
     if (leader_record) {
-        const leader_id = leader_record._id;
-
         // check if the team_exists
         const team_exists = await TeamCollection.findOne({ _id: leader_record.team_id })
         if (team_exists) {
+            // check if the name matches
+            if (new_team_name === team_exists.name) {
+                return {
+                    "message": "New name matches current Team Name!"
+                }
+            }
+
             // update the name attribute of the team entry
             const updateTeamName = await TeamCollection.updateOne(
                 { _id: leader_record.team_id },

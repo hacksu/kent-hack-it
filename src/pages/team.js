@@ -14,62 +14,65 @@ const Team = ({ onShowProfile, profileUsername }) => {
   const [reqTeamName, SetReqTeamName] = useState("");
   
   const [reqTeamMsg, SetReqTeamMsg] = useState("");
+  const [teamUpdateMsg, SetTeamUpdateMsg] = useState("");
   const [teamCreateMsg, SetTeamCreateMsg] = useState("");
 
   /*
       "// eslint-disable-next-line" is for warning suppression!
   */
 
+  async function GetProfileDetails() {
+    try {
+      const response = await fetch("http://localhost:4000/user/info", {
+        method: "GET",
+        credentials: 'include'  // ensures cookies are sent
+      });
+
+      // { username, team, is_leader }
+      const data = await response.json();
+      if (data === null) {
+        SetJoinedTeamName("None");
+      } else {
+        SetJoinedTeamName(data.team);
+        // leaders can manage the team | non-leaders view-only
+        SetIsLeader(data.is_leader);
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
+  }
+
   // runs periodically
   useEffect(() => {
-    async function GetProfileDetails() {
-      try {
-        const response = await fetch("http://localhost:4000/user/info", {
-          method: "GET",
-          credentials: 'include'  // ensures cookies are sent
-        });
-
-        // { username, team, is_leader }
-        const data = await response.json();
-        if (data === null) {
-          SetJoinedTeamName("None");
-        } else {
-          SetJoinedTeamName(data.team);
-          // leaders can manage the team | non-leaders view-only
-          SetIsLeader(data.is_leader);
-        }
-      } catch (error) {
-        console.error("Error sending request:", error);
-      }
-    }
     GetProfileDetails();
     // eslint-disable-next-line
   }, []); // <-- [] means run once on page-load
   
-  useEffect(() => {
-    // used to show leaders their team so they can manage it
-    // and used to allow team-members to view their team stats
-    async function GetTeamDetails() {
-      try {
-        const response = await fetch("http://localhost:4000/team/info", {
-          method: "POST",
-          headers: {
-              "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            "team_name": joinedTeamName
-            // eslint-disable-next-line
-          }),
-          credentials: 'include'  // ensures cookies are sent
-        });
+  // used to show leaders their team so they can manage it
+  // and used to allow team-members to view their team stats
+  async function GetTeamDetails() {
+    try {
+      const response = await fetch("http://localhost:4000/team/info", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "team_name": joinedTeamName
+          // eslint-disable-next-line
+        }),
+        credentials: 'include'  // ensures cookies are sent
+      });
 
-        // { name, team_leader, members, completions }
-        const data = await response.json();
-        SetTeamData(data);
-      } catch (error) {
-        console.error("Error sending request:", error);
-      }
+      // { name, team_leader, members, completions }
+      const data = await response.json();
+      SetTeamData(data);
+    } catch (error) {
+      console.error("Error sending request:", error);
     }
+  }
+
+  useEffect(() => {
     if (joinedTeamName !== "None" && joinedTeamName !== "") GetTeamDetails();
     // eslint-disable-next-line
   }, [joinedTeamName]); // executes when joinedTeamName changes state
@@ -133,7 +136,12 @@ const Team = ({ onShowProfile, profileUsername }) => {
       });
 
       const data = await response.json();
-      if (data) SetJoinedTeamName(data.message);
+      if (data) {
+        // if we get a message back refetch profile and team details
+        SetTeamUpdateMsg(data.message);
+        await GetProfileDetails();
+        await GetTeamDetails();
+      }
     } catch (error) {
       console.error("Error sending request:", error);
     }
@@ -172,6 +180,17 @@ const Team = ({ onShowProfile, profileUsername }) => {
             ) : (
               <h3 style={{ color: "red" }}>
                 {teamCreateMsg}
+              </h3>
+            )}
+
+            {/* Show the Team Update Response */}
+            { teamUpdateMsg.toLowerCase().includes("success") ? (
+              <h3 style={{ color: "green" }}>
+                {teamUpdateMsg}
+              </h3>
+            ) : (
+              <h3 style={{ color: "red" }}>
+                {teamUpdateMsg}
               </h3>
             )}
 
