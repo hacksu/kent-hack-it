@@ -1,6 +1,7 @@
 import GetChallenges, { LoginUser, RegisterUser,
     GetUserProfile, GetTeamInfo, SendTeamRequest,
-    CreateTeam, UpdateTeam, DoesExist } from './db.js';
+    CreateTeam, UpdateTeam, DoesExist, AddMember,
+    RemoveMember } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
@@ -270,6 +271,33 @@ app.post('/team/update', async (req, res) => {
         // { message }
         console.log(JSON.stringify(teamUpdate));
         return res.json(teamUpdate);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/team/add-member', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(res, token);
+
+    if (validJWT) {
+        const addTeamMember = await AddMember(data.request_id, data.checksum);
+        // null | { message }
+        return addTeamMember;
+    } else {
+        return res.json(null);
+    }
+});
+app.post('/team/remove-member', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(res, token);
+
+    if (validJWT) {
+        const removeTeamMember = await RemoveMember(data.member_username);
+        // null | { message }
+        return removeTeamMember;
     } else {
         return res.json(null);
     }

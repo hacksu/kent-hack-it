@@ -255,6 +255,8 @@ const Team = ({ onShowProfile }) => {
                             UpdateTeamName={() => UpdateTeamName()}
                             newTeamName={newTeamName} 
                             SetNewTeamName={SetNewTeamName}
+                            BackendHost={GetBackendHost()}
+                            SetTeamUpdateMsg={SetTeamUpdateMsg}
                           />
                         </>
                       ) : (

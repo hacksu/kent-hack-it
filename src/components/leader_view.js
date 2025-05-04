@@ -1,11 +1,56 @@
 import '../App.css';
 
-const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName, SetNewTeamName }) => {
+const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
+                      SetNewTeamName, BackendHost, SetTeamUpdateMsg }) => {
   
-  const RemoveMember = async () => {
+  const RemoveMember = async (member_name) => {
+    try {
+      const response = await fetch(`http://${BackendHost}/team/remove-member`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "member_username": member_name
+        }),
+        credentials: 'include'  // ensures cookies are sent
+      });
+
+      // { message }
+      const data = await response.json();
+      if (data) {
+        SetTeamUpdateMsg(data.message);
+      } else {
+        SetTeamUpdateMsg("Error Removing Member!");
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
   };
-  const AddMember = async (sender_id, checksum) => {
-    alert(sender_id);
+  const AddMember = async (req_id, checksum) => {
+    try {
+      const response = await fetch(`http://${BackendHost}/team/add-member`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "request_id": req_id,
+          "checksum": checksum,
+        }),
+        credentials: 'include'  // ensures cookies are sent
+      });
+
+      // { message }
+      const data = await response.json();
+      if (data) {
+        SetTeamUpdateMsg(data.message);
+      } else {
+        SetTeamUpdateMsg("Error Adding Member!");
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
   };
 
   return (

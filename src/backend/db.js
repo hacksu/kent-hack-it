@@ -614,6 +614,106 @@ async function AcceptTeamRequest(request_id, checksum) {
     };
 }
 
+async function AddMember(request_id, checksum) {
+    request_id = SanitizeString(request_id);
+    checksum = SanitizeString(checksum);
+
+    if (request_id === null || checksum === null) {
+        console.log("[-] AddMember Parameters Invalid!");
+        return null;
+    }
+
+    // find the request object that has matching attributes
+    // to request_id and checksum
+    const joinRequest = await TeamRequestCollection.findOne({ _id: request_id, checksum: checksum })
+    if (joinRequest) {
+        console.log("[+] Found Request Object!");
+        
+        // add the sender_id into the team object where _id matches team_id
+        const insertNewMember = await TeamCollection.updateOne(
+            { _id: joinRequest.team_id },
+            { $addToSet: { members: joinRequest.sender_id } }
+        );
+
+        if (!insertNewMember) {
+            console.log("[-] Error Inserting Member into this Team Object!");
+            return null;
+        }
+
+        // update sender_id user object to show they are on the team
+        const updateMemberProfile = await UserCollection.updateOne(
+            { _id: joinRequest.sender_id },
+            { $set: { team_id: joinRequest.team_id } }
+        );
+
+        if (!updateMemberProfile) {
+            console.log("[-] Error Updating Member Object Attributes!");
+            return null;
+        }
+
+        // remove all join requests that match sender_id
+        const result = await TeamRequestCollection.deleteMany({ sender_id: joinRequest.sender_id });
+        if (result) {
+            console.log(`[*] ${result.deletedCount} requests sent by "${joinRequest.sender_id}" were deleted`);
+        }
+
+        if (insertNewMember && updateMemberProfile) {
+            return { "message": "Member Added Successfully!" }
+        }
+    } else {
+        console.log("[-] Could not find Join Request Object");
+        console.log(`|___ request_id >> ${request_id}`);
+        console.log(`|___ checksum  >> ${checksum}\n`);
+        return null;
+    }
+}
+async function RemoveMember(member_username) {
+    member_username = SanitizeString(member_username);
+
+    if (member_username === null) {
+        console.log("[-] RemoveMember Parameters Invalid!");
+        return null;
+    }
+
+    const memberProfile = await UserCollection.findOne({ username: member_username })
+    if (!memberProfile) {
+        console.log("[-] Error finding Member Profile!");
+        return null;
+    }
+    const member_id = memberProfile._id.toString();
+    console.log(`[*] Attempting to remove: ${member_id}`);
+
+    // update the team profile and remove the member from the
+    // members Array
+    const removeMember = await TeamCollection.updateOne(
+        { _id: memberProfile.team_id },
+        { $pull: { members: member_id } }
+    );
+
+    if (!removeMember) {
+        console.log("[-] Error Removing Member from this Team Object!");
+        return null;
+    }
+    
+    // update the user profile of member_username and set their
+    // team attribute to None
+    const updateMemberProfile = await UserCollection.updateOne(
+        { _id: memberProfile._id },
+        { $set: { team_id: "None" } }
+    );
+
+    if (!updateMemberProfile) {
+        console.log("[-] Error Updating Member Object Attributes!");
+        return null;
+    }
+
+    if (removeMember && updateMemberProfile) {
+        console.log("[+] Member Removed Successfully!");
+        return { "message": "Member Removed Successfully!" }
+    }
+}
+
 export { LoginUser, RegisterUser, GetUserProfile,
     GetTeamInfo, SendTeamRequest, AcceptTeamRequest,
-    CreateTeam, UpdateTeam, DoesExist };
+    CreateTeam, UpdateTeam, DoesExist, AddMember,
+    RemoveMember };
