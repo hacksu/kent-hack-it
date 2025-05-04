@@ -2,7 +2,7 @@ import '../App.css';
 import { useState } from 'react'; // needed to allow for form interaction
 import { useSearchParams } from "react-router-dom"; // used to look into potential parameters in the URL
 
-import Navbar from '../components/navbar.js'
+import Navbar, { GetBackendHost } from '../components/navbar.js'
 
 export function Register() {
   const [username, SetUsername] = useState(""); // variable pair to modify a variable based on a funct-name
@@ -14,7 +14,7 @@ export function Register() {
       event.preventDefault();
 
       try {
-        const response = await fetch("http://localhost:4000/register", {
+        const response = await fetch(`http://${GetBackendHost()}/register`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

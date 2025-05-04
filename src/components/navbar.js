@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'; // needed to interact with the React App BrowserRouter
 
+function GetBackendHost() {
+  const BACKEND_HOST = process.env.REACT_APP_BACKEND_HOST;
+  const BACKEND_PORT = process.env.REACT_APP_BACKEND_PORT;
+  return `${BACKEND_HOST}:${BACKEND_PORT}`;
+}
+
 async function LogoutUser() {
-  const response = await fetch("http://localhost:4000/logout", {
+  const response = await fetch(`http://${GetBackendHost()}/logout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -31,7 +37,7 @@ const HandleLogout = async (event) =>  {
 async function VerifySession() {
   // ask the backend if this session is valid
   try {
-    const response = await fetch("http://localhost:4000/user/verify", {
+    const response = await fetch(`http://${GetBackendHost()}/user/verify`, {
       method: "GET",
       credentials: 'include'  // ensures cookies are sent
     });
@@ -104,4 +110,4 @@ function Navbar() {
 }
 export default Navbar;
 
-export { VerifySession, LogoutUser };
+export { VerifySession, LogoutUser, GetBackendHost };

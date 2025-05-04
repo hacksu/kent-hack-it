@@ -181,7 +181,7 @@ async function DoesExist(username, email) {
     const findUser = await UserCollection.findOne({"username":username});
     const findEmail = await UserCollection.findOne({"email":email});
 
-    console.log(`FindUser: ${findUser.username} | FindEmail: ${findEmail.email}`);
+    console.log(`DoesExist --> ${(findUser !== null || findEmail !== null)}`);
     return (findUser !== null || findEmail !== null) ? true : false;
 }
 
@@ -337,12 +337,39 @@ async function GetTeamInfo(teamName) {
         if (leader_record) {
             console.log(`[*] ${leader_record.username} Leads --> ${teamRecord.name}`);
         }
-        
+
+        // see if anyone has sent a request to join the team
+        // return an array of: [ { _id, checksum } ] so we
+        // can generate accept buttons on the team info page
+        const requests = await TeamRequestCollection.find({ team_id: teamRecord._id })
+            .select('_id sender_id checksum')
+            .lean();
+
+        // need to ensure this Array population finishes before returning
+        const join_requests = await Promise.all(
+            requests.map(async (request) => {
+                const sender_profile = await UserCollection.findOne({ _id: request.sender_id });
+                if (sender_profile) {
+                    return {
+                        "_id": request._id,
+                        "sender_name": sender_profile.username,
+                        "checksum": request.checksum,
+                    };
+                }
+                // If no profile, return null
+                return null;
+            })
+        );
+
+        // Filter out the nulls from the Array
+        const filtered_join_requests = join_requests.filter(item => item !== null);
+
         return {
             "name": teamRecord.name,
             "team_leader": leader_record.username,
             "members": members_list,
             "completions": teamRecord.completions,
+            "join_requests": filtered_join_requests,
         };
     }
     return null;
@@ -464,6 +491,7 @@ async function SendTeamRequest(sender, team_name) {
     team_name = SanitizeString(team_name);
 
     if (team_name === null || sender === null) {
+        console.log(`Bad Arguments for Team Request | ${sender}:${team_name}`);
         return {
             "message": "Could not send request, try again!"
         };
@@ -498,14 +526,23 @@ async function SendTeamRequest(sender, team_name) {
                     "checksum": requestChecksum,
                     "created_at": Date.now(),
                 }
-                const addJoinRequest = await TeamRequestCollection.insertOne(req_data);
-                if (addJoinRequest) {
-                    return {
-                        "message": "Request Sent Successfully!"
-                    };
+
+                // check if a request has already been created
+                const requestExists = await TeamRequestCollection.findOne({ sender_id: req_data.sender_id })
+                if (!requestExists) {
+                    const addJoinRequest = await TeamRequestCollection.insertOne(req_data);
+                    if (addJoinRequest) {
+                        return {
+                            "message": "Request Sent Successfully!"
+                        };
+                    } else {
+                        return {
+                            "message": "Could not send request, try again!"
+                        };
+                    }
                 } else {
                     return {
-                        "message": "Could not send request, try again!"
+                        "message": "You have already sent a request to this team."
                     };
                 }
             } else {

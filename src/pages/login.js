@@ -2,7 +2,7 @@ import '../App.css';
 import { useState } from 'react'; // needed to allow for form interaction
 import { useSearchParams } from "react-router-dom";
 
-import Navbar from '../components/navbar.js'
+import Navbar, { GetBackendHost } from '../components/navbar.js'
 
 export function Login() {
   const [username, SetUsername] = useState(""); // variable pair to modify a variable based on a funct-name
@@ -13,7 +13,7 @@ export function Login() {
       event.preventDefault();
       
       try {
-        const response = await fetch("http://localhost:4000/login", {
+        const response = await fetch(`http://${GetBackendHost()}/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

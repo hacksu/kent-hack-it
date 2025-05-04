@@ -29,17 +29,34 @@ async function DecodeJWT(res, token) {
 //==================================================================================================
 
 const app = express();
-const port = 4000; // NOT AN OPEN PORT BACKEND BE FILTERED (ONLY ACCESSIBLE BY LOCAL-HOST)
+/*
+#################################################################
+        NOT AN OPEN PORT BACKEND 
+        BE FILTERED (ONLY ACCESSIBLE BY LOCAL-HOST)
+        WE WILL NEED A REVERSE-PROXY SUCH AS APACHE
+        OR NGINX TO HAVE THIS BEHAVIOUR IN PRODUCTION
+#################################################################
+*/
+const host = "0.0.0.0"
+const port = process.env.REACT_APP_BACKEND_PORT;
 
 // Allows data to be sent from post requests
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // middleware to handle JSON
 app.use(cookieParser()); // Access cookies
 
+const allowedOrigins = [
+    `http://localhost:${process.env.FRONT_END_PORT}`,                  // local dev
+    `http://${process.env.LAN_HOST}:${process.env.FRONT_END_PORT}`,   // LAN live frontend
+    // 'https://khi.io'                     // production site
+];
+
+console.log(`Allowed Origins\n|____ ${allowedOrigins}\n`);
+
 // backend will handle setting JWT Cookies so the Frontend never
 // sees the tokens passed from a response
 app.use(cors({
-    origin: 'http://localhost:3000',  // React app origin
+    origin: allowedOrigins,  // React app origin
     credentials: true                // allow cookies
 }));
 
@@ -258,6 +275,6 @@ app.post('/team/update', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+app.listen(port, host, () => {
+    console.log(`Backend Server is Active!\n|____ http://${host}:${port}\n`);
 });

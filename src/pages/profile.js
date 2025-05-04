@@ -17,7 +17,7 @@ export function Profile() {
   return (
     <>
       {pageIndex === 1 ? (
-        <Team profileUsername={username} onShowProfile={() => SetPageIndex(0)}/>
+        <Team onShowProfile={() => SetPageIndex(0)}/>
       ) : (
         <div className="App">
           <Navbar />

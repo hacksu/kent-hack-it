@@ -1,9 +1,10 @@
 import '../App.css';
 import { useState, useEffect } from 'react';
-import Navbar from '../components/navbar.js'
+import Navbar, { GetBackendHost } from '../components/navbar.js'
 
-const Team = ({ onShowProfile, profileUsername }) => {
+const Team = ({ onShowProfile }) => {
   const [joinedTeamName, SetJoinedTeamName] = useState("");
+  const [profileData, SetProfileData] = useState(null);
 
   const [teamName, SetTeamName] = useState("");
   const [newTeamName, SetNewTeamName] = useState(teamName);
@@ -23,7 +24,7 @@ const Team = ({ onShowProfile, profileUsername }) => {
 
   async function GetProfileDetails() {
     try {
-      const response = await fetch("http://localhost:4000/user/info", {
+      const response = await fetch(`http://${GetBackendHost()}/user/info`, {
         method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });
@@ -36,6 +37,7 @@ const Team = ({ onShowProfile, profileUsername }) => {
         SetJoinedTeamName(data.team);
         // leaders can manage the team | non-leaders view-only
         SetIsLeader(data.is_leader);
+        SetProfileData(data);
       }
     } catch (error) {
       console.error("Error sending request:", error);
@@ -52,7 +54,7 @@ const Team = ({ onShowProfile, profileUsername }) => {
   // and used to allow team-members to view their team stats
   async function GetTeamDetails() {
     try {
-      const response = await fetch("http://localhost:4000/team/info", {
+      const response = await fetch(`http://${GetBackendHost()}/team/info`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -64,7 +66,7 @@ const Team = ({ onShowProfile, profileUsername }) => {
         credentials: 'include'  // ensures cookies are sent
       });
 
-      // { name, team_leader, members, completions }
+      // { name, team_leader, members, completions, join_requests }
       const data = await response.json();
       SetTeamData(data);
     } catch (error) {
@@ -81,13 +83,13 @@ const Team = ({ onShowProfile, profileUsername }) => {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:4000/team/request", {
+      const response = await fetch(`http://${GetBackendHost()}/team/request`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          "sender": profileUsername,
+          "sender": profileData.username,
           "team_name": reqTeamName
         }),
         credentials: 'include'  // ensures cookies are sent
@@ -103,7 +105,7 @@ const Team = ({ onShowProfile, profileUsername }) => {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:4000/team/create", {
+      const response = await fetch(`http://${GetBackendHost()}/team/create`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -124,7 +126,7 @@ const Team = ({ onShowProfile, profileUsername }) => {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:4000/team/update", {
+      const response = await fetch(`http://${GetBackendHost()}/team/update`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -150,8 +152,8 @@ const Team = ({ onShowProfile, profileUsername }) => {
   const RemoveMember = async (event) => {
     event.preventDefault();
   };
-  const AddMember = async (event) => {
-    event.preventDefault();
+  const AddMember = async (sender_id, checksum) => {
+    alert(sender_id);
   };
 
   return (
@@ -246,7 +248,7 @@ const Team = ({ onShowProfile, profileUsername }) => {
                           <div className="d-grid">
                             <button
                               className="btn btn-primary"
-                              onClick={() => SendJoinRequest(reqTeamName)}
+                              onClick={SendJoinRequest}
                             >
                               Request Join Team
                             </button>
@@ -327,6 +329,35 @@ const Team = ({ onShowProfile, profileUsername }) => {
                                   </ul>
                                 </div>
                                 <hr />
+
+                                {/*
+                                      join_requests => { _id, sender_name, checksum }
+                                */}
+                                {teamData.join_requests && teamData.join_requests.length > 0 ? (
+                                  <div className="mt-4">
+                                    <h5>Join Requests:</h5>
+                                    {teamData.join_requests.map((request, index) => (
+                                      <div key={index} className="mb-2">
+                                        <button
+                                          className="btn btn-warning"
+                                          onClick={() => {
+                                            if (window.confirm(`Are you sure?`)) {
+                                              AddMember(request._id, request.checksum);
+                                            }
+                                          }}
+                                        >
+                                          Accept Request: {request.sender_name}
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="mt-4">
+                                    <p>No Requests at this time.</p>
+                                  </div>
+                                )}
+                                <hr />
+
                               </div>
                             </div>
                           </div>

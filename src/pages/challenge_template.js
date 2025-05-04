@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import Navbar from '../components/navbar.js';
+import Navbar, { GetBackendHost } from '../components/navbar.js';
 
 export function ChallengeDetail() {
   const { search } = useLocation();
@@ -13,7 +13,7 @@ export function ChallengeDetail() {
   useEffect(() => {
     async function FetchChallenge() {
       try {
-        const response = await fetch(`http://localhost:4000/challenges`);
+        const response = await fetch(`http://${GetBackendHost()}/challenges`);
         const data = await response.json();
         const chall = data.find(challenge => challenge._id === id);
         setChallenge(chall);

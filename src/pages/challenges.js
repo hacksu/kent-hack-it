@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
-import Navbar, { VerifySession, LogoutUser } from '../components/navbar.js';
+import Navbar, { VerifySession, LogoutUser, GetBackendHost } from '../components/navbar.js';
 
 export function Challenges() {
   const [challenges, setChallenges] = useState([]);
@@ -19,7 +19,7 @@ export function Challenges() {
 
     async function FetchChallenges() {
       try {
-        const response = await fetch(`http://localhost:4000/challenges`);
+        const response = await fetch(`http://${GetBackendHost()}/challenges`);
         const data = await response.json();
         setChallenges(data);
       } catch (err) {
