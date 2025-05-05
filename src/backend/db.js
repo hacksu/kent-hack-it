@@ -76,6 +76,7 @@ const ChallengeSchema = new mongoose.Schema({
     user_rates: Array, // [ 3, 3, 4, 5, 1, 2, ... ] 1-5 stars
     rating: Number, // shows the avg of user_rates (maybe only show whole int or one-decimal place)
     points: Number,
+    flag: String, // KHI{...}
 });
 const ChallengeCollection = mongoose.model(
     'Challenges',
@@ -552,7 +553,7 @@ async function UpdateTeam(team_creator, new_team_name) {
 
             // only team leaders can modify team data
             // ensure this request came from the real leader
-            if (team_exists.leader_id.toString() !== leader_record._id.toString()) {
+            if (team_exists.team_leader_id.toString() !== leader_record._id.toString()) {
                 console.log(`[-] Non-Member: "${leader_record._id.toString()}" tried to Update Team Information of --> "${team_exists.name}"`);
                 return {
                     "message": "Team Name Updated Successfully!"
