@@ -2,7 +2,7 @@
 // and interacting with the database
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
+import crypto, { Hash } from 'crypto';
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -293,12 +293,14 @@ async function GetUserProfile(username) {
                 console.log("We got a leader!");
                 return {
                     "username": userRecord.username,
+                    "email": userRecord.email,
                     "team": team_name,
                     "is_leader": true
                 }
             } else {
                 return {
                     "username": userRecord.username,
+                    "email": userRecord.email,
                     "team": team_name,
                     "is_leader": false
                 }
@@ -306,6 +308,7 @@ async function GetUserProfile(username) {
         } else {
             return {
                 "username": userRecord.username,
+                "email": userRecord.email,
                 "team": "None",
                 "is_leader": false
             }
@@ -313,9 +316,64 @@ async function GetUserProfile(username) {
     } else {
         return {
             "username": userRecord.username,
+            "email": userRecord.email,
             "team": "None",
             "is_leader": false
         }
+    }
+}
+
+// data = { username, email, password, newPassword }
+async function UpdateUserProfile(data, jwt) {
+    const newUsername = SanitizeString(data.username);
+    const newEmail = SanitizeString(data.email);
+    const newPassword = SanitizeString(data.newPassword);
+    const password = SanitizeString(data.password); // must always be present
+
+    if (password === null) {
+        return null;
+    }
+
+    const userProfile = await UserCollection.findOne({ username: jwt.username, email: jwt.email })
+    if (userProfile) {
+        // verify credential given
+        const SALT = process.env.SALT;
+        const salted_password = SALT + password;
+        const password_hash = Hash_SHA256(salted_password);
+        if (userProfile.password !== password_hash) {
+            return null;
+        }
+
+        let profileUpdated = false;
+        if (newUsername !== null) {
+            // update username
+            userProfile.username = newUsername;
+            profileUpdated = true;
+        }
+        if (newEmail !== null) {
+            // update email
+            userProfile.email = newEmail;
+            profileUpdated = true;
+        }
+        if (newPassword !== null) {
+            // update password
+            userProfile.password = password_hash;
+            profileUpdated = true;
+        }
+
+        if (profileUpdated) {
+            await userProfile.save();
+            const jwt_token = await GenerateJWT(userProfile.username, userProfile.email);
+        
+            return {
+                "message": "Profile Updated Successfully!",
+                "token": jwt_token
+            }
+        } else {
+            return null;
+        }
+    } else {
+        return null;
     }
 }
 
@@ -713,7 +771,7 @@ async function RemoveMember(member_username) {
     }
 }
 
-export { LoginUser, RegisterUser, GetUserProfile,
+export { LoginUser, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, AcceptTeamRequest,
     CreateTeam, UpdateTeam, DoesExist, AddMember,
     RemoveMember };

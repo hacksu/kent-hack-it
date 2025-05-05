@@ -1,7 +1,7 @@
 import GetChallenges, { LoginUser, RegisterUser,
-    GetUserProfile, GetTeamInfo, SendTeamRequest,
-    CreateTeam, UpdateTeam, DoesExist, AddMember,
-    RemoveMember } from './db.js';
+    GetUserProfile, UpdateUserProfile, GetTeamInfo,
+    SendTeamRequest, CreateTeam, UpdateTeam, DoesExist,
+    AddMember, RemoveMember } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
@@ -197,9 +197,38 @@ app.get('/user/info', async (req, res) => {
             return res.json(null);
         }
 
-        // { username, team, is_leader }
+        // { username, email, team, is_leader }
         console.log(`User Info --> ${JSON.stringify(userData)}`);
         return res.json(userData);
+    } else {
+        return res.json({ authenticated: false });
+    }
+});
+
+app.post('/user/update', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(res, token);
+
+    if (validJWT) {
+        // null | { message, token }
+        const profileUpdate = await UpdateUserProfile(data, validJWT);
+
+        // when profiles are updated a new JWT is generated
+        // incase username or email values have been altered
+        if (profileUpdate) {
+            res.cookie('khi_token', profileUpdate.token, {
+                httpOnly: true,
+                secure: false,           // set to true if using HTTPS
+                sameSite: 'lax',         // or 'none' if cross-site and using HTTPS
+                path: '/',
+                maxAge: 24000 * 60 * 60  // 24 hours
+            });
+
+            return res.json(profileUpdate);
+        } else {
+            return res.json(null);
+        }
     } else {
         return res.json({ authenticated: false });
     }
