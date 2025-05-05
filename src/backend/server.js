@@ -224,7 +224,7 @@ app.post('/user/update', async (req, res) => {
                 path: '/',
                 maxAge: 24000 * 60 * 60  // 24 hours
             });
-
+            console.log(`[+] Successfully Updated Profile: ${validJWT.username}`);
             return res.json(profileUpdate);
         } else {
             return res.json(null);

@@ -357,7 +357,8 @@ async function UpdateUserProfile(data, jwt) {
         }
         if (newPassword !== null) {
             // update password
-            userProfile.password = password_hash;
+            const new_salted_password = SALT + newPassword;
+            userProfile.password = Hash_SHA256(new_salted_password);
             profileUpdated = true;
         }
 
