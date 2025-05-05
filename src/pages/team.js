@@ -58,14 +58,7 @@ const Team = ({ onShowProfile }) => {
   async function GetTeamDetails() {
     try {
       const response = await fetch(`http://${GetBackendHost()}/team/info`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          "team_name": joinedTeamName
-          // eslint-disable-next-line
-        }),
+        method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });
 

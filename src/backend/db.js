@@ -324,6 +324,7 @@ async function GetUserProfile(username) {
 }
 
 // data = { username, email, password, newPassword }
+// Uses the username in the JWT to find the account it will update
 async function UpdateUserProfile(data, jwt) {
     const newUsername = SanitizeString(data.username);
     const newEmail = SanitizeString(data.email);
@@ -378,15 +379,22 @@ async function UpdateUserProfile(data, jwt) {
     }
 }
 
-// Return the json object of the team if one exists
-async function GetTeamInfo(teamName) {
-    teamName = SanitizeString(teamName);
+// Locates the team object from the username provided in the JWT
+// to then return a JSON object reguarding informatio about the
+// team the user is currently joined in
+async function GetTeamInfo(username) {
+    username = SanitizeString(username);
 
-    if (teamName === null) {
+    if (username === null) {
         return null;
     }
 
-    const teamRecord = await TeamCollection.findOne({ name: teamName });
+    const userProfile = await UserCollection.findOne({username: username});
+    if (!userProfile) {
+        return null;
+    }
+
+    const teamRecord = await TeamCollection.findOne({ _id: userProfile.team_id });
     
     // null | { ... }
     if (teamRecord) {
@@ -395,41 +403,57 @@ async function GetTeamInfo(teamName) {
 
         if (leader_record) {
             console.log(`[*] ${leader_record.username} Leads --> ${teamRecord.name}`);
+            
+            // only leaders will be given data about join requests
+            if (userProfile._id.toString() === leader_record._id.toString()) {
+                console.log("[*] Giving Join Request Data to the Leader!");
+
+                // see if anyone has sent a request to join the team
+                // return an array of: [ { _id, checksum } ] so we
+                // can generate accept buttons on the team info page
+                const requests = await TeamRequestCollection.find({ team_id: teamRecord._id })
+                .select('_id sender_id checksum')
+                .lean();
+
+                // need to ensure this Array population finishes before returning
+                const join_requests = await Promise.all(
+                    requests.map(async (request) => {
+                        const sender_profile = await UserCollection.findOne({ _id: request.sender_id });
+                        if (sender_profile) {
+                            return {
+                                "_id": request._id,
+                                "sender_name": sender_profile.username,
+                                "checksum": request.checksum,
+                            };
+                        }
+                        // If no profile, return null
+                        return null;
+                    })
+                );
+
+                // Filter out the nulls from the Array
+                const filtered_join_requests = join_requests.filter(item => item !== null);
+
+                return {
+                    "name": teamRecord.name,
+                    "team_leader": leader_record.username,
+                    "members": members_list,
+                    "completions": teamRecord.completions,
+                    "join_requests": filtered_join_requests,
+                };
+            } else {
+                console.log("[*] Giving Team Member Basic Team Data!");
+                return {
+                    "name": teamRecord.name,
+                    "team_leader": leader_record.username,
+                    "members": members_list,
+                    "completions": teamRecord.completions,
+                };
+            }
+        } else {
+            console.log("[-] Cannot find profile of Team Leader!")
+            return null;
         }
-
-        // see if anyone has sent a request to join the team
-        // return an array of: [ { _id, checksum } ] so we
-        // can generate accept buttons on the team info page
-        const requests = await TeamRequestCollection.find({ team_id: teamRecord._id })
-            .select('_id sender_id checksum')
-            .lean();
-
-        // need to ensure this Array population finishes before returning
-        const join_requests = await Promise.all(
-            requests.map(async (request) => {
-                const sender_profile = await UserCollection.findOne({ _id: request.sender_id });
-                if (sender_profile) {
-                    return {
-                        "_id": request._id,
-                        "sender_name": sender_profile.username,
-                        "checksum": request.checksum,
-                    };
-                }
-                // If no profile, return null
-                return null;
-            })
-        );
-
-        // Filter out the nulls from the Array
-        const filtered_join_requests = join_requests.filter(item => item !== null);
-
-        return {
-            "name": teamRecord.name,
-            "team_leader": leader_record.username,
-            "members": members_list,
-            "completions": teamRecord.completions,
-            "join_requests": filtered_join_requests,
-        };
     }
     return null;
 }
@@ -451,6 +475,13 @@ async function CreateTeam(team_creator, team_name) {
     // to the new team entry
     const leader_record = await UserCollection.findOne({ username: team_creator });
     if (leader_record) {
+        // if the creator already had a team they cannot create another one
+        if (leader_record.team_id !== "None") {
+            return {
+                "message": "Error creating team."
+            }
+        }
+
         const leader_id = leader_record._id;
 
         // check if team_name is already taken
@@ -516,6 +547,15 @@ async function UpdateTeam(team_creator, new_team_name) {
             if (new_team_name === team_exists.name) {
                 return {
                     "message": "New name matches current Team Name!"
+                }
+            }
+
+            // only team leaders can modify team data
+            // ensure this request came from the real leader
+            if (team_exists.leader_id.toString() !== leader_record._id.toString()) {
+                console.log(`[-] Non-Member: "${leader_record._id.toString()}" tried to Update Team Information of --> "${team_exists.name}"`);
+                return {
+                    "message": "Team Name Updated Successfully!"
                 }
             }
 

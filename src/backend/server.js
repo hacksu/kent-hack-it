@@ -234,21 +234,17 @@ app.post('/user/update', async (req, res) => {
     }
 });
 
-app.post('/team/info', async (req, res) => {
+// Displays information about the inputted team
+app.get('/team/info', async (req, res) => {
     const token = req.cookies.khi_token;
-    const data = req.body;
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        console.log(`[*] Getting Info for Team: ${data.team_name}`);
-        if (data.team_name) {
-            const teamData = await GetTeamInfo(data.team_name);
-            // null | { ... }
-            console.log(`Team Info --> "${JSON.stringify(teamData)}"`);
-            return res.json(teamData);
-        } else {
-            return res.json(null);
-        }
+        console.log(`[*] Getting Info for the Team: ${validJWT.username} is in.`);
+        const teamData = await GetTeamInfo(validJWT.username);
+        // null | { ... }
+        console.log(`Team Info --> "${JSON.stringify(teamData)}"`);
+        return res.json(teamData);
     } else {
         return res.json(null);
     }
