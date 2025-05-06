@@ -61,10 +61,12 @@ export function Challenges() {
 
   async function SelfFilterChallenges(data) {
     if (!profileData) {
+      console.log("No Profile Data!")
       return data;
     }
 
     if (profileData.completions.length === 0) {
+      console.log("No Completions on Profile!")
       return data;
     }
 
@@ -77,6 +79,8 @@ export function Challenges() {
       // if the challenge entry doesnt exist in profileData push it to the Array
       if (!exists) {
         filteredChallenges.push(challenge);
+      } else {
+        console.log("Completed: ", challenge.name)
       }
     }
 
@@ -118,7 +122,10 @@ export function Challenges() {
       const teamFilteredData = await TeamFilterChallenges(data);
       const selfFilteredData = await SelfFilterChallenges(data);
 
-      if (showSelfCompleted) {
+      // when a user has no team they always filter out challenges
+      // theyve completed
+      if (!teamData || showSelfCompleted) {
+        console.log("Heres your unfinished business!: ", selfFilteredData)
         setChallenges(selfFilteredData);
       } else {
         setChallenges(teamFilteredData);
@@ -136,7 +143,7 @@ export function Challenges() {
       }
     }
     Verify();
-  }, [teamData, profileData, challenges]); // run on state change
+  }, [challenges]); // run on state change
   
   const indexOfLast = currentPage * challengesPerPage;
   const indexOfFirst = indexOfLast - challengesPerPage;
@@ -161,7 +168,7 @@ export function Challenges() {
 
   useEffect(() => {
     FetchChallenges()
-  }, []); // run on-load
+  }, [profileData]);
 
   return (
     <div className="App">
