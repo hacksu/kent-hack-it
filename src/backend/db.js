@@ -2,7 +2,7 @@
 // and interacting with the database
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
-import crypto, { Hash } from 'crypto';
+import crypto from 'crypto';
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -165,25 +165,47 @@ async function UpdateTeamCompletions(team_id) {
     console.log("[*] Attempting to Update Team Completions. . .");
     const teamProfile = await TeamCollection.findOne({ _id: team_id });
     if (teamProfile) {
-        const mergedCompletions = {};  // { challName: memberId }
+        const mergedCompletions = [];  // Initialize as an array of objects
+        const teamMembers = teamProfile.members;
+        teamMembers.push(teamProfile.team_leader_id);
 
-        for (const memberId of teamProfile.members) {
+        console.log(`All Members of team ${teamProfile.name}`, teamMembers);
+
+        for (const memberId of teamMembers) {
             const memberProfile = await UserCollection.findOne({ _id: memberId });
 
             if (!memberProfile || !memberProfile.completions) {
                 continue;
             }
 
-            for (const [challName, timestamp] of Object.entries(memberProfile.completions)) {
-                if (
-                    !mergedCompletions[challName] || 
-                    timestamp < mergedCompletions[challName].timestamp  // compare oldest
-                ) {
-                    mergedCompletions[challName] = memberId;
+            for (const data of Object.entries(memberProfile.completions)) {
+                console.log(`Completions of ${memberProfile.username}`, memberProfile.completions)
+                const [index, { name, time }] = data; // break down the entry
+                console.log("Completion Data -> ", { name, time });
+
+
+                // Find if the challenge already exists in mergedCompletions
+                const existingChallenge = mergedCompletions.find(completion => completion.name === name);
+
+                // If challenge doesn't exist or the current timestamp is older, add/update the challenge
+                if (!existingChallenge || time < existingChallenge.timestamp) {
+                    const newCompletion = { name: name, memberId: memberId, timestamp: time };
+
+                    // Remove the existing challenge entry if it exists
+                    if (existingChallenge) {
+                        const index = mergedCompletions.indexOf(existingChallenge);
+                        mergedCompletions.splice(index, 1);
+                    }
+
+                    // Add the new challenge with the oldest timestamp
+                    mergedCompletions.push(newCompletion);
                 }
             }
         }
 
+        console.log("Merged Completions:", mergedCompletions);
+
+        // Update the team completions as an array
         await TeamCollection.updateOne(
             { _id: team_id },
             { $set: { completions: mergedCompletions } }
@@ -191,7 +213,7 @@ async function UpdateTeamCompletions(team_id) {
 
         console.log("[+] Team completions updated successfully!");
     } else {
-        console.log(`[-] Cannot find Team Record for: ${team_id}`)
+        console.log(`[-] Cannot find Team Record for: ${team_id}`);
     }
 }
 
@@ -553,7 +575,7 @@ async function CreateTeam(team_creator, team_name) {
                     { $set: { team_id: addNewTeam._id } }
                 );
 
-                UpdateTeamCompletions(addNewTeam._id);
+                await UpdateTeamCompletions(addNewTeam._id);
 
                 return {
                     "message": "Team created Successfully!"
@@ -757,7 +779,7 @@ async function AddMember(request_id, checksum) {
         }
 
         if (insertNewMember && updateMemberProfile) {
-            UpdateTeamCompletions(joinRequest.team_id)
+            await UpdateTeamCompletions(joinRequest.team_id)
             return { "message": "Member Added Successfully!" }
         }
     } else {
@@ -808,7 +830,7 @@ async function RemoveMember(member_username) {
     }
 
     if (removeMember && updateMemberProfile) {
-        UpdateTeamCompletions(removeMember._id)
+        await UpdateTeamCompletions(removeMember._id)
         console.log("[+] Member Removed Successfully!");
         return { "message": "Member Removed Successfully!" }
     }
@@ -841,10 +863,10 @@ async function ValidateFlag(challenge_id, flag_value, jwt) {
         if (userProfile) {
             const currentCompletions = userProfile.completions;
             for (const claim of currentCompletions) {
-                console.log("Reviewing Claim");
-                console.log(`|____ ${claim.name} === ${simplifiedChallengeName}`);
+                // console.log("Reviewing Claim");
+                // console.log(`|____ ${claim.name} === ${simplifiedChallengeName}`);
                 if (claim.name === simplifiedChallengeName) {
-                    console.log("CLAIM ALREADY EXISTS!");
+                    // console.log("CLAIM ALREADY EXISTS!");
                     return {
                         message: "Already Claimed this Flag!"
                     };
@@ -878,7 +900,7 @@ async function ValidateFlag(challenge_id, flag_value, jwt) {
 
             if (updateUser) {
                 const userProfile = await UserCollection.findOne({ username: jwt.username })
-                UpdateTeamCompletions(userProfile.team_id)
+                await UpdateTeamCompletions(userProfile.team_id)
                 return {
                     "message": "Correct Flag!"
                 }

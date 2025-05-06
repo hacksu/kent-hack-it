@@ -5,6 +5,8 @@ import Navbar, { GetBackendHost } from '../components/navbar.js'
 import LeaderView from '../components/leader_view.js';
 import MemberView from '../components/member_view.js';
 
+import Stats from '../components/stats.js';
+
 const Team = ({ onShowProfile }) => {
   const [joinedTeamName, SetJoinedTeamName] = useState("");
   const [profileData, SetProfileData] = useState(null);
@@ -262,6 +264,9 @@ const Team = ({ onShowProfile }) => {
                       <p className="text-center text-muted">Loading team data...</p>
                     )}
                   </>
+
+                  <Stats TEAM_DATA={teamData} PROFILE_DATA={profileData}/>
+                  <hr />
   
                   <div className="d-flex justify-content-center gap-4 mt-3">
                     <button

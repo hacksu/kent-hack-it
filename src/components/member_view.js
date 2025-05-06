@@ -27,21 +27,6 @@ const MemberView = ({ TEAM_DATA }) => {
               )}
             </ul>
           </div>
-
-          <div>
-            <h5>Completions:</h5>
-            <ul className="list-group">
-              {TEAM_DATA.completions && TEAM_DATA.completions.length > 0 ? (
-                TEAM_DATA.completions.map((challenge, index) => (
-                  <li key={index} className="list-group-item">
-                    {challenge}
-                  </li>
-                ))
-              ) : (
-                <li className="list-group-item text-muted">No completions yet</li>
-              )}
-            </ul>
-          </div>
         </div>
       </div>
     </div>
