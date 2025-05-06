@@ -38,7 +38,7 @@ const UserSchema = new mongoose.Schema({
     username: String,
     email: String,
     password: String, // sha-256 salted hex-string
-    completions: Array, // [ "Scrambled", "BitLocker-1", ... ]
+    completions: Array, // [ { "Scrambled": Date.now() } ... ]
     team_id: String, // "None" | '_id' --> "xX_RaTT3rs_Xx"
     created_at: Date
 });
@@ -49,7 +49,7 @@ const TeamSchema = new mongoose.Schema({
     name: String,
     team_leader_id: String, // "yoyojesus" <-- '_id'
     members: Array, // Array of _id elements that link to a profile
-    completions: Array, // [ "Perplexed", "Guess-My-Cheese", ... ]
+    completions: Array, // [ { "Perplexed": user._id }, ... ]
     created_at: Date
 });
 const TeamCollection = mongoose.model('Teams', TeamSchema, 'teams');
@@ -151,6 +151,50 @@ async function GenerateJWT(username, email) {
 
 //==================================================================================================
 
+// reusable function to review the completions among team members
+// to update the completions of the team for stat showing
+/*
+    Occurs during:
+        - Team Creation
+        - Member Join
+        - Member Leave
+        - Flag Claiming
+*/
+async function UpdateTeamCompletions(team_id) {
+    if (team_id === "None" || !team_id) return;
+    console.log("[*] Attempting to Update Team Completions. . .");
+    const teamProfile = await TeamCollection.findOne({ _id: team_id });
+    if (teamProfile) {
+        const mergedCompletions = {};  // { challName: memberId }
+
+        for (const memberId of teamProfile.members) {
+            const memberProfile = await UserCollection.findOne({ _id: memberId });
+
+            if (!memberProfile || !memberProfile.completions) {
+                continue;
+            }
+
+            for (const [challName, timestamp] of Object.entries(memberProfile.completions)) {
+                if (
+                    !mergedCompletions[challName] || 
+                    timestamp < mergedCompletions[challName].timestamp  // compare oldest
+                ) {
+                    mergedCompletions[challName] = memberId;
+                }
+            }
+        }
+
+        await TeamCollection.updateOne(
+            { _id: team_id },
+            { $set: { completions: mergedCompletions } }
+        );
+
+        console.log("[+] Team completions updated successfully!");
+    } else {
+        console.log(`[-] Cannot find Team Record for: ${team_id}`)
+    }
+}
+
 // Converts the TeamCollection.members _id Array into an Array of Strings
 async function FetchMemberNames(member_list) {
     // Find all users whose _id is in the member_list array
@@ -213,7 +257,7 @@ async function RegisterUser(username, password, email) {
         email,
         password: hashed_passwd,
         completions: [],
-        team: "None",
+        team_id: "None",
         created_at: Date.now()
     });
 
@@ -295,6 +339,7 @@ async function GetUserProfile(username) {
                 return {
                     "username": userRecord.username,
                     "email": userRecord.email,
+                    "completions": userRecord.completions,
                     "team": team_name,
                     "is_leader": true
                 }
@@ -302,6 +347,7 @@ async function GetUserProfile(username) {
                 return {
                     "username": userRecord.username,
                     "email": userRecord.email,
+                    "completions": userRecord.completions,
                     "team": team_name,
                     "is_leader": false
                 }
@@ -310,6 +356,7 @@ async function GetUserProfile(username) {
             return {
                 "username": userRecord.username,
                 "email": userRecord.email,
+                "completions": userRecord.completions,
                 "team": "None",
                 "is_leader": false
             }
@@ -318,6 +365,7 @@ async function GetUserProfile(username) {
         return {
             "username": userRecord.username,
             "email": userRecord.email,
+            "completions": userRecord.completions,
             "team": "None",
             "is_leader": false
         }
@@ -505,6 +553,8 @@ async function CreateTeam(team_creator, team_name) {
                     { $set: { team_id: addNewTeam._id } }
                 );
 
+                UpdateTeamCompletions(addNewTeam._id);
+
                 return {
                     "message": "Team created Successfully!"
                 }
@@ -663,57 +713,6 @@ async function SendTeamRequest(sender, team_name) {
 }
 // request_id and checksum will be attached to the handler
 // that triggers this function
-async function AcceptTeamRequest(request_id, checksum) {
-    request_id = SanitizeString(request_id);
-    checksum = SanitizeString(checksum);
-
-    if (request_id === null) {
-        return {
-            "success": false
-        };
-    }
-
-    const requestObject = await TeamRequestCollection.findOne({
-        _id: request_id
-    });
-
-    // if the request exists
-    if (requestObject) {
-        // verify the accept is legit through a checksum
-        if (requestObject.checksum === checksum) {
-            // remove request from the db
-            const team_id = requestObject.team_id;
-            request_deletion = await TeamRequestCollection.deleteOne({ _id: requestObject._id });
-            if (request_deletion) {
-                // update the request senders profile
-                // to show they are a member of the team
-                // (sender is a _id)
-                const updateUserData = await UserCollection.updateOne(
-                    { _id: requestObject.sender_id },
-                    { $set: { team_id: team_id } }
-                );
-
-                if (updateUserData) {
-                    return {
-                        "success": true
-                    };
-                } else {
-                    return {
-                        "success": false
-                    };
-                }
-            }
-        }
-        return {
-            "success": false
-        };
-    }
-    
-    return {
-        "success": false
-    };
-}
-
 async function AddMember(request_id, checksum) {
     request_id = SanitizeString(request_id);
     checksum = SanitizeString(checksum);
@@ -758,6 +757,7 @@ async function AddMember(request_id, checksum) {
         }
 
         if (insertNewMember && updateMemberProfile) {
+            UpdateTeamCompletions(joinRequest.team_id)
             return { "message": "Member Added Successfully!" }
         }
     } else {
@@ -808,12 +808,97 @@ async function RemoveMember(member_username) {
     }
 
     if (removeMember && updateMemberProfile) {
+        UpdateTeamCompletions(removeMember._id)
         console.log("[+] Member Removed Successfully!");
         return { "message": "Member Removed Successfully!" }
     }
 }
 
+// we use the JWT so if the flag_value matches for
+// the challenge its submitted for we can give the
+// challenge points to the owner of the JWT (username|email)
+async function ValidateFlag(challenge_id, flag_value, jwt) {
+    // hash the flag so it passes Sanitization as it includes
+    // characters such as: "{}"
+    challenge_id = SanitizeString(challenge_id);
+    // the hashing helps prevent injections due to the "{}" characters
+    const flag_hash = SanitizeString(Hash_SHA256(flag_value));
+
+    if (flag_value === null || challenge_id === null) {
+        console.log("[-] Bad Parameters in ValidateFlag!");
+        return null;
+    }
+
+    // find the challenge object based off the id
+    const chall = await ChallengeCollection.findOne({ _id: challenge_id })
+    if (chall) {
+        // check if the user has already claimed the flag:
+        // before doing an insert check if there is an object with
+        // a name attribute matching simplifiedChallengeName
+        // EX: completions: [ { name: 'BasicWebExploit', time: 1746503187547 } ]
+        const userProfile = await UserCollection.findOne({ username: jwt.username });
+        const simplifiedChallengeName = chall.name.replaceAll(' ', '');
+        if (userProfile) {
+            const currentCompletions = userProfile.completions;
+            for (const claim of currentCompletions) {
+                console.log("Reviewing Claim");
+                console.log(`|____ ${claim.name} === ${simplifiedChallengeName}`);
+                if (claim.name === simplifiedChallengeName) {
+                    console.log("CLAIM ALREADY EXISTS!");
+                    return {
+                        message: "Already Claimed this Flag!"
+                    };
+                }
+            }
+        } else {
+            return {
+                "message": "Error locating User Profile!"
+            }
+        }
+
+        // check if the flag_value matches the collection flag value
+        if (Hash_SHA256(chall.flag) === flag_hash) {
+            console.log("[+] Correct Flag Submitted");
+            // move the challenge into the user
+            // profile's completions Array
+            // the Array will store the name of the challenge
+            // this way if it is removed from the DB and potentially
+            // reinserted there is no data-loss
+
+            const updateUser = await UserCollection.updateOne(
+                { username: jwt.username },
+                {
+                    $addToSet: {
+                        completions: {
+                            name: simplifiedChallengeName, time: Date.now()
+                        }
+                    }
+                }
+            );
+
+            if (updateUser) {
+                const userProfile = await UserCollection.findOne({ username: jwt.username })
+                UpdateTeamCompletions(userProfile.team_id)
+                return {
+                    "message": "Correct Flag!"
+                }
+            } else {
+                return {
+                    "message": "Correct Flag! Error marking Completion!"
+                }
+            }
+        } else {
+            console.log("[-] Incorrect Flag Submitted");
+            return {
+                "message": "Incorrect Flag!"
+            }
+        }
+    } else {
+        console.log("[-] Challenge ID could not be located!");
+        return null;
+    }
+}
+
 export { LoginUser, RegisterUser, GetUserProfile, UpdateUserProfile,
-    GetTeamInfo, SendTeamRequest, AcceptTeamRequest,
-    CreateTeam, UpdateTeam, DoesExist, AddMember,
-    RemoveMember };
+    GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
+    DoesExist, AddMember, RemoveMember, ValidateFlag };

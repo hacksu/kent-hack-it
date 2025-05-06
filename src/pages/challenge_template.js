@@ -24,11 +24,38 @@ export function ChallengeDetail() {
     FetchChallenge();
   }, [id]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would send 'answer' to your backend
-    setMessage(`Submitted answer: ${answer}`);
-    setAnswer('');
+
+    // send the flag over to the backend and validate if they
+    // submitted the correct flag
+    try {
+      const response = await fetch(`http://${GetBackendHost()}/submit-flag`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "flag": answer,
+          "challenge_id": id,
+        }),
+        credentials: 'include'  // ensures cookies are sent
+      });
+
+      // null | { message }
+      const data = await response.json();
+      if (data) {
+        setMessage(data.message);
+        setAnswer('');
+      } else {
+        setMessage("Incorrect Flag!");
+        setAnswer('');
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+      setMessage("Error Submitting Flag.");
+      setAnswer('');
+    }
   };
 
   if (!challenge) {
@@ -85,8 +112,11 @@ export function ChallengeDetail() {
                 </form>
 
                 {message && (
-                    <div className="alert alert-info mt-3" role="alert">
-                    {message}
+                    <div
+                        className={`alert mt-3 ${message === 'Correct Flag!' ? 'alert-info' : 'alert-danger'}`}
+                        role="alert"
+                    >
+                        {message}
                     </div>
                 )}
                 </div>

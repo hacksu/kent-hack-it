@@ -1,7 +1,7 @@
 import GetChallenges, { LoginUser, RegisterUser,
     GetUserProfile, UpdateUserProfile, GetTeamInfo,
     SendTeamRequest, CreateTeam, UpdateTeam, DoesExist,
-    AddMember, RemoveMember } from './db.js';
+    AddMember, RemoveMember, ValidateFlag } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
@@ -323,6 +323,22 @@ app.post('/team/remove-member', async (req, res) => {
         const removeTeamMember = await RemoveMember(data.member_username);
         // null | { message }
         return removeTeamMember;
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/submit-flag', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(res, token);
+
+    if (validJWT) {
+        console.log("[*] Attempting to check flag value. . .");
+        const checkFlag = await ValidateFlag(data.challenge_id, data.flag, validJWT);
+        // null | { message }
+        console.log(checkFlag);
+        return res.json(checkFlag);
     } else {
         return res.json(null);
     }

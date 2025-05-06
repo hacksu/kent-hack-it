@@ -32,7 +32,7 @@ const Team = ({ onShowProfile }) => {
         credentials: 'include'  // ensures cookies are sent
       });
 
-      // { username, team, is_leader }
+      // { username, email, completions, team, is_leader }
       const data = await response.json();
       if (data === null) {
         SetJoinedTeamName("None");
