@@ -49,7 +49,6 @@ const Team = ({ onShowProfile }) => {
     }
   }
 
-  // runs periodically
   useEffect(() => {
     GetProfileDetails();
     // eslint-disable-next-line

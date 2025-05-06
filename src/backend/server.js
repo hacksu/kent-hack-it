@@ -1,7 +1,8 @@
 import GetChallenges, { LoginUser, RegisterUser,
     GetUserProfile, UpdateUserProfile, GetTeamInfo,
     SendTeamRequest, CreateTeam, UpdateTeam, DoesExist,
-    AddMember, RemoveMember, ValidateFlag } from './db.js';
+    AddMember, RemoveMember, ValidateFlag, ConvertCompletions
+} from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
@@ -339,6 +340,22 @@ app.post('/submit-flag', async (req, res) => {
         // null | { message }
         console.log(checkFlag);
         return res.json(checkFlag);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/data/get-completions', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(res, token);
+
+    if (validJWT) {
+        console.log("[*] Attempting to create readable completions. . .");
+        const readableCompletions = await ConvertCompletions(data.userCompletions, data.teamCompletions);
+        // null | { ... }
+        console.log("[*] CONVERSION-RESULTS: ", readableCompletions);
+        return res.json(readableCompletions);
     } else {
         return res.json(null);
     }

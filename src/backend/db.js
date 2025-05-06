@@ -183,22 +183,24 @@ async function UpdateTeamCompletions(team_id) {
                 const [index, { name, time }] = data; // break down the entry
                 console.log("Completion Data -> ", { name, time });
 
-
-                // Find if the challenge already exists in mergedCompletions
-                const existingChallenge = mergedCompletions.find(completion => completion.name === name);
-
-                // If challenge doesn't exist or the current timestamp is older, add/update the challenge
-                if (!existingChallenge || time < existingChallenge.timestamp) {
-                    const newCompletion = { name: name, memberId: memberId, timestamp: time };
-
-                    // Remove the existing challenge entry if it exists
-                    if (existingChallenge) {
-                        const index = mergedCompletions.indexOf(existingChallenge);
-                        mergedCompletions.splice(index, 1);
+                const challengeProfile = await ChallengeCollection.findOne({ name: name.replaceAll('_', ' ') })
+                if (challengeProfile) {
+                    // Find if the challenge already exists in mergedCompletions
+                    const existingChallenge = mergedCompletions.find(completion => completion.name === name);
+    
+                    // If challenge doesn't exist or the current timestamp is older, add/update the challenge
+                    if (!existingChallenge || time < existingChallenge.timestamp) {
+                        const newCompletion = { name: name, memberId: memberId, points: challengeProfile.points, timestamp: time };
+    
+                        // Remove the existing challenge entry if it exists
+                        if (existingChallenge) {
+                            const index = mergedCompletions.indexOf(existingChallenge);
+                            mergedCompletions.splice(index, 1);
+                        }
+    
+                        // Add the new challenge with the oldest timestamp
+                        mergedCompletions.push(newCompletion);
                     }
-
-                    // Add the new challenge with the oldest timestamp
-                    mergedCompletions.push(newCompletion);
                 }
             }
         }
@@ -859,7 +861,7 @@ async function ValidateFlag(challenge_id, flag_value, jwt) {
         // a name attribute matching simplifiedChallengeName
         // EX: completions: [ { name: 'BasicWebExploit', time: 1746503187547 } ]
         const userProfile = await UserCollection.findOne({ username: jwt.username });
-        const simplifiedChallengeName = chall.name.replaceAll(' ', '');
+        const simplifiedChallengeName = chall.name.replaceAll(' ', '_');
         if (userProfile) {
             const currentCompletions = userProfile.completions;
             for (const claim of currentCompletions) {
@@ -921,6 +923,38 @@ async function ValidateFlag(challenge_id, flag_value, jwt) {
     }
 }
 
+async function ConvertCompletions(userCompletions, teamCompletions) {
+    console.log("[*] Attempting Conversions. . .")
+    console.log("|____ User Completions: ", userCompletions);
+    console.log("|____ Team Completions: ", teamCompletions);
+
+    if (teamCompletions) {
+        // Iterate through data and modify memberId using for...of to handle async correctly
+        for (const item of teamCompletions) {
+            const memberProfile = await UserCollection.findOne({ _id: item.memberId });
+            if (memberProfile) {
+                const memberUsername = memberProfile.username;
+                // Replace memberId with memberName
+                item.memberName = memberUsername;  // Add memberName attribute
+                delete item.memberId; // Delete memberId attribute
+            }
+        }
+
+        console.log("[*] Team Completions Modified: ", teamCompletions);
+
+        return {
+            "userCompletions": userCompletions,
+            "teamCompletions": teamCompletions,
+        }
+    } else {
+        return {
+            "userCompletions": userCompletions,
+            "teamCompletions": [],
+        }
+    }
+}
+
 export { LoginUser, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
-    DoesExist, AddMember, RemoveMember, ValidateFlag };
+    DoesExist, AddMember, RemoveMember, ValidateFlag,
+    ConvertCompletions };
