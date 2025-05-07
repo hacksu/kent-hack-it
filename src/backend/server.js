@@ -354,7 +354,7 @@ app.post('/data/get-completions', async (req, res) => {
         console.log("[*] Attempting to create readable completions. . .");
         const readableCompletions = await ConvertCompletions(data.userCompletions, data.teamCompletions);
         // null | { ... }
-        console.log("[*] CONVERSION-RESULTS: ", readableCompletions);
+        // console.log("[*] CONVERSION-RESULTS: ", readableCompletions);
         return res.json(readableCompletions);
     } else {
         return res.json(null);

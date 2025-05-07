@@ -163,13 +163,32 @@ async function GenerateJWT(username, email) {
 async function UpdateTeamCompletions(team_id) {
     if (team_id === "None" || !team_id) return;
     console.log("[*] Attempting to Update Team Completions. . .");
-    const teamProfile = await TeamCollection.findOne({ _id: team_id });
+    let teamProfile = await TeamCollection.findOne({ _id: team_id });
     if (teamProfile) {
         const mergedCompletions = [];  // Initialize as an array of objects
         const teamMembers = teamProfile.members;
         teamMembers.push(teamProfile.team_leader_id);
 
         console.log(`All Members of team ${teamProfile.name}`, teamMembers);
+
+        console.log("\nBEFORE: ", teamProfile.completions);
+
+        // remove entries within TeamCollections.completions that contain
+        // memberIds that are not contained in the teamMembers Array
+        await TeamCollection.updateOne(
+            { _id: team_id },
+            {
+                $pull: {
+                    completions: {
+                        memberId: { $nin: teamMembers }
+                    }
+                }
+            }
+        );
+
+        // reference update after a modification
+        teamProfile = await TeamCollection.findOne({ _id: team_id });
+        console.log("AFTER: ", teamProfile.completions);
 
         for (const memberId of teamMembers) {
             const memberProfile = await UserCollection.findOne({ _id: memberId });
@@ -179,9 +198,9 @@ async function UpdateTeamCompletions(team_id) {
             }
 
             for (const data of Object.entries(memberProfile.completions)) {
-                console.log(`Completions of ${memberProfile.username}`, memberProfile.completions)
+                // console.log(`Completions of ${memberProfile.username}`, memberProfile.completions)
                 const [index, { name, time }] = data; // break down the entry
-                console.log("Completion Data -> ", { name, time });
+                // console.log("Completion Data -> ", { name, time });
 
                 const challengeProfile = await ChallengeCollection.findOne({ name: name.replaceAll('_', ' ') })
                 if (challengeProfile) {
@@ -205,7 +224,7 @@ async function UpdateTeamCompletions(team_id) {
             }
         }
 
-        console.log("Merged Completions:", mergedCompletions);
+        // console.log("Merged Completions:", mergedCompletions);
 
         // Update the team completions as an array
         await TeamCollection.updateOne(
@@ -577,7 +596,9 @@ async function CreateTeam(team_creator, team_name) {
                     { $set: { team_id: addNewTeam._id } }
                 );
 
-                await UpdateTeamCompletions(addNewTeam._id);
+                // pull up the updated leader record and pass their team_id
+                const leader_record = await UserCollection.findOne({ username: team_creator });
+                await UpdateTeamCompletions(leader_record.team_id);
 
                 return {
                     "message": "Team created Successfully!"
@@ -805,6 +826,7 @@ async function RemoveMember(member_username) {
         return null;
     }
     const member_id = memberProfile._id.toString();
+    const team_id = memberProfile.team_id; // reference to the team this user is removed from
     console.log(`[*] Attempting to remove: ${member_id}`);
 
     // update the team profile and remove the member from the
@@ -832,7 +854,7 @@ async function RemoveMember(member_username) {
     }
 
     if (removeMember && updateMemberProfile) {
-        await UpdateTeamCompletions(removeMember._id)
+        await UpdateTeamCompletions(team_id)
         console.log("[+] Member Removed Successfully!");
         return { "message": "Member Removed Successfully!" }
     }
@@ -925,8 +947,8 @@ async function ValidateFlag(challenge_id, flag_value, jwt) {
 
 async function ConvertCompletions(userCompletions, teamCompletions) {
     console.log("[*] Attempting Conversions. . .")
-    console.log("|____ User Completions: ", userCompletions);
-    console.log("|____ Team Completions: ", teamCompletions);
+    // console.log("|____ User Completions: ", userCompletions);
+    // console.log("|____ Team Completions: ", teamCompletions);
 
     if (teamCompletions) {
         // Iterate through data and modify memberId using for...of to handle async correctly
@@ -940,7 +962,7 @@ async function ConvertCompletions(userCompletions, teamCompletions) {
             }
         }
 
-        console.log("[*] Team Completions Modified: ", teamCompletions);
+        // console.log("[*] Team Completions Modified: ", teamCompletions);
 
         return {
             "userCompletions": userCompletions,
