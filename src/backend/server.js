@@ -1,7 +1,8 @@
 import GetChallenges, { LoginUser, RegisterUser,
     GetUserProfile, UpdateUserProfile, GetTeamInfo,
     SendTeamRequest, CreateTeam, UpdateTeam, DoesExist,
-    AddMember, RemoveMember, ValidateFlag, ConvertCompletions
+    AddMember, RemoveMember, ValidateFlag, ConvertCompletions,
+    ReplaceLeader
 } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
@@ -325,9 +326,22 @@ app.post('/team/remove-member', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const removeTeamMember = await RemoveMember(data.member_username);
+        const removeTeamMember = await RemoveMember(data.member_username, validJWT);
         // null | { message }
         return removeTeamMember;
+    } else {
+        return res.json(null);
+    }
+});
+app.post('/team/replace-leader', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(res, token);
+
+    if (validJWT) {
+        const leaderLeaveTeam = await ReplaceLeader(validJWT.username, data);
+        // null | { message }
+        return leaderLeaveTeam;
     } else {
         return res.json(null);
     }

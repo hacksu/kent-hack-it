@@ -834,7 +834,7 @@ async function AddMember(request_id, checksum) {
         return null;
     }
 }
-async function RemoveMember(member_username) {
+async function RemoveMember(member_username, jwt) {
     member_username = SanitizeString(member_username);
 
     if (member_username === null) {
@@ -879,6 +879,108 @@ async function RemoveMember(member_username) {
         await UpdateTeamCompletions(team_id)
         console.log("[+] Member Removed Successfully!");
         return { "message": "Member Removed Successfully!" }
+    }
+}
+
+async function ReplaceLeader(leader_username, data) {
+    const SALT = process.env.SALT;
+    const hashed_password = Hash_SHA256(SALT + data.password);
+    const team_name = data.team_data.name;
+    
+    // find the team object based on team_name
+    const teamProfile = await TeamCollection.findOne({ name: team_name })
+    if (teamProfile) {
+        // pull user profile based off leader_username to compare the _id
+        // to the team leader _id in teamProfile
+        const userProfile = await UserCollection.findOne({ username: leader_username })
+        if (userProfile) {
+            if (userProfile._id.toString() === teamProfile.team_leader_id) {
+                // this is the true leader
+                // validate password entry
+                if (userProfile.password === hashed_password) {
+                    console.log(`[*] Modifying old team leader profile. . .`)
+
+                    // set their team_id attribute to None
+                    const revokeLeader = await UserCollection.updateOne(
+                        { _id: userProfile._id },
+                        { $set: { team_id: "None" } }
+                    );
+                    if (!revokeLeader) {
+                        console.log("Error occured revoking team_id!");
+                        return null;
+                    }
+
+                    // no members means no one is next in line to take
+                    // charge, therefor we delete the team entry
+                    if (teamProfile.members.length === 0) {
+                        console.log(`[*] Team ${teamProfile.name} has no members!`)
+                        // delete the team profile from the database
+                        const deleteTeam = await TeamCollection.deleteOne({ _id: teamProfile._id })
+                        if (!deleteTeam) {
+                            return null;
+                        } else {
+                            console.log(`[*] Team ${teamProfile.name} has been deleted!`);
+                            return null;
+                        }
+                    } else {
+                        // find the member_id of the user profile
+                        // who will be the new team leader
+                        let nextInLine = null;
+                        let maxCompletions = -1;
+    
+                        for (const member_id of teamProfile.members) {
+                            const memberProfile = await UserCollection.findOne({ _id: member_id });
+                            if (memberProfile && Array.isArray(memberProfile.completions)) {
+                                const numCompletions = memberProfile.completions.length;
+    
+                                if (numCompletions > maxCompletions) {
+                                    maxCompletions = numCompletions;
+                                    nextInLine = memberProfile._id.toString();
+                                }
+                            }
+                        }
+    
+                        console.log(`[*] Next in line: ${nextInLine} with ${maxCompletions} completions`)
+                    
+                        if (!nextInLine || maxCompletions === -1) {
+                            console.log("[-] Error occured finding Next In Line!")
+                            return null;
+                        }
+
+                        const appointNewLeader = await TeamCollection.updateOne(
+                            { _id: teamProfile._id },
+                            { $set: { team_leader_id: nextInLine } }
+                        )
+                        if (!appointNewLeader) {
+                            console.log(`[-] Error in appointing new leader for team: ${teamProfile.name}`)
+                            return null;
+                        }
+
+                        const updateTeamMemberList = await TeamCollection.updateOne(
+                            { _id: teamProfile._id },
+                            { $pull: { members: nextInLine } }
+                        )
+                        if (!updateTeamMemberList) {
+                            console.log("[-] Error in removing leader_id from members list")
+                            return null;
+                        }
+
+                        console.log(`[+] New leader has been appointed for team: ${teamProfile.name}`)
+                        return {
+                            "message": "New leader has been appointed!"
+                        }
+                    }
+                } else {
+                    console.log("[-] Request Invalid, username or password incorrect!")
+                    return null;
+                }
+            } else {
+                console.log("[-] Request Invalid, requester is not Team Leader!")
+                return null;
+            }
+        }
+    } else {
+        return null;
     }
 }
 
@@ -1001,4 +1103,4 @@ async function ConvertCompletions(userCompletions, teamCompletions) {
 export { LoginUser, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
     DoesExist, AddMember, RemoveMember, ValidateFlag,
-    ConvertCompletions };
+    ConvertCompletions, ReplaceLeader };

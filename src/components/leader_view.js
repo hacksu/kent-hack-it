@@ -53,6 +53,33 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
     }
   };
 
+  
+  const LeaderLeaving = async (passwd) => {
+    try {
+      const response = await fetch(`http://${BackendHost}/team/replace-leader`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "password": passwd,
+          "team_data": TEAM_DATA,
+        }),
+        credentials: 'include'  // ensures cookies are sent
+      });
+
+      // { message }
+      const data = await response.json();
+      if (data) {
+        SetTeamUpdateMsg(data.message);
+      } else {
+        SetTeamUpdateMsg("Error Adding Member!");
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
+  };
+
   return (
     <>
     {/*
@@ -80,6 +107,21 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
                 onClick={UpdateTeamName}
               >
                 Update
+              </button>
+            </div>
+            <div className="mt-2">
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to leave your team?`)) {
+                    const p = window.prompt("Enter your password to confirm.");
+                    if (p !== null) {
+                      LeaderLeaving(p);
+                    }
+                  }
+                }}
+              >
+                Leave Team
               </button>
             </div>
           </div>
