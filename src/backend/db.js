@@ -696,6 +696,15 @@ async function SendTeamRequest(sender, team_name) {
     // in the database or if it is a new join-request
     const teamRecord = await TeamCollection.findOne({ name: team_name });
     if (teamRecord) {
+        // if the team already has 3 members we need to drop
+        // this join-request due to the team being full
+        if (teamRecord.members.length === 3) {
+            console.log(`[-] Request Dropped: Team ${team_name} is Full!`);
+            return {
+                "message": "Request Denied, this team is full!"
+            };
+        }
+
         // team_name points to the ID in the db incase the
         // team leader changes the name (ensures data connection)
         const requestObject = await TeamRequestCollection.findOne({
@@ -772,6 +781,19 @@ async function AddMember(request_id, checksum) {
     const joinRequest = await TeamRequestCollection.findOne({ _id: request_id, checksum: checksum })
     if (joinRequest) {
         console.log("[+] Found Request Object!");
+
+        // if there are already 3 members we need to drop this
+        // addMember request
+        const teamProfile = await TeamCollection.findOne({ _id: joinRequest.team_id })
+        if (teamProfile) {
+            if (teamProfile.members.length === 3) {
+                console.log("[-] This Team has reached Maximum number of Members!");
+                return null;
+            }
+        } else {
+            console.log("[-] Error locating Team Profile!");
+            return null;
+        }
         
         // add the sender_id into the team object where _id matches team_id
         const insertNewMember = await TeamCollection.updateOne(
