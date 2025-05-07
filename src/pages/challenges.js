@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
 import Navbar, { VerifySession, LogoutUser, GetBackendHost } from '../components/navbar.js';
@@ -59,36 +59,34 @@ export function Challenges() {
     // eslint-disable-next-line
   }, [joinedTeamName]); // executes when joinedTeamName changes state
 
-  async function SelfFilterChallenges(data) {
+
+  const SelfFilterChallenges = useCallback(async (data) => {
     if (!profileData) {
-      console.log("No Profile Data!")
+      console.log("No Profile Data!");
       return data;
     }
 
     if (profileData.completions.length === 0) {
-      console.log("No Completions on Profile!")
+      console.log("No Completions on Profile!");
       return data;
     }
 
     const filteredChallenges = [];
 
-    // iterate over data (Array of all challenges in the DB)
     for (const challenge of data) {
       const targetName = challenge.name.replaceAll(' ', '_');
       const exists = profileData.completions.find(chall => chall.name === targetName);
-      // if the challenge entry doesnt exist in profileData push it to the Array
       if (!exists) {
         filteredChallenges.push(challenge);
       } else {
-        console.log("Completed: ", challenge.name)
+        console.log("Completed: ", challenge.name);
       }
     }
 
-    // returns an Array of challenge entries
-    // that the user has not completed
     return filteredChallenges;
-  }
-  async function TeamFilterChallenges(data) {
+  }, [profileData]);
+
+  const TeamFilterChallenges = useCallback(async (data) => {
     if (!teamData) {
       return data;
     }
@@ -99,33 +97,28 @@ export function Challenges() {
 
     const filteredChallenges = [];
 
-    // iterate over data (Array of all challenges in the DB)
     for (const challenge of data) {
       const targetName = challenge.name.replaceAll(' ', '_');
       const exists = teamData.completions.find(chall => chall.name === targetName);
-      // if the challenge entry doesnt exist in teamData push it to the Array
       if (!exists) {
         filteredChallenges.push(challenge);
       }
     }
 
-    // returns an Array of challenge entries
-    // that the team has not completed
     return filteredChallenges;
-  }
+  }, [teamData]);
 
-  async function FetchChallenges() {
+  
+  const FetchChallenges = useCallback(async () => {
     try {
       const response = await fetch(`http://${GetBackendHost()}/challenges`);
       const data = await response.json();
-
+  
       const teamFilteredData = await TeamFilterChallenges(data);
       const selfFilteredData = await SelfFilterChallenges(data);
-
-      // when a user has no team they always filter out challenges
-      // theyve completed
+  
       if (!teamData || showSelfCompleted) {
-        console.log("Heres your unfinished business!: ", selfFilteredData)
+        console.log("Heres your unfinished business!: ", selfFilteredData);
         setChallenges(selfFilteredData);
       } else {
         setChallenges(teamFilteredData);
@@ -133,7 +126,8 @@ export function Challenges() {
     } catch (err) {
       console.error('Failed to fetch challenges:', err);
     }
-  }
+  }, [teamData, showSelfCompleted, setChallenges,
+    TeamFilterChallenges, SelfFilterChallenges]);
 
   useEffect(() => {
     async function Verify() {
@@ -168,7 +162,7 @@ export function Challenges() {
 
   useEffect(() => {
     FetchChallenges()
-  }, [profileData]);
+  }, [profileData, FetchChallenges]);
 
   return (
     <div className="App">

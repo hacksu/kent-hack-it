@@ -376,7 +376,7 @@ async function GetUserProfile(username) {
         // check if the connection matches
         if (teamRecord) {
             const team_name = teamRecord.name;
-            console.log(`[*] Comparing: ${userRecord._id} === ${teamRecord.team_leader_id}`);
+            // console.log(`[*] Comparing: ${userRecord._id} === ${teamRecord.team_leader_id}`);
             if (userRecord._id.toString() === teamRecord.team_leader_id.toString()) {
                 console.log("We got a leader!");
                 return {

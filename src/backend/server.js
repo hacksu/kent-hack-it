@@ -5,9 +5,13 @@ import GetChallenges, { LoginUser, RegisterUser,
 } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import sanitize from 'sanitize-filename';
+import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
+import { existsSync } from 'fs';
 
 //==================================================================================================
 async function DecodeJWT(res, token) {
@@ -199,7 +203,7 @@ app.get('/user/info', async (req, res) => {
         }
 
         // { username, email, team, is_leader }
-        console.log(`User Info --> ${JSON.stringify(userData)}`);
+        // console.log(`User Info --> ${JSON.stringify(userData)}`);
         return res.json(userData);
     } else {
         return res.json({ authenticated: false });
@@ -244,7 +248,7 @@ app.get('/team/info', async (req, res) => {
         console.log(`[*] Getting Info for the Team: ${validJWT.username} is in.`);
         const teamData = await GetTeamInfo(validJWT.username);
         // null | { ... }
-        console.log(`Team Info --> "${JSON.stringify(teamData)}"`);
+        // console.log(`Team Info --> "${JSON.stringify(teamData)}"`);
         return res.json(teamData);
     } else {
         return res.json(null);
@@ -358,6 +362,58 @@ app.post('/data/get-completions', async (req, res) => {
         return res.json(readableCompletions);
     } else {
         return res.json(null);
+    }
+});
+
+// this path is for downloading challenge archives to solve
+// (used for reverse engineering | forensics challenges)
+// |___ http://HOST:4000/download/test_archive.zip
+app.get('/download/:filename', (req, res, next) => {
+    try {
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+
+        const uploadsDir = path.join(__dirname, 'challenge_archives');
+        const allowedExtensions = ['.zip'];
+
+        const rawFilename = req.params.filename;
+        const safeFilename = sanitize(rawFilename);
+        const ext = path.extname(safeFilename).toLowerCase();
+
+        // attempt to check file types
+        if (!allowedExtensions.includes(ext)) {
+            return res.status(400).send('Invalid file type.');
+        }
+
+        // attempt to sanitize file path to prevent LFI
+        const filePath = path.join(uploadsDir, safeFilename);
+
+        if (!filePath.startsWith(uploadsDir)) {
+            return res.status(400).send('Invalid file path.');
+        }
+
+        if (!existsSync(filePath)) {
+            return res.status(404).send('File not found.');
+        }
+
+        // if something gets around it at least we log it!
+        // cause then we will dox them and cheer >w<
+        console.log(`[*] ${req.ip} downloading --> ${filePath}`);
+
+        res.download(filePath, (err) => {
+            if (err) {
+                if (err.code === 'ECONNABORTED') {
+                    console.warn(`[*] ${req.ip} aborted download. . .`);
+                } else {
+                    console.error('Download error:', err);
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Err: ", error);
+        if (!res.headersSent) {
+            res.status(500).send('Internal Server Error');
+        }
     }
 });
 
