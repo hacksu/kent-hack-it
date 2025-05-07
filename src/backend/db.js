@@ -849,6 +849,26 @@ async function RemoveMember(member_username, jwt) {
     }
     const member_id = memberProfile._id.toString();
     const team_id = memberProfile.team_id; // reference to the team this user is removed from
+    
+    // fetch the user profile based off the JWT
+    const userProfile = await UserCollection.findOne({ username: jwt.username, email: jwt.email })
+    if (!userProfile) {
+        console.log("[-] Cannot find User Profile based off token values!")
+        return null;
+    }
+
+    const teamProfile = await TeamCollection.findOne({  _id: team_id });
+    if (!teamProfile) {
+        console.log("[-] Cannot find Team Profile!")
+        return null;
+    }
+
+    // ensure the person making this request is the team leader
+    if (teamProfile.team_leader_id !== userProfile._id.toString()) {
+        console.log("[-] Error requester is not Team Leader!")
+        return null;
+    }
+
     console.log(`[*] Attempting to remove: ${member_id}`);
 
     // update the team profile and remove the member from the
