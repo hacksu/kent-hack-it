@@ -111,6 +111,11 @@ const Team = ({ onShowProfile }) => {
 
       const data = await response.json();
       SetTeamCreateMsg(data.message);
+
+      // auto redirect
+      setTimeout(() => {
+        window.location.href = "/profile?mode=1";
+      }, 300);
     } catch (error) {
       console.error("Error sending request:", error);
     }

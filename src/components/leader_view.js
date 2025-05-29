@@ -70,8 +70,14 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
 
       // { message }
       const data = await response.json();
+      
       if (data) {
         SetTeamUpdateMsg(data.message);
+
+        // auto redirect
+        setTimeout(() => {
+          window.location.href = "/profile?mode=1";
+        }, 200);  // 100 ms delay
       } else {
         SetTeamUpdateMsg("Error Adding Member!");
       }

@@ -1,5 +1,6 @@
 import '../App.css';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from "react-router-dom";
 import Team from './team.js'
 import Navbar, { VerifySession, GetBackendHost } from '../components/navbar.js'
 
@@ -85,6 +86,15 @@ export function Profile() {
     }
     GetInfo();
   }, []); // run once on page-load
+
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get("mode");
+
+  useEffect(() => {
+    if (mode === "1") {
+      ShowTeamPage();
+    }
+  }, [mode]); // Runs when `mode` changes (on initial load or URL update)
 
   return (
     <>

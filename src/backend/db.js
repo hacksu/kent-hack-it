@@ -972,7 +972,9 @@ async function ReplaceLeader(leader_username, data) {
                             return null;
                         } else {
                             console.log(`[*] Team ${teamProfile.name} has been deleted!`);
-                            return null;
+                            return {
+                                "message": "Leader Left Team!"
+                            };
                         }
                     } else {
                         // find the member_id of the user profile

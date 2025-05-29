@@ -320,7 +320,7 @@ app.post('/team/add-member', async (req, res) => {
     if (validJWT) {
         const addTeamMember = await AddMember(data.request_id, data.checksum);
         // null | { message }
-        return addTeamMember;
+        return res.json(addTeamMember);
     } else {
         return res.json(null);
     }
@@ -333,7 +333,7 @@ app.post('/team/remove-member', async (req, res) => {
     if (validJWT) {
         const removeTeamMember = await RemoveMember(data.member_username, validJWT);
         // null | { message }
-        return removeTeamMember;
+        return res.json(removeTeamMember);
     } else {
         return res.json(null);
     }
@@ -346,7 +346,8 @@ app.post('/team/replace-leader', async (req, res) => {
     if (validJWT) {
         const leaderLeaveTeam = await ReplaceLeader(validJWT.username, data);
         // null | { message }
-        return leaderLeaveTeam;
+        console.log(leaderLeaveTeam);
+        return res.json(leaderLeaveTeam);
     } else {
         return res.json(null);
     }
