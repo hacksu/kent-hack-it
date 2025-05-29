@@ -39,6 +39,7 @@ const UserSchema = new mongoose.Schema({
     email: String,
     password: String, // sha-256 salted hex-string
     completions: Array, // [ { "Scrambled": Date.now() } ... ]
+    ratings: Array, // [ "name", "name_1" ... ]
     team_id: String, // "None" | '_id' --> "xX_RaTT3rs_Xx"
     created_at: Date
 });
@@ -71,7 +72,7 @@ const TeamRequestCollection = mongoose.model(
 const ChallengeSchema = new mongoose.Schema({
     name: String,
     description: String,
-    catagory: String, 
+    category: String, 
     difficulty: String,
     user_rates: Array, // [ 3, 3, 4, 5, 1, 2, ... ] 1-5 stars
     rating: Number, // shows the avg of user_rates (maybe only show whole int or one-decimal place)
@@ -103,6 +104,15 @@ function SanitizeString(input) {
 
     // this string is clean we can use it
     return str;
+}
+
+function ValidRatingNumber(num) {
+    const numeric = Number(num);
+    return !(
+        isNaN(numeric) ||
+        numeric <= 0 ||
+        (numeric * 10) % 5 !== 0
+    );
 }
 
 function Hash_SHA256(input) {
@@ -253,10 +263,28 @@ async function FetchMemberNames(member_list) {
 }
 
 async function GetChallenges() {
-    const challenges = await ChallengeCollection.find();
+    const challenges = await ChallengeCollection.find({}, { user_rates: 0, flag: 0 });
     return challenges;
 }
 export default GetChallenges;
+
+// data = { challenge_name }
+async function GetChallengeInfo(data) {
+    const challengeName = SanitizeString(data.challenge_name)
+    if (challengeName === null) {
+        return null
+    } else {
+        const challengeProfile = await ChallengeCollection.findOne({ name: challengeName.replaceAll('_', ' ') })
+        
+        return {
+            "name": challengeProfile.name,
+            "description": challengeProfile.description,
+            "category": challengeProfile.category,
+            "difficulty": challengeProfile.difficulty,
+            "rating": challengeProfile.rating,
+        }
+    }
+}
 
 async function DoesExist(username, email) {
     username = SanitizeString(username);
@@ -384,6 +412,7 @@ async function GetUserProfile(username) {
                     "email": userRecord.email,
                     "completions": userRecord.completions,
                     "team": team_name,
+                    "user_rates": userRecord.ratings,
                     "is_leader": true
                 }
             } else {
@@ -392,6 +421,7 @@ async function GetUserProfile(username) {
                     "email": userRecord.email,
                     "completions": userRecord.completions,
                     "team": team_name,
+                    "user_rates": userRecord.ratings,
                     "is_leader": false
                 }
             }
@@ -401,6 +431,7 @@ async function GetUserProfile(username) {
                 "email": userRecord.email,
                 "completions": userRecord.completions,
                 "team": "None",
+                "user_rates": userRecord.ratings,
                 "is_leader": false
             }
         }
@@ -410,6 +441,7 @@ async function GetUserProfile(username) {
             "email": userRecord.email,
             "completions": userRecord.completions,
             "team": "None",
+            "user_rates": userRecord.ratings,
             "is_leader": false
         }
     }
@@ -1120,7 +1152,95 @@ async function ConvertCompletions(userCompletions, teamCompletions) {
     }
 }
 
+async function UserRatingChallenge(ratingData, jwt) {
+    const userProfile = await UserCollection.findOne({ username: jwt.username, email: jwt.email })
+    if (!userProfile || !ratingData) {
+        return null;
+    }
+
+    // check if the userProfile completed the challenge theyre rating
+    let completedChallenge = false;
+
+    // check that numberRating is a valid number
+    ratingData.challenge_name = SanitizeString(ratingData.challenge_name);
+    if (ratingData.challenge_name === null) {
+        console.log("[-] Error rating challenge_name attribute malformed!");
+        return null;
+    }
+
+    // Check if numberRating is a valid number
+    if ( !ValidRatingNumber(ratingData.rating) ) {
+        console.log("[-] Error: rating must be a positive number, whole or ending in .5");
+        console.log(" |___ User Submitted: " + ratingData.rating);
+        return null;
+    }
+    
+    const numberRating = ratingData.rating;
+    const challengeName = ratingData.challenge_name.replaceAll('_', ' ');
+
+    console.log("Rating Challenge: " + challengeName);
+    console.log("|______" + numberRating);
+
+    // check if this user has already rated the challenge
+    // in ratingData
+    if (userProfile.ratings.includes(challengeName)) {
+        console.log("[*] " + userProfile.username + " has already submitted a rating for: " + challengeName);
+        return null;
+    }
+
+    // iterate the users completions
+    for (const data of Object.entries(userProfile.completions)) {
+        const [index, { name, time }] = data; // break down the entry
+        const challengeProfile = await ChallengeCollection.findOne({ name: name.replaceAll('_', ' ') })
+
+        if (challengeProfile) {
+            // users completions have the challenge name
+            // listed as completed
+            if (challengeProfile.name === challengeName) {
+                completedChallenge = true;
+                break;
+            }
+        }
+    }
+
+    // they didnt complete the challenge
+    if (!completedChallenge) {
+        return null;
+    } else {
+        // they completed the challenge we can take their number rating
+        // and apply it to the challenge entry in the db
+        await ChallengeCollection.updateOne(
+            { name: challengeName },
+            { $push: { user_rates: Number(numberRating) } } // user_rates are used to calulate rating attribute
+        )
+
+        // update the challenges rating attribute based on its user_rates
+        const updatedChallenge = await ChallengeCollection.findOne({ name: challengeName });
+        if (updatedChallenge && updatedChallenge.user_rates.length > 0) {
+            const total = updatedChallenge.user_rates.reduce((sum, r) => sum + r, 0);
+            const avg = total / updatedChallenge.user_rates.length;
+
+            await ChallengeCollection.updateOne(
+                { name: challengeName },
+                { $set: { rating: avg } }
+            );
+        }
+
+        // mark this action in the user profile so
+        // they cannot spam ratings for a challenge
+        await UserCollection.updateOne(
+            { _id: userProfile._id },
+            { $addToSet: { ratings: challengeName } }
+        )
+
+        return {
+            "message": "Rate Uploaded Successfully!"
+        }
+    }
+}
+
 export { LoginUser, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
     DoesExist, AddMember, RemoveMember, ValidateFlag,
-    ConvertCompletions, ReplaceLeader };
+    ConvertCompletions, ReplaceLeader, UserRatingChallenge,
+    GetChallengeInfo };

@@ -13,6 +13,7 @@ export function Profile() {
   const [newPassword, SetNewPassword] = useState("");
   const [pageIndex, SetPageIndex] = useState(0);
   
+  // eslint-disable-next-line
   const [profileUpdateMsg, SetProfileUpdateMsg] = useState("");
 
   const ShowTeamPage = () => {

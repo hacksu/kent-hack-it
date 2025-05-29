@@ -2,8 +2,7 @@ import GetChallenges, { LoginUser, RegisterUser,
     GetUserProfile, UpdateUserProfile, GetTeamInfo,
     SendTeamRequest, CreateTeam, UpdateTeam, DoesExist,
     AddMember, RemoveMember, ValidateFlag, ConvertCompletions,
-    ReplaceLeader
-} from './db.js';
+    ReplaceLeader, UserRatingChallenge, GetChallengeInfo } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import sanitize from 'sanitize-filename';
@@ -99,6 +98,12 @@ app.get('/', (req, res) => {
 app.get('/challenges', async (req, res) => {
     const challenges = await GetChallenges();
     res.send(challenges);
+});
+
+app.post('/challenge', async (req, res) => {
+    const data = req.body;
+    const challenge_details = await GetChallengeInfo(data);
+    res.json(challenge_details);
 });
 
 app.post('/register', async (req, res) => {
@@ -203,7 +208,7 @@ app.get('/user/info', async (req, res) => {
             return res.json(null);
         }
 
-        // { username, email, team, is_leader }
+        // { username, email, team, completions, is_leader, user_rates }
         // console.log(`User Info --> ${JSON.stringify(userData)}`);
         return res.json(userData);
     } else {
@@ -374,6 +379,19 @@ app.post('/data/get-completions', async (req, res) => {
         // null | { ... }
         // console.log("[*] CONVERSION-RESULTS: ", readableCompletions);
         return res.json(readableCompletions);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/rate-challenge', async (req, res) => {
+    const token = req.cookies.khi_token;
+    const data = req.body;
+    const validJWT = await DecodeJWT(res, token);
+
+    if (validJWT) {
+        const ratingChallenge = await UserRatingChallenge(data, validJWT);
+        return res.json(ratingChallenge);
     } else {
         return res.json(null);
     }

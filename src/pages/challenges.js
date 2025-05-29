@@ -232,6 +232,7 @@ export function Challenges() {
           ))}
         </div>
       </div>
+      <Link className="navbar-brand btn btn-md btn-info" to="/rate-challenge">Rate Challenges</Link>
     </div>
   );
 }
