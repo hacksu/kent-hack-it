@@ -20,6 +20,10 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
       const data = await response.json();
       if (data) {
         SetTeamUpdateMsg(data.message);
+        
+        setTimeout(() => {
+          window.location.href = "/profile?mode=1";
+        }, 200);  // 100 ms delay
       } else {
         SetTeamUpdateMsg("Error Removing Member!");
       }
@@ -45,6 +49,10 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
       const data = await response.json();
       if (data) {
         SetTeamUpdateMsg(data.message);
+
+        setTimeout(() => {
+          window.location.href = "/profile?mode=1";
+        }, 200);  // 100 ms delay
       } else {
         SetTeamUpdateMsg("Error Adding Member!");
       }
