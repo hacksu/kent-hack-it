@@ -7,7 +7,7 @@ import MemberView from '../components/member_view.js';
 
 import Stats from '../components/stats.js';
 
-const Team = ({ onShowProfile }) => {
+const Team = () => {
   const [joinedTeamName, SetJoinedTeamName] = useState("");
   const [profileData, SetProfileData] = useState(null);
 
@@ -22,6 +22,10 @@ const Team = ({ onShowProfile }) => {
   const [reqTeamMsg, SetReqTeamMsg] = useState("");
   const [teamUpdateMsg, SetTeamUpdateMsg] = useState("");
   const [teamCreateMsg, SetTeamCreateMsg] = useState("");
+
+  const onShowProfile = () => {
+    window.location.href = "/profile?mode=0";
+  };
 
   /*
       "// eslint-disable-next-line" is for warning suppression!

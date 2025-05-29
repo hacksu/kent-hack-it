@@ -7,18 +7,18 @@ import Navbar, { VerifySession, GetBackendHost } from '../components/navbar.js'
 export function Profile() {
   const [currentUsername, SetCurrentUsername] = useState("");
   const [currentEmail, SetCurrentEmail] = useState("");
+  const [pageId, SetPageId] = useState(0);
 
   const [username, SetUsername] = useState("");
   const [email, SetEmail] = useState("");
   const [password, SetPassword] = useState("");
   const [newPassword, SetNewPassword] = useState("");
-  const [pageIndex, SetPageIndex] = useState(0);
   
   // eslint-disable-next-line
   const [profileUpdateMsg, SetProfileUpdateMsg] = useState("");
 
   const ShowTeamPage = () => {
-    SetPageIndex(1);
+    window.location.href = "/profile?mode=1";
   };
 
   // triggered by a form there for event is included
@@ -92,14 +92,16 @@ export function Profile() {
 
   useEffect(() => {
     if (mode === "1") {
-      ShowTeamPage();
+      SetPageId(1);
+    } else {
+      SetPageId(0);
     }
   }, [mode]); // Runs when `mode` changes (on initial load or URL update)
 
   return (
     <>
-      {pageIndex === 1 ? (
-        <Team onShowProfile={() => SetPageIndex(0)}/>
+      {pageId === 1 ? (
+        <Team />
       ) : (
         <div className="App">
           <Navbar />

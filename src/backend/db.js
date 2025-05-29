@@ -740,7 +740,7 @@ async function SendTeamRequest(sender, team_name) {
         // team_name points to the ID in the db incase the
         // team leader changes the name (ensures data connection)
         const requestObject = await TeamRequestCollection.findOne({
-            team_name: teamRecord._id
+            team_id: teamRecord._id
         });
 
         // if this request is new attempt inserting
@@ -972,6 +972,12 @@ async function ReplaceLeader(leader_username, data) {
                             return null;
                         } else {
                             console.log(`[*] Team ${teamProfile.name} has been deleted!`);
+                            
+                            // if the team is deleted remove all join requests towards this team
+                            const requestObject = await TeamRequestCollection.deleteMany({
+                                team_id: teamProfile._id.toString()
+                            });
+
                             return {
                                 "message": "Leader Left Team!"
                             };
