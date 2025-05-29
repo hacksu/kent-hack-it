@@ -1,6 +1,5 @@
 import '../App.css';
 import { useState } from 'react'; // needed to allow for form interaction
-import { useSearchParams } from "react-router-dom"; // used to look into potential parameters in the URL
 
 import Navbar, { GetBackendHost } from '../components/navbar.js'
 
@@ -31,22 +30,26 @@ export function Register() {
         // get the response output from the above fetch call
         const data = await response.text();
         console.log("Server Response:", data);
+        let msgArea = document.getElementById('msg_popup');
         
         if (data === "User Added Successfully!") {
-          // reload the page with a parameter
-          window.location.href = "/register?msg=success";
+          if (msgArea) {
+            // auto redirect to login
+            msgArea.innerHTML = "<p style='color: green;'>Registration Successful!</p>";
+            setTimeout(() => {
+              window.location.href = "/login";
+            }, 200);  // 100 ms delay
+          }
         } else {
-          // reload the page with a parameter
-          window.location.href = "/register?msg=fail";
+          if (msgArea) {
+            msgArea.innerHTML = "<p style='color: red;'>Registration Failed!</p>";
+          }
         }
       } catch (error) {
         console.error("Error sending request:", error);
         window.location.href = "/register?msg=fail";
       }
   }
-
-  const [searchParams] = useSearchParams();
-  const msg = searchParams.get("msg"); // Get "msg" parameter from URL
 
   return (
       <div className="App">
@@ -58,8 +61,8 @@ export function Register() {
                 <div className="card shadow">
                   <div className="card-body">
                     <h3 className="card-title text-center mb-4">Register</h3>
-                    {msg === "success" && <p style={{ color: "green" }}>Registration successful!</p>}
-                    {msg === "fail" && <p style={{ color: "red" }}>Registration Failed!</p>}
+                    <div id='msg_popup'>
+                    </div>
                     <form onSubmit={HandleRegisteration}>
                       <div className="mb-3">
                         <input

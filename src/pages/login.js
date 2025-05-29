@@ -1,6 +1,5 @@
 import '../App.css';
 import { useState } from 'react'; // needed to allow for form interaction
-import { useSearchParams } from "react-router-dom";
 
 import Navbar, { GetBackendHost } from '../components/navbar.js'
 
@@ -30,24 +29,27 @@ export function Login() {
         // get the response output from the above fetch call
         const data = await response.json();
         console.log("Server Response:", data.message);
+        let msgArea = document.getElementById('msg_popup');
         
         if (data.message === "Login Successful!") {
-          // reload the page with a parameter (gets a JWT cookie!)
-          setTimeout(() => {
-            window.location.href = "/";
-          }, 100);  // 100 ms delay gives the browser time to store the cookie
+          if (msgArea) {
+            msgArea.innerHTML = "<p style='color: green;'>Login Successful!</p>";
+            
+            // auto redirect to challenge page after Set-Cookie executes
+            setTimeout(() => {
+              window.location.href = "/compete";
+            }, 200);  // 100 ms delay gives the browser time to store the cookie
+          }
         } else {
-          // reload the page with a parameter
-          window.location.href = "/login?msg=fail";
+          if (msgArea) {
+            msgArea.innerHTML = "<p style='color: red;'>Login Failed!</p>";
+          }
         }
       } catch (error) {
         console.error("Error sending request:", error);
         window.location.href = "/login?msg=fail";
       }
   }
-
-  const [searchParams] = useSearchParams();
-  const msg = searchParams.get("msg"); // Get "msg" parameter from URL
 
   return (
     <div className="App">
@@ -59,10 +61,8 @@ export function Login() {
               <div className="card shadow">
                 <div className="card-body">
                   <h3 className="card-title text-center mb-4">Login</h3>
-                  
-                  {msg === "success" && <p style={{ color: "green" }}>Login successful!</p>}
-                  {msg === "fail" && <p style={{ color: "red" }}>Login Failed!</p>}
-                  
+                  <div id='msg_popup'>
+                  </div>
                   <form onSubmit={HandleLogin}>
                     <div className="mb-3">
                       <input
