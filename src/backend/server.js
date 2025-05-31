@@ -2,7 +2,7 @@ import GetChallenges, { LoginUser, LoginAdmin, RegisterUser,
     GetUserProfile, UpdateUserProfile, GetTeamInfo,
     SendTeamRequest, CreateTeam, UpdateTeam, DoesExist, DoesAdminExist,
     AddMember, RemoveMember, ValidateFlag, ConvertCompletions,
-    ReplaceLeader, UserRatingChallenge, GetChallengeInfo } from './db.js';
+    ReplaceLeader, UserRatingChallenge, GetChallengeInfo, GetAllUsers } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import sanitize from 'sanitize-filename';
@@ -231,6 +231,10 @@ function ClearAdminCookie(res) {
 
 app.post('/logout', (req, res) => {
     ClearCookie(res);
+    res.json({ message: 'Logged out!' });
+});
+app.post('/admin/logout', (req, res) => {
+    ClearAdminCookie(res);
     res.json({ message: 'Logged out!' });
 });
 
@@ -538,6 +542,26 @@ app.get('/download/:filename', (req, res, next) => {
         if (!res.headersSent) {
             res.status(500).send('Internal Server Error');
         }
+    }
+});
+
+/*
+######################################################
+            Admin Dashboard End-Points
+######################################################
+*/
+app.get('/admin/get_users', async (req, res) => {
+    console.log("---- Admin Requesting Users!");
+
+    const token = req.cookies.khi_adm_token;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        console.log("---- Admin Pulling all Users!")
+        const users = await GetAllUsers();
+        return res.json(users);
+    } else {
+        return res.json(null);
     }
 });
 

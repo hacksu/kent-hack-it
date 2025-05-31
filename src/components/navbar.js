@@ -8,7 +8,7 @@ function GetBackendHost() {
 }
 
 async function LogoutUser() {
-  const response = await fetch(`http://${GetBackendHost()}/logout`, {
+  const response = await fetch(`http://${GetBackendHost()}/admin/logout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -19,7 +19,7 @@ async function LogoutUser() {
   const data = await response.json();
   if (data.message === "Logged out!") {
     // Cookie Cleared!
-    window.location.href = "/login";
+    window.location.href = "/";
   }
 }
 

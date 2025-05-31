@@ -32,9 +32,9 @@ export function Admin() {
         if (msgArea) {
           msgArea.innerHTML = "<p style='color: green;'>Login Successful!</p>";
           
-          // setTimeout(() => {
-          //   window.location.href = "/admin/panel";
-          // }, 200);
+          setTimeout(() => {
+            window.location.href = "/admin/panel";
+          }, 200);
         }
       } else {
         if (msgArea) {

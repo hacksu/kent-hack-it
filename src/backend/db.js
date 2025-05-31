@@ -1340,8 +1340,29 @@ async function UserRatingChallenge(ratingData, jwt) {
     }
 }
 
+async function GetAllUsers() {
+    // only fetch username|email|team_id
+    const users = await UserCollection.find({}) .select('username email team_id -_id').lean();
+
+    let readableUsers = users;
+    for (let user of readableUsers) {
+        // resolve team_id to team name for readability
+        const team_id = user.team_id;
+        if (team_id !== "None") {
+            const teamProfile = await TeamCollection.findOne({ _id: team_id })
+            if (teamProfile) {
+                console.log(teamProfile.name);
+                user.team_id = teamProfile.name;
+            }
+        }
+    }
+    console.log(readableUsers);
+
+    return readableUsers;
+}
+
 export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
     DoesExist, DoesAdminExist, AddMember, RemoveMember, ValidateFlag,
     ConvertCompletions, ReplaceLeader, UserRatingChallenge,
-    GetChallengeInfo };
+    GetChallengeInfo, GetAllUsers };
