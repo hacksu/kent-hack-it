@@ -23,6 +23,7 @@ mongoose.connect(MongoURI()).then(() => {
 });
 
 const jwt_secret = process.env.JWT_SECRET;
+const adm_jwt_secret = process.env.ADM_JWT_SECRET;
 
 //==================================================================================================
 
@@ -45,6 +46,13 @@ const UserSchema = new mongoose.Schema({
 });
 // the final argument is the specific collection to link the schema to when performing read/write
 const UserCollection = mongoose.model('Users', UserSchema, 'users');
+
+const AdminSchema = new mongoose.Schema({
+    username: String,
+    password: String, // sha-256 salted hex-string
+    created_at: Date
+});
+const AdminCollection = mongoose.model('Admins', AdminSchema, 'admins');
 
 const TeamSchema = new mongoose.Schema({
     name: String,
@@ -95,7 +103,7 @@ function SanitizeString(input) {
     // Only allow letters, numbers, underscores, hyphens, periods, @
     // help prevent someone from using: '{"$ne": ""}' which can
     // lead to NoSQL Injection
-    const allowedPattern = /^[a-zA-Z0-9@._-]+$/;
+    const allowedPattern = /^[a-zA-Z0-9@._\-!]+$/;
 
     // Invalid string input string detected
     if (!allowedPattern.test(str)) {
@@ -156,6 +164,31 @@ async function GenerateJWT(username, email) {
     // Create the token
     const token = jwt.sign(payload, jwt_secret, options);
     console.log(`Here's Your JWT! ${token}`);
+    return token;
+}
+
+async function GenerateAdminJWT(username) {
+    username = SanitizeString(username);
+
+    if (username === null) {
+        console.log("Bad Admin Username");
+        return null;
+    }
+
+    // Payload can include user info
+    const payload = {
+        "username": username,
+        "is_admin": true
+    };
+    
+    // Options like token expiry
+    const options = {
+        expiresIn: '24h', // token expires in 24 hours
+    };
+    
+    // Create the token
+    const token = jwt.sign(payload, adm_jwt_secret, options);
+    console.log(`Here's Your Admin JWT! ${token}`);
     return token;
 }
 
@@ -300,6 +333,18 @@ async function DoesExist(username, email) {
     console.log(`DoesExist --> ${(findUser !== null || findEmail !== null)}`);
     return (findUser !== null || findEmail !== null) ? true : false;
 }
+async function DoesAdminExist(username) {
+    username = SanitizeString(username);
+
+    if (username === null) {
+        return false;
+    }
+
+    const findAdmin = await AdminCollection.findOne({"username":username});
+
+    console.log(`DoesExist --> ${(findAdmin !== null)}`);
+    return (findAdmin !== null) ? true : false;
+}
 
 async function RegisterUser(username, password, email) {
     username = SanitizeString(username);
@@ -376,6 +421,54 @@ async function LoginUser(username, password) {
         }
     } else {
         console.log("Bad Auth!");
+
+        return {
+            "message": "Login Failed!"
+        }
+    }
+}
+
+async function LoginAdmin(username, password) {
+    username = SanitizeString(username);
+    password = SanitizeString(password);
+
+    if (username === null || password === null) {
+        console.log("Potentially Malformed Data!");
+        return "Username of Password Incorrect!";
+    }
+
+    // Find the profile data based on username given
+    const adminRecord = await AdminCollection.findOne({ username });
+    if (!adminRecord) {
+        console.log("Admin not found!");
+        return "Login Failed!";
+    }
+
+    // salted passwords are very lit
+    const SALT = process.env.SALT;
+    const salted_password = SALT + password;
+    const hashed_passwd = Hash_SHA256(salted_password);
+
+    // compare the hashes of the given to whats linked in the db
+    const adminAuth = (hashed_passwd === adminRecord.password);
+
+    if (adminAuth) {
+        console.log("Good Admin Auth!");
+        const jwt_token = await GenerateAdminJWT(adminRecord.username);
+
+        if (jwt_token) {
+            return {
+                "message": "Login Successful!",
+                "token": jwt_token
+            }
+        } else {
+            return {
+                "message": "Login Failed!",
+                "token": null
+            }
+        }
+    } else {
+        console.log("Bad Admin Auth!");
 
         return {
             "message": "Login Failed!"
@@ -1247,8 +1340,8 @@ async function UserRatingChallenge(ratingData, jwt) {
     }
 }
 
-export { LoginUser, RegisterUser, GetUserProfile, UpdateUserProfile,
+export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
-    DoesExist, AddMember, RemoveMember, ValidateFlag,
+    DoesExist, DoesAdminExist, AddMember, RemoveMember, ValidateFlag,
     ConvertCompletions, ReplaceLeader, UserRatingChallenge,
     GetChallengeInfo };

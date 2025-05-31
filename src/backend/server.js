@@ -1,6 +1,6 @@
-import GetChallenges, { LoginUser, RegisterUser,
+import GetChallenges, { LoginUser, LoginAdmin, RegisterUser,
     GetUserProfile, UpdateUserProfile, GetTeamInfo,
-    SendTeamRequest, CreateTeam, UpdateTeam, DoesExist,
+    SendTeamRequest, CreateTeam, UpdateTeam, DoesExist, DoesAdminExist,
     AddMember, RemoveMember, ValidateFlag, ConvertCompletions,
     ReplaceLeader, UserRatingChallenge, GetChallengeInfo } from './db.js';
 import rateLimit from 'express-rate-limit';
@@ -16,7 +16,7 @@ import { existsSync } from 'fs';
 //==================================================================================================
 async function DecodeJWT(res, token) {
     if (!token) {
-        console.log("No Token Found!");
+        console.log("No User Token Found!");
         ClearCookie(res);
         return null;
     }
@@ -29,6 +29,25 @@ async function DecodeJWT(res, token) {
     } catch (err) {
         console.error('Invalid token:', err);
         ClearCookie(res);
+        return null;
+    }
+}
+
+async function DecodeAdminJWT(res, token) {
+    if (!token) {
+        console.log("No Admin Token Found!");
+        ClearAdminCookie(res);
+        return null;
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.ADM_JWT_SECRET);
+        console.log(`Admin Token for ${decoded.username} is valid!`);
+        // { username, is_admin }
+        return decoded;
+    } catch (err) {
+        console.error('Invalid Admin token:', err);
+        ClearAdminCookie(res);
         return null;
     }
 }
@@ -157,8 +176,53 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.post('/admin/login', async (req, res) => {
+    try {
+        console.log(`Admin req.body -> ${JSON.stringify(req.body)}`);
+        const userData = req.body;
+        console.log(`Admin Recv: ${userData}`);
+
+        const loginResp = await LoginAdmin(userData.username, userData.password);
+        
+        console.log(`Admin loginResp --> ${loginResp}`);
+
+        if (loginResp.token) {
+            console.log(`[*] Admin LoginResp.token => ${loginResp.token}`);
+            console.log(`[*] Admin LoginResp.message => ${loginResp.message}`);
+
+            res.cookie('khi_adm_token', loginResp.token, {
+                httpOnly: true,
+                secure: false,           // set to true if using HTTPS
+                sameSite: 'lax',         // or 'none' if cross-site and using HTTPS
+                path: '/',
+                maxAge: 24000 * 60 * 60  // 24 hours
+            });
+
+            // send response back to frontend
+            res.json({
+                "message": loginResp.message
+            });
+        } else {
+            // send response back to frontend
+            console.log("No Admin Token Generated. . .");
+            res.json({
+                "message": loginResp.message
+            });
+        }
+    } catch (error) {
+        console.error("Error sending request:", error);
+    }
+});
+
 function ClearCookie(res) {
     res.clearCookie('khi_token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax'
+    });
+}
+function ClearAdminCookie(res) {
+    res.clearCookie('khi_adm_token', {
         httpOnly: true,
         secure: false,
         sameSite: 'lax'
@@ -185,6 +249,33 @@ app.get('/user/verify', async (req, res) => {
 
         const userExists = await DoesExist(username, email);
         if (userExists) {
+            return res.json({
+                authenticated: true,
+                username: validJWT.username
+            });
+        } else {
+            return res.json({ authenticated: false });
+        }
+    } else {
+        return res.json({ authenticated: false });
+    }
+});
+app.get('/admin/verify', async (req, res) => {
+    const token = req.cookies.khi_adm_token;
+    // make sure the JWT is valid
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        // pull username from JWT
+        // and check if it exists in the DB
+        const username = validJWT.username;
+
+        console.log("Admin Token Valid")
+        console.log("Checking username in Token")
+
+        const adminExists = await DoesAdminExist(username);
+        if (adminExists) {
+            console.log("Fully Verified Admin Token!")
             return res.json({
                 authenticated: true,
                 username: validJWT.username

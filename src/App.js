@@ -1,9 +1,11 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'; // When the user moves around different pages the browser URL updates correctly
 import { Login } from './pages/login.js' // custom js that returns HTML
 import { Home } from './pages/home.js'
+import { Admin } from './pages/admin.js'
 import { Profile } from './pages/profile.js'
 import { Register } from './pages/register.js'
 import { Challenges } from './pages/challenges.js'
+import { AdminPanel } from './pages/admin_panel.js'
 import { RatingPage } from './pages/rate_challenge.js'
 import { ChallengeDetail } from './pages/challenge_template.js'
 
@@ -14,6 +16,8 @@ function App() {
     <Router>
       <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/panel" element={<AdminPanel />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/register" element={<Register />} />
