@@ -1027,6 +1027,56 @@ async function RemoveMember(member_username, jwt) {
     }
 }
 
+// returns null | { message }
+async function SetNewLeader(teamProfile) {
+    // find the member_id of the user profile
+    // who will be the new team leader
+    let nextInLine = null;
+    let maxCompletions = -1;
+
+    for (const member_id of teamProfile.members) {
+        const memberProfile = await UserCollection.findOne({ _id: member_id });
+        if (memberProfile && Array.isArray(memberProfile.completions)) {
+            const numCompletions = memberProfile.completions.length;
+
+            if (numCompletions > maxCompletions) {
+                maxCompletions = numCompletions;
+                nextInLine = memberProfile._id.toString();
+            }
+        }
+    }
+
+    console.log(`[*] Next in line: ${nextInLine} with ${maxCompletions} completions`)
+
+    if (!nextInLine || maxCompletions === -1) {
+        console.log("[-] Error occured finding Next In Line!")
+        return null;
+    }
+
+    const appointNewLeader = await TeamCollection.updateOne(
+        { _id: teamProfile._id },
+        { $set: { team_leader_id: nextInLine } }
+    )
+    if (!appointNewLeader) {
+        console.log(`[-] Error in appointing new leader for team: ${teamProfile.name}`)
+        return null;
+    }
+
+    const updateTeamMemberList = await TeamCollection.updateOne(
+        { _id: teamProfile._id },
+        { $pull: { members: nextInLine } }
+    )
+    if (!updateTeamMemberList) {
+        console.log("[-] Error in removing leader_id from members list")
+        return null;
+    }
+
+    console.log(`[+] New leader has been appointed for team: ${teamProfile.name}`)
+    return {
+        "message": "New leader has been appointed!"
+    }
+}
+
 async function ReplaceLeader(leader_username, data) {
     const SALT = process.env.SALT;
     const hashed_password = Hash_SHA256(SALT + data.password);
@@ -1076,52 +1126,7 @@ async function ReplaceLeader(leader_username, data) {
                             };
                         }
                     } else {
-                        // find the member_id of the user profile
-                        // who will be the new team leader
-                        let nextInLine = null;
-                        let maxCompletions = -1;
-    
-                        for (const member_id of teamProfile.members) {
-                            const memberProfile = await UserCollection.findOne({ _id: member_id });
-                            if (memberProfile && Array.isArray(memberProfile.completions)) {
-                                const numCompletions = memberProfile.completions.length;
-    
-                                if (numCompletions > maxCompletions) {
-                                    maxCompletions = numCompletions;
-                                    nextInLine = memberProfile._id.toString();
-                                }
-                            }
-                        }
-    
-                        console.log(`[*] Next in line: ${nextInLine} with ${maxCompletions} completions`)
-                    
-                        if (!nextInLine || maxCompletions === -1) {
-                            console.log("[-] Error occured finding Next In Line!")
-                            return null;
-                        }
-
-                        const appointNewLeader = await TeamCollection.updateOne(
-                            { _id: teamProfile._id },
-                            { $set: { team_leader_id: nextInLine } }
-                        )
-                        if (!appointNewLeader) {
-                            console.log(`[-] Error in appointing new leader for team: ${teamProfile.name}`)
-                            return null;
-                        }
-
-                        const updateTeamMemberList = await TeamCollection.updateOne(
-                            { _id: teamProfile._id },
-                            { $pull: { members: nextInLine } }
-                        )
-                        if (!updateTeamMemberList) {
-                            console.log("[-] Error in removing leader_id from members list")
-                            return null;
-                        }
-
-                        console.log(`[+] New leader has been appointed for team: ${teamProfile.name}`)
-                        return {
-                            "message": "New leader has been appointed!"
-                        }
+                        return await SetNewLeader(teamProfile);
                     }
                 } else {
                     console.log("[-] Request Invalid, username or password incorrect!")
@@ -1341,8 +1346,8 @@ async function UserRatingChallenge(ratingData, jwt) {
 }
 
 async function GetAllUsers() {
-    // only fetch username|email|team_id
-    const users = await UserCollection.find({}) .select('username email team_id -_id').lean();
+    // only fetch username|email|team_id|_id
+    const users = await UserCollection.find({}) .select('username email team_id _id').lean();
 
     let readableUsers = users;
     for (let user of readableUsers) {
@@ -1351,7 +1356,7 @@ async function GetAllUsers() {
         if (team_id !== "None") {
             const teamProfile = await TeamCollection.findOne({ _id: team_id })
             if (teamProfile) {
-                console.log(teamProfile.name);
+                // console.log(teamProfile.name);
                 user.team_id = teamProfile.name;
             }
         }
@@ -1360,9 +1365,116 @@ async function GetAllUsers() {
 
     return readableUsers;
 }
+async function GetAllTeams() {
+    // only fetch name|members|_id
+    const teams = await TeamCollection.find({}) .select('name members team_leader_id _id').lean();
+
+    console.log("Teams: " + JSON.stringify(teams));
+
+    let readableTeams = teams;
+    for (let team of readableTeams) {
+        // resolve members _id to usernames for readability
+        let members = [];
+        for (let user_id of team.members) {
+            const userProfile = await UserCollection.findOne({ _id: user_id });
+            if (userProfile) {
+                members.push(userProfile.username);
+            } else {
+                members.push("Unknown: " + user_id);
+            }
+        }
+
+        console.log("Team LeaderID: " + team.team_leader_id)
+        const leaderProfile = await UserCollection.findOne({ _id: team.team_leader_id });
+        if (leaderProfile) {
+            members.push(leaderProfile.username);
+        } else {
+            members.push("Unknown: " + team.team_leader_id);
+        }
+
+        team.members = members;
+    }
+
+    console.log("Readable Teams: " + JSON.stringify(readableTeams));
+
+    return readableTeams;
+}
+
+async function RemoveTeam(team_id) {
+    if (!team_id) {
+        console.log("Issue Deleting Team")
+        return { "acknowledge":false, "message":"Error Deleting Team!" }
+    }
+
+    // change every member and leader team_id to None before deletion
+    const teamProfile = await TeamCollection.findOne({ _id: team_id.toString() })
+    if (teamProfile) {
+        // remove all join requests to this team
+        await TeamRequestCollection.deleteMany({ team_id: teamProfile._id.toString() });
+
+        // update leader
+        const updateLeaderProfile = await UserCollection.updateOne(
+            { _id: teamProfile.team_leader_id },
+            { $set: { team_id: "None" } })
+        
+        if (updateLeaderProfile.matchedCount === 1) {
+            console.log("Found Leader Profile and Updated Attribute")
+        }
+
+        // update members
+        for (let member_id in teamProfile.members) {
+            const updateMemberProfile = await UserCollection.updateOne(
+                { _id: member_id },
+                { $set: { team_id: "None" } })
+            
+            if (updateMemberProfile.matchedCount === 1) {
+                console.log("Found Profile and Updated Attribute")
+            }
+        }
+    }
+
+    // remove the team entry
+    const action = await TeamCollection.deleteOne({ _id: team_id.toString() });
+    if (action.deletedCount === 1) {
+        console.log("Team Deleted!")
+        return { "acknowledge":true, "message":"Team Deleted Successfully!" }
+    } else {
+        console.log("Issue Deleting Team")
+        return { "acknowledge":false, "message":"Error Deleting Team!" }
+    }
+}
+
+async function RemoveUser(user_id) {
+    // if the user is a team leader we need to update the team
+    const userProfile = await UserCollection.findOne({ _id: user_id })
+    if (userProfile && userProfile.team_id !== "None") {
+        const teamProfile = await TeamCollection.findOne({ _id: userProfile.team_id })
+        
+        // update team record
+        if (teamProfile && teamProfile.team_leader_id == user_id) {
+            // appoint new team leader
+            if (teamProfile.members.length > 0) {
+                await SetNewLeader(teamProfile);
+            } else {
+                // remove team
+                await RemoveTeam(userProfile.team_id);
+            }
+        }
+    }
+
+    const action = await UserCollection.deleteOne({ _id: user_id });
+    if (action.deletedCount === 1) {
+        console.log("User Deleted!")
+        return { "acknowledge":true, "message":"User Deleted Successfully!" }
+    } else {
+        console.log("Issue Deleting User")
+        return { "acknowledge":false, "message":"Error Deleting User!" }
+    }
+}
 
 export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
     DoesExist, DoesAdminExist, AddMember, RemoveMember, ValidateFlag,
     ConvertCompletions, ReplaceLeader, UserRatingChallenge,
-    GetChallengeInfo, GetAllUsers };
+    GetChallengeInfo, GetAllUsers, GetAllTeams, RemoveTeam,
+    RemoveUser };

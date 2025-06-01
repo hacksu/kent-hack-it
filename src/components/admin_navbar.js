@@ -8,7 +8,7 @@ function GetBackendHost() {
 }
 
 async function LogoutAdmin() {
-  const response = await fetch(`http://${GetBackendHost()}/logout`, {
+  const response = await fetch(`http://${GetBackendHost()}/admin/logout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

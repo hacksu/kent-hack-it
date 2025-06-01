@@ -2,7 +2,8 @@ import GetChallenges, { LoginUser, LoginAdmin, RegisterUser,
     GetUserProfile, UpdateUserProfile, GetTeamInfo,
     SendTeamRequest, CreateTeam, UpdateTeam, DoesExist, DoesAdminExist,
     AddMember, RemoveMember, ValidateFlag, ConvertCompletions,
-    ReplaceLeader, UserRatingChallenge, GetChallengeInfo, GetAllUsers } from './db.js';
+    ReplaceLeader, UserRatingChallenge, GetChallengeInfo,
+    GetAllUsers, GetAllTeams, RemoveTeam, RemoveUser } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import sanitize from 'sanitize-filename';
@@ -560,6 +561,49 @@ app.get('/admin/get_users', async (req, res) => {
         console.log("---- Admin Pulling all Users!")
         const users = await GetAllUsers();
         return res.json(users);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.get('/admin/get_teams', async (req, res) => {
+    console.log("---- Admin Requesting Teams!");
+
+    const token = req.cookies.khi_adm_token;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        console.log("---- Admin Pulling all Teams!")
+        const teams = await GetAllTeams();
+        return res.json(teams);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/admin/remove_user', async (req, res) => {
+    const token = req.cookies.khi_adm_token;
+    const data = req.body;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        console.log("Admin Attmepting to Remove User: " + data.user_id)
+        const action = await RemoveUser(data.user_id);
+        return res.json(action);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/admin/remove_team', async (req, res) => {
+    const token = req.cookies.khi_adm_token;
+    const data = req.body;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        console.log("Admin Attmepting to Remove Team: " + data.team_id)
+        const action = await RemoveTeam(data.team_id);
+        return res.json(action);
     } else {
         return res.json(null);
     }
