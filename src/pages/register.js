@@ -47,7 +47,9 @@ export function Register() {
         }
       } catch (error) {
         console.error("Error sending request:", error);
-        window.location.href = "/register?msg=fail";
+        if (msgArea) {
+          msgArea.innerHTML = "<p style='color: red;'>Registration Failed!</p>";
+        }
       }
   }
 

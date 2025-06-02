@@ -47,7 +47,9 @@ export function Login() {
         }
       } catch (error) {
         console.error("Error sending request:", error);
-        window.location.href = "/login?msg=fail";
+        if (msgArea) {
+          msgArea.innerHTML = "<p style='color: red;'>Login Failed!</p>";
+        }
       }
   }
 
