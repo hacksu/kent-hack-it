@@ -1,4 +1,5 @@
 import '../App.css';
+import showPasswordPrompt from '../components/prompt.js';
 
 const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
                       SetNewTeamName, BackendHost, SetTeamUpdateMsg }) => {
@@ -128,10 +129,14 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
                 className="btn btn-secondary"
                 onClick={() => {
                   if (window.confirm(`Are you sure you want to leave your team?`)) {
-                    const p = window.prompt("Enter your password to confirm.");
-                    if (p !== null) {
-                      LeaderLeaving(p);
-                    }
+                    showPasswordPrompt((password) => {
+                      if (password !== null) {
+                        LeaderLeaving(password);
+                      } else {
+                        // User cancelled password input
+                        console.log("Password prompt cancelled");
+                      }
+                    });
                   }
                 }}
               >

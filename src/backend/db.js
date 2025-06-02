@@ -1549,9 +1549,50 @@ async function CreateChallenge(data) {
     }
 }
 
+async function DeleteChallenge(data, adminUsername) {
+    /*
+    {
+        "challenge_id": STRING,
+        "password": STRING,
+    }
+    */
+
+    // check if password matches admin username
+    const adminProfile = await UserCollection.findOne({ username: adminUsername });
+    if (adminProfile) {
+        // check calculated password hash
+        const SALT = process.env.SALT;
+        const salted_password = SALT + data.password;
+        const hashed_passwd = Hash_SHA256(salted_password);
+
+        if (adminProfile.password === hashed_passwd) {
+            // we need to remove all references to this challenge from various
+            // entries: user.completions | team.completions
+            return { acknowledge: false, "message": "In Development!" }
+        } else {
+            console.log("Bad Admin Auth")
+            return { acknowledge: false, "message": "Error Deleting Challenge!" }
+        }
+    } else {
+        console.log("Bad Admin Auth")
+        return { acknowledge: false, "message": "Error Deleting Challenge!" }
+    }
+
+    const action = await ChallengeCollection.deleteOne({ _id: data.challenge_id })
+    
+    if (action.acknowledged && action.deletedCount != 0) {
+        console.log("Deleted Challenge")
+        return { acknowledge: true, "message": "Challenge Deleted!" }
+    } else {
+        console.log("Error Deleting Challenge")
+        return { acknowledge: false, "message": "Error Deleting Challenge!" }
+    }
+}
+
 export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
     DoesExist, DoesAdminExist, AddMember, RemoveMember, ValidateFlag,
     ConvertCompletions, ReplaceLeader, UserRatingChallenge,
     GetChallengeInfo, GetAllUsers, GetAllTeams, RemoveTeam,
-    RemoveUser, UpdateChallenge, AdminGetChallenges, CreateChallenge };
+    RemoveUser, UpdateChallenge, AdminGetChallenges,
+    CreateChallenge, DeleteChallenge };
