@@ -133,6 +133,14 @@ export function AdminPanel() {
     points: ''
   });
 
+  const handleUpdateChange = e => {
+    const { name, value } = e.target;
+    setUpdateFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   async function FetchChallenges() {
     try {
       const response = await fetch(`http://${GetBackendHost()}/challenges`);
@@ -185,13 +193,6 @@ export function AdminPanel() {
     FetchChallenges()
   }, []);
 
-  const [newChallengeName, setNewChallengeName] = useState("");
-  const [newChallengeDesc, setNewChallengeDesc] = useState("");
-  const [newChallengeCatagory, setNewChallengeCatagory] = useState("");
-  const [newChallengeDifficulty, setNewChallengeDifficulty] = useState("");
-  const [newChallengePoints, setNewChallengePoints] = useState(0);
-  const [newChallengeFlag, setNewChallengeFlag] = useState("");
-
   const [editId, setEditID] = useState("");
 
   // change to invisible tab where edit form is located
@@ -241,6 +242,7 @@ export function AdminPanel() {
     }
   }
 
+
   const [newFormData, setNewFormData] = useState({
     name: '',
     description: '',
@@ -249,17 +251,7 @@ export function AdminPanel() {
     flag: '',
     points: ''
   });
-  const addChallenge = (event) => {
-    event.preventDefault();
-  }
 
-  const handleUpdateChange = e => {
-    const { name, value } = e.target;
-    setUpdateFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
   const handleNewChange = e => {
     const { name, value } = e.target;
     setNewFormData(prev => ({
@@ -267,6 +259,45 @@ export function AdminPanel() {
       [name]: value
     }));
   };
+
+  const addChallenge = async (event) => {
+    event.preventDefault();
+
+    try {
+      const response = await fetch(`http://${GetBackendHost()}/admin/create_challenge`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          "name": newFormData.name,
+          "description": newFormData.description,
+          "category": newFormData.category,
+          "difficulty": newFormData.difficulty,
+          "flag": newFormData.flag,
+          "points": newFormData.points,
+        }),
+        credentials: 'include'  // ensures cookies are sent
+      });
+
+      // get the response output from the above fetch call
+      const data = await response.json();
+      let msgArea = document.getElementById('msg_popup');
+      
+      if (data && data.acknowledge) {
+        if (msgArea) {
+          setMsgContent("<p style='color: green;'>" + data.message + "</p>");
+        }
+        GetTeams();
+      } else {
+        if (msgArea) {
+          setMsgContent("<p style='color: red;'>" + data.message + "</p>");
+        }
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
+  }
 
 //###############################################################################
 //###############################################################################
@@ -345,20 +376,20 @@ export function AdminPanel() {
             </li>
             <li className="nav-item">
               <button
-                className={`nav-link ${activeTab === "create" ? "active" : ""}`}
-                style={{ fontSize: "1.5rem", padding: "0.25rem 0.5rem" }}
-                onClick={() => setActiveTab("create")}
-              >
-                Create Challenge
-              </button>
-            </li>
-            <li className="nav-item">
-              <button
                 className={`nav-link ${activeTab === "view" ? "active" : ""}`}
                 style={{ fontSize: "1.5rem", padding: "0.25rem 0.5rem" }}
                 onClick={() => ChangeTab("view")}
               >
                 View Challenges
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeTab === "create" ? "active" : ""}`}
+                style={{ fontSize: "1.5rem", padding: "0.25rem 0.5rem" }}
+                onClick={() => setActiveTab("create")}
+              >
+                Create Challenge
               </button>
             </li>
           </ul>
@@ -476,12 +507,105 @@ export function AdminPanel() {
             </>
 
             {activeTab === "create" && (
-              <div>
+              <div style={{ maxWidth: '600px', margin: '0 auto' }}>
                 <h5>Create a New Challenge</h5>
-                <div className="input-group mb-3">
-                  <form onSubmit={addChallenge}>
-                  </form>
-                </div>
+                <form onSubmit={addChallenge}>
+                  <div className="mb-3">
+                    <label className="form-label">Challenge Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="name"
+                      value={newFormData.name}
+                      onChange={handleNewChange}
+                      required
+                    />
+                  </div>
+              
+                  <div className="mb-3">
+                    <label className="form-label">Description</label>
+                    <textarea
+                      className="form-control"
+                      name="description"
+                      value={newFormData.description}
+                      onChange={handleNewChange}
+                      style={{
+                        minHeight: '120px',
+                        maxHeight: '300px',
+                        overflowY: 'auto',
+                        resize: 'vertical', // allow vertical resizing
+                        width: '100%',
+                      }}
+                      placeholder="Enter description"
+                    />
+                  </div>
+              
+                  <div className="mb-3">
+                    <label className="form-label">Category</label>
+                    <select
+                      className="form-select"
+                      name="category"
+                      value={newFormData.category}
+                      onChange={handleNewChange}
+                      required
+                    >
+                      <option value="" disabled>Select Category</option>
+                      <option value="Web Exploitation">Web Exploitation</option>
+                      <option value="Cryptography">Cryptography</option>
+                      <option value="Reverse Engineering">Reverse Engineering</option>
+                      <option value="Forensics">Forensics</option>
+                      <option value="Binary Exploitation">Binary Exploitation</option>
+                      <option value="General">General</option>
+                    </select>
+                  </div>
+              
+                  <div className="mb-3">
+                    <label className="form-label">Difficulty</label>
+                    <select
+                      className="form-select"
+                      name="difficulty"
+                      value={newFormData.difficulty}
+                      onChange={handleNewChange}
+                      required
+                    >
+                      <option value="" disabled>Select difficulty</option>
+                      <option value="Easy">Easy</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Hard">Hard</option>
+                    </select>
+                  </div>
+              
+                  <div className="mb-3">
+                    <label className="form-label">Flag</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="flag"
+                      value={newFormData.flag}
+                      onChange={handleNewChange}
+                      required
+                    />
+                  </div>
+              
+                  <div className="mb-3">
+                    <label className="form-label">Points</label>
+                    <div style={{ textAlign: 'center' }}>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="points"
+                        value={newFormData.points}
+                        onChange={handleNewChange}
+                        required
+                        style={{ width: '100px', display: 'inline-block' }} // smaller width and inline-block to respect centering
+                      />
+                    </div>
+                  </div>
+              
+                  <button type="submit" className="btn btn-primary">
+                    Submit
+                  </button>
+                </form>
               </div>
             )}
 

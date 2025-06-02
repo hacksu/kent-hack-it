@@ -4,7 +4,7 @@ import GetChallenges, { LoginUser, LoginAdmin, RegisterUser,
     AddMember, RemoveMember, ValidateFlag, ConvertCompletions,
     ReplaceLeader, UserRatingChallenge, GetChallengeInfo,
     GetAllUsers, GetAllTeams, RemoveTeam, RemoveUser,
-    UpdateChallenge, AdminGetChallenges } from './db.js';
+    UpdateChallenge, AdminGetChallenges, CreateChallenge } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import sanitize from 'sanitize-filename';
@@ -618,6 +618,22 @@ app.post('/admin/update_challenge', async (req, res) => {
     if (validJWT) {
         console.log("Admin Attmepting to Update Challenge: " + data.challenge_id)
         const action = await UpdateChallenge(data);
+
+        // { acknowledge, message }
+        return res.json(action);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/admin/create_challenge', async (req, res) => {
+    const token = req.cookies.khi_adm_token;
+    const data = req.body;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        console.log("Admin Attmepting to Create Challenge: " + data.name)
+        const action = await CreateChallenge(data);
 
         // { acknowledge, message }
         return res.json(action);

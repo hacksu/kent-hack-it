@@ -1510,9 +1510,48 @@ async function AdminGetChallenges() {
     return challenges;
 }
 
+async function CreateChallenge(data) {
+    /*
+    {
+        "name": STRING,
+        "description": STRING,
+        "category": STRING,
+        "difficulty": STRING,
+        "flag": STRING,
+        "points": NUMBER
+    }
+    */
+
+    // check if a challenge already exists based on name
+    const challengeExists = await ChallengeCollection.findOne({ name: data.name })
+    if (challengeExists) {
+        console.log("Already Existing Challenge")
+        return { acknowledge: false, "message": "Already Existing Challenge!" }
+    }
+
+    const action = await ChallengeCollection.insertOne({
+        "name": data.name,
+        "description": data.description,
+        "category": data.category,
+        "difficulty": data.difficulty,
+        "flag": data.flag,
+        "points": Number(data.points),
+        "user_rates": [],
+        "rating": Number(0),
+    })
+    
+    if (action) {
+        console.log("Created New Challenge")
+        return { acknowledge: true, "message": "Challenge Created!" }
+    } else {
+        console.log("Error Creating Challenge")
+        return { acknowledge: false, "message": "Error Creating Challenge!" }
+    }
+}
+
 export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
     DoesExist, DoesAdminExist, AddMember, RemoveMember, ValidateFlag,
     ConvertCompletions, ReplaceLeader, UserRatingChallenge,
     GetChallengeInfo, GetAllUsers, GetAllTeams, RemoveTeam,
-    RemoveUser, UpdateChallenge, AdminGetChallenges };
+    RemoveUser, UpdateChallenge, AdminGetChallenges, CreateChallenge };
