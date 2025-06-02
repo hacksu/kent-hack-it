@@ -34,6 +34,7 @@ export function AdminPanel() {
   }, []);
 
   async function removeTeam(id) {
+    let msgArea = document.getElementById('msg_popup');
     try {
       const response = await fetch(`http://${GetBackendHost()}/admin/remove_team`, {
         method: "POST",
@@ -49,7 +50,6 @@ export function AdminPanel() {
       });
 
       const data = await response.json();
-      let msgArea = document.getElementById('msg_popup');
       
       if (data && data.acknowledge) {
         if (msgArea) {
@@ -63,6 +63,9 @@ export function AdminPanel() {
       }
     } catch (error) {
       console.error("Error sending request:", error);
+      if (msgArea) {
+        setMsgContent("<p style='color: red;'> Error Occured! </p>");
+      }
     }
   };
 
@@ -90,6 +93,7 @@ export function AdminPanel() {
   }, []);
 
   async function removeUser(user_id) {
+    let msgArea = document.getElementById('msg_popup');
     try {
       const response = await fetch(`http://${GetBackendHost()}/admin/remove_user`, {
         method: "POST",
@@ -105,7 +109,6 @@ export function AdminPanel() {
       });
 
       const data = await response.json();
-      let msgArea = document.getElementById('msg_popup');
       
       if (data && data.acknowledge) {
         if (msgArea) {
@@ -119,6 +122,9 @@ export function AdminPanel() {
       }
     } catch (error) {
       console.error("Error sending request:", error);
+      if (msgArea) {
+        setMsgContent("<p style='color: red;'> Error Occured! </p>");
+      }
     }
   };
 
@@ -206,6 +212,7 @@ export function AdminPanel() {
   // prompt admin for passphrase to verify admin wishes to delete
   // a challenge, they will have to do this per challenge for safety
   async function DeleteChallenge(challenge_id) {
+    let msgArea = document.getElementById('msg_popup');
     if (window.confirm(`Are you sure you want to delete this challenge?`)) {
       showPasswordPrompt(async (password) => {
         if (password !== null) {
@@ -223,7 +230,6 @@ export function AdminPanel() {
             });
       
             const data = await response.json();
-            let msgArea = document.getElementById('msg_popup');
             
             if (data && data.acknowledge) {
               if (msgArea) {
@@ -237,6 +243,9 @@ export function AdminPanel() {
             }
           } catch (error) {
             console.error("Error sending request:", error);
+            if (msgArea) {
+              setMsgContent("<p style='color: red;'> Error Occured! </p>");
+            }
           }
         } else {
           // User cancelled password input
@@ -248,6 +257,7 @@ export function AdminPanel() {
 
   const UpdateChallenge = async (event) => {
     event.preventDefault();
+    let msgArea = document.getElementById('msg_popup');
     
     try {
       const response = await fetch(`http://${GetBackendHost()}/admin/update_challenge`, {
@@ -269,7 +279,6 @@ export function AdminPanel() {
 
       // get the response output from the above fetch call
       const data = await response.json();
-      let msgArea = document.getElementById('msg_popup');
       
       if (data && data.acknowledge) {
         if (msgArea) {
@@ -283,6 +292,9 @@ export function AdminPanel() {
       }
     } catch (error) {
       console.error("Error sending request:", error);
+      if (msgArea) {
+        setMsgContent("<p style='color: red;'> Error Occured! </p>");
+      }
     }
   }
 
@@ -306,6 +318,7 @@ export function AdminPanel() {
 
   const addChallenge = async (event) => {
     event.preventDefault();
+    let msgArea = document.getElementById('msg_popup');
 
     try {
       const response = await fetch(`http://${GetBackendHost()}/admin/create_challenge`, {
@@ -326,7 +339,6 @@ export function AdminPanel() {
 
       // get the response output from the above fetch call
       const data = await response.json();
-      let msgArea = document.getElementById('msg_popup');
       
       if (data && data.acknowledge) {
         if (msgArea) {
@@ -340,8 +352,115 @@ export function AdminPanel() {
       }
     } catch (error) {
       console.error("Error sending request:", error);
+      if (msgArea) {
+        setMsgContent("<p style='color: red;'> Error Occured! </p>");
+      }
     }
   }
+
+//###############################################################################
+//###############################################################################
+  const [username, SetUsername] = useState("");
+  const [password, SetPassword] = useState("");
+
+  const HandleRegisteration = async (event) => {
+    event.preventDefault();
+    let msgArea = document.getElementById('msg_popup');
+
+    try {
+      const response = await fetch(`http://${GetBackendHost()}/admin/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+          {
+            "username": username,
+            "password": password,
+          }
+        ),
+        credentials: 'include',
+      });
+
+      // get the response output from the above fetch call
+      const data = await response.text();
+      console.log("Server Response:", data);
+      
+      if (data === "Admin Added Successfully!") {
+        if (msgArea) {
+          setMsgContent("<p style='color: green;'>Registration Successful!</p>");
+        }
+
+        SetUsername("")
+        SetPassword("")
+        getAdmins()
+      } else {
+        if (msgArea) {
+          setMsgContent("<p style='color: green;'>Registration Failed!</p>");
+        }
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+      if (msgArea) {
+        setMsgContent("<p style='color: red;'> Error Occured! </p>");
+      }
+    }
+  }
+
+  const [admins, setAdmins] = useState([]);
+  async function getAdmins() {
+    try {
+      const response = await fetch(`http://${GetBackendHost()}/admin/fetch_admins`, {
+        method: "GET",
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+      
+      if (data) {
+        setAdmins(data)
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
+  };
+
+  async function removeAdmin(username) {
+    let msgArea = document.getElementById('msg_popup');
+
+    try {
+      const response = await fetch(`http://${GetBackendHost()}/admin/remove_admin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+          {
+            "username": username,
+          }
+        ),
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+      
+      if (data && data.acknowledge) {
+        if (msgArea) {
+          setMsgContent("<p style='color: green;'>" + data.message + "</p>");
+        }
+        getAdmins()
+      } else {
+        if (msgArea) {
+          setMsgContent("<p style='color: red;'>" + data.message + "</p>");
+        }
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+      if (msgArea) {
+        setMsgContent("<p style='color: red;'> Error Occured! </p>");
+      }
+    }
+  };
 
 //###############################################################################
 //###############################################################################
@@ -357,6 +476,8 @@ export function AdminPanel() {
   }, []); // run once on page-load
 
   async function ChangeTab(tab_name) {
+    setMsgContent("")
+
     setActiveTab(tab_name);
 
     if (tab_name === "teams") {
@@ -367,6 +488,9 @@ export function AdminPanel() {
     }
     if (tab_name === "view") {
       FetchChallenges();
+    }
+    if (tab_name === "admins") {
+      getAdmins()
     }
   }
 
@@ -434,6 +558,15 @@ export function AdminPanel() {
                 onClick={() => setActiveTab("create")}
               >
                 Create Challenge
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeTab === "admins" ? "active" : ""}`}
+                style={{ fontSize: "1.5rem", padding: "0.25rem 0.5rem" }}
+                onClick={() => ChangeTab("admins")}
+              >
+                Admins
               </button>
             </li>
           </ul>
@@ -822,7 +955,77 @@ export function AdminPanel() {
                   Submit
                 </button>
               </form>
-            </div>            
+            </div>
+            )}
+
+            {activeTab === "admins" && (
+              <>
+              <div className="container">
+                <div className="row justify-content-center">
+                  <div className="col-md-6">
+                    <div className="card shadow">
+                      <div className="card-body">
+                        <h3 className="card-title text-center mb-4">Register</h3>
+                        <div id='msg_popup'>
+                        </div>
+                        <form onSubmit={HandleRegisteration}>
+                          <div className="mb-3">
+                            <input
+                              type="text"
+                              className="form-control"
+                              id="username"
+                              placeholder="Enter username"
+                              value={username}
+                              onChange={(e) => SetUsername(e.target.value)}
+                            />
+                          </div>
+    
+                          <div className="mb-3">
+                            <input
+                              type="password"
+                              className="form-control"
+                              id="password"
+                              placeholder="Enter password"
+                              value={password}
+                              onChange={(e) => SetPassword(e.target.value)}
+                            />
+                          </div>
+    
+                          <div className="d-grid">
+                            <button type="submit" className="btn btn-primary">
+                              Register Admin
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="container mt-4 d-flex justify-content-center align-items-center">
+                <div className="row w-100 justify-content-center">
+                  <h4>Current Admins</h4>
+                  <ul className="list-group w-auto">
+                    {admins.map((admin, index) => (
+                      <li
+                        key={index}
+                        className="list-group-item d-flex justify-content-between align-items-center px-3 py-2"
+                        style={{ fontSize: '0.9rem', minWidth: '250px', maxWidth: '400px' }}
+                      >
+                        <span className="text-muted">{admin.username}</span>
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => removeAdmin(admin.username)}
+                        >
+                          <i className="bi bi-trash"></i> Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              </>
             )}
           </div>
         </div>

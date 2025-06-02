@@ -50,6 +50,7 @@ const UserCollection = mongoose.model('Users', UserSchema, 'users');
 const AdminSchema = new mongoose.Schema({
     username: String,
     password: String, // sha-256 salted hex-string
+    isProtected: Boolean,
     created_at: Date
 });
 const AdminCollection = mongoose.model('Admins', AdminSchema, 'admins');
@@ -1451,7 +1452,7 @@ async function RemoveUser(user_id) {
         const teamProfile = await TeamCollection.findOne({ _id: userProfile.team_id })
         
         // update team record
-        if (teamProfile && teamProfile.team_leader_id == user_id) {
+        if (teamProfile && teamProfile.team_leader_id === user_id) {
             // appoint new team leader
             if (teamProfile.members.length > 0) {
                 await SetNewLeader(teamProfile);
@@ -1580,7 +1581,7 @@ async function DeleteChallenge(data, adminUsername) {
 
     const action = await ChallengeCollection.deleteOne({ _id: data.challenge_id })
     
-    if (action.acknowledged && action.deletedCount != 0) {
+    if (action.acknowledged && action.deletedCount !== 0) {
         console.log("Deleted Challenge")
         return { acknowledge: true, "message": "Challenge Deleted!" }
     } else {
@@ -1589,10 +1590,77 @@ async function DeleteChallenge(data, adminUsername) {
     }
 }
 
+async function RegisterAdmin(username, password) {
+    username = SanitizeString(username);
+    password = SanitizeString(password);
+
+    if (username === null || password === null) {
+        return "Register Failed!";
+    }
+
+    // check if admin under username exists
+    if (await AdminCollection.findOne({ username: username })) {
+        return "Failed to add Admin!";
+    }
+
+    console.log(`Attempting to add Admin: ${username}`);
+
+    // salted passwords are very lit
+    const SALT = process.env.SALT;
+    const salted_password = SALT + password;
+    const hashed_passwd = Hash_SHA256(salted_password);
+
+    const addAdmin = await AdminCollection.insertOne({
+        username,
+        password: hashed_passwd,
+        isProtected: false,
+        created_at: Date.now()
+    });
+
+    if (addAdmin) { console.log("Admin Added Successfully!"); } else { console.log("Failed to add Admin!"); }
+    return addAdmin ? "Admin Added Successfully!" : "Failed to add Admin!";
+}
+
+async function RemoveAdmin(adminUsername) {
+    // check if profile is protected from deletion
+    const adminProfile = await AdminCollection.findOne({ username: adminUsername });
+
+    if (adminProfile) {
+        if (!adminProfile.isProtected) {
+            // profile exists and is not protected
+            const action = await AdminCollection.deleteOne({ username: adminUsername });
+    
+            if (action.deletedCount === 1) {
+                console.log("Admin Deleted!")
+                return { "acknowledge":true, "message":"Admin Deleted Successfully!" }
+            } else {
+                console.log("Issue Deleting Admin")
+                return { "acknowledge":false, "message":"Error Deleting Admin!" }
+            }
+        } else {
+            console.log("Attempted to delete protected account")
+            return { "acknowledge":false, "message":"Cannot delete administrator!" }
+        }
+    } else {
+        // attempt to delete non-existing profile
+        console.log("Issue Deleting Admin")
+        return { "acknowledge":false, "message":"Error Deleting Admin!" }
+    }
+}
+
+async function GetAdmins() {
+    // check if profile is protected from deletion
+    const admins = await AdminCollection.find({}, { username: 1 });
+    console.log("ADMIN LIST")
+    console.log(admins)
+    return admins;
+}
+
 export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
     DoesExist, DoesAdminExist, AddMember, RemoveMember, ValidateFlag,
     ConvertCompletions, ReplaceLeader, UserRatingChallenge,
     GetChallengeInfo, GetAllUsers, GetAllTeams, RemoveTeam,
     RemoveUser, UpdateChallenge, AdminGetChallenges,
-    CreateChallenge, DeleteChallenge };
+    CreateChallenge, DeleteChallenge, RegisterAdmin, RemoveAdmin,
+    GetAdmins };

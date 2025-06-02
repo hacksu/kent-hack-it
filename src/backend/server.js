@@ -5,7 +5,7 @@ import GetChallenges, { LoginUser, LoginAdmin, RegisterUser,
     ReplaceLeader, UserRatingChallenge, GetChallengeInfo,
     GetAllUsers, GetAllTeams, RemoveTeam, RemoveUser,
     UpdateChallenge, AdminGetChallenges, CreateChallenge,
-    DeleteChallenge } from './db.js';
+    DeleteChallenge, RegisterAdmin, RemoveAdmin, GetAdmins } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import sanitize from 'sanitize-filename';
@@ -662,8 +662,54 @@ app.post('/admin/delete_challenge', async (req, res) => {
 // only admins hit this so the challenge flag is recieved in
 // the result
 app.get('/admin/fetch_challenges', async (req, res) => {
-    const challenges = await AdminGetChallenges();
-    res.send(challenges);
+    const token = req.cookies.khi_adm_token;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        const challenges = await AdminGetChallenges();
+        res.send(challenges);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.get('/admin/fetch_admins', async (req, res) => {
+    const token = req.cookies.khi_adm_token;
+    const validJWT = await DecodeAdminJWT(res, token);
+    
+    if (validJWT) {
+        const admins = await GetAdmins();
+        res.send(admins);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/admin/register', async (req, res) => {
+    const token = req.cookies.khi_adm_token;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        const adminData = req.body;
+        const regAdmin = await RegisterAdmin(adminData.username, adminData.password);
+        res.send(regAdmin);
+    } else {
+        res.send("Failed to add Admin!");
+    }
+});
+
+app.post('/admin/remove_admin', async (req, res) => {
+    const token = req.cookies.khi_adm_token;
+    const data = req.body;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        console.log("Admin Attmepting to Remove Admin: " + data.username)
+        const action = await RemoveAdmin(data.username);
+        return res.json(action);
+    } else {
+        return res.json(null);
+    }
 });
 
 app.listen(port, host, () => {
