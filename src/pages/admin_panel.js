@@ -10,8 +10,6 @@ export function AdminPanel() {
   const [teams, setTeams] = useState([]);
   const [challenges, setChallenges] = useState([]);
 
-  const [newChallenge, setNewChallenge] = useState("");
-
 //###############################################################################
 //###############################################################################
 
@@ -126,6 +124,15 @@ export function AdminPanel() {
 //###############################################################################
 //###############################################################################
 
+  const [updateFormData, setUpdateFormData] = useState({
+    name: '',
+    description: '',
+    category: '',
+    difficulty: '',
+    flag: '',
+    points: ''
+  });
+
   async function FetchChallenges() {
     try {
       const response = await fetch(`http://${GetBackendHost()}/challenges`);
@@ -136,12 +143,129 @@ export function AdminPanel() {
     }
   }
 
+  async function GetChallengeInfo(id) {
+    try {
+      const response = await fetch(`http://${GetBackendHost()}/admin/fetch_challenges`);
+      const data = await response.json();
+      if (data) {
+        const challenge = data.find(c => c._id === id);
+
+        setUpdateFormData(prev => ({
+          ...prev,
+          'name': challenge.name
+        }));
+        setUpdateFormData(prev => ({
+          ...prev,
+          'description': challenge.description
+        }));
+        setUpdateFormData(prev => ({
+          ...prev,
+          'category': challenge.category
+        }));
+        setUpdateFormData(prev => ({
+          ...prev,
+          'difficulty': challenge.difficulty
+        }));
+        setUpdateFormData(prev => ({
+          ...prev,
+          'flag': challenge.flag
+        }));
+        setUpdateFormData(prev => ({
+          ...prev,
+          'points': challenge.points
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch challenges:', err);
+    }
+  }
+
   // execute FetchChallenges once on-load
   useEffect(() => {
     FetchChallenges()
   }, []);
 
-  const addChallenge = () => {
+  const [newChallengeName, setNewChallengeName] = useState("");
+  const [newChallengeDesc, setNewChallengeDesc] = useState("");
+  const [newChallengeCatagory, setNewChallengeCatagory] = useState("");
+  const [newChallengeDifficulty, setNewChallengeDifficulty] = useState("");
+  const [newChallengePoints, setNewChallengePoints] = useState(0);
+  const [newChallengeFlag, setNewChallengeFlag] = useState("");
+
+  const [editId, setEditID] = useState("");
+
+  // change to invisible tab where edit form is located
+  async function EditChallenge(challenge_id) {
+    await GetChallengeInfo(challenge_id)
+    setActiveTab("edit");
+    setEditID(challenge_id);
+  }
+
+  const UpdateChallenge = async (event) => {
+    event.preventDefault();
+    
+    try {
+      const response = await fetch(`http://${GetBackendHost()}/admin/update_challenge`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          "challenge_id": editId,
+          "name": updateFormData.name,
+          "description": updateFormData.description,
+          "category": updateFormData.category,
+          "difficulty": updateFormData.difficulty,
+          "flag": updateFormData.flag,
+          "points": updateFormData.points,
+        }),
+        credentials: 'include'  // ensures cookies are sent
+      });
+
+      // get the response output from the above fetch call
+      const data = await response.json();
+      let msgArea = document.getElementById('msg_popup');
+      
+      if (data && data.acknowledge) {
+        if (msgArea) {
+          setMsgContent("<p style='color: green;'>" + data.message + "</p>");
+        }
+        GetTeams();
+      } else {
+        if (msgArea) {
+          setMsgContent("<p style='color: red;'>" + data.message + "</p>");
+        }
+      }
+    } catch (error) {
+      console.error("Error sending request:", error);
+    }
+  }
+
+  const [newFormData, setNewFormData] = useState({
+    name: '',
+    description: '',
+    category: '',
+    difficulty: '',
+    flag: '',
+    points: ''
+  });
+  const addChallenge = (event) => {
+    event.preventDefault();
+  }
+
+  const handleUpdateChange = e => {
+    const { name, value } = e.target;
+    setUpdateFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  const handleNewChange = e => {
+    const { name, value } = e.target;
+    setNewFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
 //###############################################################################
@@ -183,14 +307,23 @@ export function AdminPanel() {
   return (
     <div className="App">
       <AdminNavbar />
-      <header className="App-header">
-        <h1>Admin Panel</h1>
+      <header
+        className="App-header"
+        style={{
+          display: 'block',
+          height: 'auto',
+          paddingTop: '0',
+        }}>
+        <h1 style={{ padding: '15px' }}>Admin Panel</h1>
 
         {/* msgContent is not user controlled */}
-        <div id='msg_popup' dangerouslySetInnerHTML={{ __html: msgContent }}>
+        <div
+          id='msg_popup'
+          style={{ padding: '5px' }}
+          dangerouslySetInnerHTML={{ __html: msgContent }}>
         </div>
 
-        <div className="container mt-5">
+        <div className="container">
           <ul className="nav nav-tabs">
             <li className="nav-item">
               <button
@@ -346,16 +479,8 @@ export function AdminPanel() {
               <div>
                 <h5>Create a New Challenge</h5>
                 <div className="input-group mb-3">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Challenge title"
-                    value={newChallenge}
-                    onChange={e => setNewChallenge(e.target.value)}
-                  />
-                  <button className="btn btn-primary" onClick={addChallenge}>
-                    Add
-                  </button>
+                  <form onSubmit={addChallenge}>
+                  </form>
                 </div>
               </div>
             )}
@@ -395,6 +520,7 @@ export function AdminPanel() {
 
                         <button
                             className="btn btn-outline-info align-self-start"
+                            onClick={() => EditChallenge(challenge._id)}
                         >
                           <i className="bi bi-trash me-2"></i> Edit
                         </button>
@@ -403,6 +529,109 @@ export function AdminPanel() {
                   ))}
                 </ul>
               </div>
+            )}
+
+            {activeTab === "edit" && (
+              <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+              <h5>Edit Challenge</h5>
+              <form onSubmit={UpdateChallenge}>
+                <div className="mb-3">
+                  <label className="form-label">Challenge Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="name"
+                    value={updateFormData.name}
+                    onChange={handleUpdateChange}
+                    required
+                  />
+                </div>
+            
+                <div className="mb-3">
+                  <label className="form-label">Description</label>
+                  <textarea
+                    className="form-control"
+                    name="description"
+                    value={updateFormData.description}
+                    onChange={handleUpdateChange}
+                    style={{
+                      minHeight: '120px',
+                      maxHeight: '300px',
+                      overflowY: 'auto',
+                      resize: 'vertical', // allow vertical resizing
+                      width: '100%',
+                    }}
+                    placeholder="Enter description"
+                  />
+                </div>
+            
+                <div className="mb-3">
+                  <label className="form-label">Category</label>
+                  <select
+                    className="form-select"
+                    name="category"
+                    value={updateFormData.category}
+                    onChange={handleUpdateChange}
+                    required
+                  >
+                    <option value="" disabled>Select Category</option>
+                    <option value="Web Exploitation">Web Exploitation</option>
+                    <option value="Cryptography">Cryptography</option>
+                    <option value="Reverse Engineering">Reverse Engineering</option>
+                    <option value="Forensics">Forensics</option>
+                    <option value="Binary Exploitation">Binary Exploitation</option>
+                    <option value="General">General</option>
+                  </select>
+                </div>
+            
+                <div className="mb-3">
+                  <label className="form-label">Difficulty</label>
+                  <select
+                    className="form-select"
+                    name="difficulty"
+                    value={updateFormData.difficulty}
+                    onChange={handleUpdateChange}
+                    required
+                  >
+                    <option value="" disabled>Select difficulty</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+            
+                <div className="mb-3">
+                  <label className="form-label">Flag</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="flag"
+                    value={updateFormData.flag}
+                    onChange={handleUpdateChange}
+                    required
+                  />
+                </div>
+            
+                <div className="mb-3">
+                  <label className="form-label">Points</label>
+                  <div style={{ textAlign: 'center' }}>
+                    <input
+                      type="number"
+                      className="form-control"
+                      name="points"
+                      value={updateFormData.points}
+                      onChange={handleUpdateChange}
+                      required
+                      style={{ width: '100px', display: 'inline-block' }} // smaller width and inline-block to respect centering
+                    />
+                  </div>
+                </div>
+            
+                <button type="submit" className="btn btn-primary">
+                  Submit
+                </button>
+              </form>
+            </div>            
             )}
           </div>
         </div>

@@ -1472,9 +1472,47 @@ async function RemoveUser(user_id) {
     }
 }
 
+async function UpdateChallenge(data) {
+    /*
+    {
+        "challenge_id": NUMBER,
+        "name": STRING,
+        "description": STRING,
+        "category": STRING,
+        "difficulty": STRING,
+        "flag": STRING,
+        "points": NUMBER
+    }
+    */
+
+    const action = await ChallengeCollection.updateOne(
+        { _id: data.challenge_id },
+        { $set: {
+            "challenge_id": data.challenge_id,
+            "name": data.name,
+            "description": data.description,
+            "category": data.category,
+            "difficulty": data.difficulty,
+            "flag": data.flag,
+            "points": Number(data.points),
+        }})
+    
+    if (action.matchedCount === 1) {
+        console.log("Found Challenge and Updated Details")
+        return { acknowledge: true, "message": "Challenge Updated!" }
+    } else {
+        return { acknowledge: false, "message": "Error Updating Challenge!" }
+    }
+}
+
+async function AdminGetChallenges() {
+    const challenges = await ChallengeCollection.find({}, { user_rates: 0 });
+    return challenges;
+}
+
 export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
     DoesExist, DoesAdminExist, AddMember, RemoveMember, ValidateFlag,
     ConvertCompletions, ReplaceLeader, UserRatingChallenge,
     GetChallengeInfo, GetAllUsers, GetAllTeams, RemoveTeam,
-    RemoveUser };
+    RemoveUser, UpdateChallenge, AdminGetChallenges };
