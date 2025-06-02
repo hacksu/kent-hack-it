@@ -320,6 +320,74 @@ async function GetChallengeInfo(data) {
     }
 }
 
+// if a player is not in a team calculate collected points and display their username
+// otherwise calculate points collected by the team and display the team name
+async function GetLeaderboardData() {
+    // { name: STRING, points: NUMBER }
+    // sort by point desending and if points match
+    // sort based on time of recent completion (time attribute (time | timestamp) on last completion)
+    let leaderboardData = []
+
+    const soloUsers = await UserCollection.find({ team_id: "None" }, { username: 1, completions: 1 })
+    const teams = await TeamCollection.find({}, { name: 1, completions: 1 })
+
+    let readableSoloUsers = [];
+    let readableTeams = [];
+
+    // for each user we need to calculate accumulated points
+    for (let userDoc of soloUsers) {
+        const user = userDoc.toObject(); // Make it modifiable
+    
+        user.points = 0;
+        user.name = user.username;
+    
+        for (const completion of user.completions) {
+            const challengeProfile = await ChallengeCollection.findOne({ _id: completion.id });
+            if (challengeProfile) {
+                user.points += challengeProfile.points;
+            }
+        }
+    
+        user.recent = user.completions.at(-1)?.time ?? 0;
+        delete user.completions;
+        delete user.username;
+        delete user._id;
+    
+        readableSoloUsers.push(user); // Save modified copy
+    }
+
+    // for each tean we need to calculate accumulated points
+    for (let teamDoc of teams) {
+        const team = teamDoc.toObject(); // Convert Mongoose document to plain object
+    
+        team.points = 0;
+        
+        for (const completion of team.completions) {
+            team.points += completion.points;
+        }
+        
+        team.recent = team.completions.at(-1)?.timestamp ?? 0;
+        delete team.completions;
+        delete team._id;
+    
+        readableTeams.push(team); // Store modified team object
+    }
+
+    // merge both lists (readableSoloUsers & readableTeams) in sorted fashion
+    const merged = [...readableSoloUsers, ...readableTeams];
+    merged.sort((a, b) => {
+        if (b.points !== a.points) {
+            // Sort by points descending
+            return b.points - a.points;
+        } else {
+            // If points are equal, sort by recent (epoch) ascending
+            return a.recent - b.recent;
+        }
+    });
+
+    return merged;
+}
+
 async function DoesExist(username, email) {
     username = SanitizeString(username);
     email = SanitizeString(email);
@@ -1719,4 +1787,4 @@ export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetChallengeInfo, GetAllUsers, GetAllTeams, RemoveTeam,
     RemoveUser, UpdateChallenge, AdminGetChallenges,
     CreateChallenge, DeleteChallenge, RegisterAdmin, RemoveAdmin,
-    GetAdmins, ValidateAdmin };
+    GetAdmins, ValidateAdmin, GetLeaderboardData };

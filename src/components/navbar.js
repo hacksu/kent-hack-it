@@ -76,6 +76,9 @@ function Navbar() {
                       <li className="nav-item">
                           <Link className="nav-link" to="/compete">Compete</Link>
                       </li>
+                      <li className="nav-item">
+                          <Link className="nav-link" to="/leaderboard">Leaderboard</Link>
+                      </li>
 
                       {authenticated ? (
                         <>

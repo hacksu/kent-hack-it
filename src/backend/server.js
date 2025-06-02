@@ -6,7 +6,7 @@ import GetChallenges, { LoginUser, LoginAdmin, RegisterUser,
     GetAllUsers, GetAllTeams, RemoveTeam, RemoveUser,
     UpdateChallenge, AdminGetChallenges, CreateChallenge,
     DeleteChallenge, RegisterAdmin, RemoveAdmin, GetAdmins,
-    ValidateAdmin } from './db.js';
+    ValidateAdmin, GetLeaderboardData } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import sanitize from 'sanitize-filename';
@@ -482,6 +482,13 @@ app.post('/data/get-completions', async (req, res) => {
     } else {
         return res.json(null);
     }
+});
+
+// leaderboard is publically accessible
+app.get('/data/leaderboard', async (req, res) => {
+    const data = await GetLeaderboardData();
+    console.log(data);
+    return res.json(data)
 });
 
 app.post('/rate-challenge', async (req, res) => {

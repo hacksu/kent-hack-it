@@ -6,6 +6,7 @@ import { Profile } from './pages/profile.js'
 import { Register } from './pages/register.js'
 import { Challenges } from './pages/challenges.js'
 import { AdminPanel } from './pages/admin_panel.js'
+import { Leaderboard } from './pages/leaderboard.js'
 import { RatingPage } from './pages/rate_challenge.js'
 import { ChallengeDetail } from './pages/challenge_template.js'
 
@@ -17,11 +18,12 @@ function App() {
       <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/panel" element={<AdminPanel />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/register" element={<Register />} />
           <Route path="/compete" element={<Challenges />} />
+          <Route path="/admin/panel" element={<AdminPanel />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/challenge" element={<ChallengeDetail />} />
           <Route path="/rate-challenge" element={<RatingPage />} />
       </Routes>
