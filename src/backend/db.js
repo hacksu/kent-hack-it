@@ -243,17 +243,17 @@ async function UpdateTeamCompletions(team_id) {
 
             for (const data of Object.entries(memberProfile.completions)) {
                 // console.log(`Completions of ${memberProfile.username}`, memberProfile.completions)
-                const [index, { name, time }] = data; // break down the entry
+                const [index, { id, time }] = data; // break down the entry
                 // console.log("Completion Data -> ", { name, time });
 
-                const challengeProfile = await ChallengeCollection.findOne({ name: name.replaceAll('_', ' ') })
+                const challengeProfile = await ChallengeCollection.findOne({ _id: id })
                 if (challengeProfile) {
                     // Find if the challenge already exists in mergedCompletions
-                    const existingChallenge = mergedCompletions.find(completion => completion.name === name);
+                    const existingChallenge = mergedCompletions.find(completion => completion.id === id);
     
                     // If challenge doesn't exist or the current timestamp is older, add/update the challenge
                     if (!existingChallenge || time < existingChallenge.timestamp) {
-                        const newCompletion = { name: name, memberId: memberId, points: challengeProfile.points, timestamp: time };
+                        const newCompletion = { id: id, memberId: memberId, points: challengeProfile.points, timestamp: time };
     
                         // Remove the existing challenge entry if it exists
                         if (existingChallenge) {
@@ -1164,16 +1164,13 @@ async function ValidateFlag(challenge_id, flag_value, jwt) {
         // check if the user has already claimed the flag:
         // before doing an insert check if there is an object with
         // a name attribute matching simplifiedChallengeName
-        // EX: completions: [ { name: 'BasicWebExploit', time: 1746503187547 } ]
+
+        // EX: completions: [ { id: 'e168c4626a', time: 1746503187547 } ]
         const userProfile = await UserCollection.findOne({ username: jwt.username });
-        const simplifiedChallengeName = chall.name.replaceAll(' ', '_');
         if (userProfile) {
             const currentCompletions = userProfile.completions;
             for (const claim of currentCompletions) {
-                // console.log("Reviewing Claim");
-                // console.log(`|____ ${claim.name} === ${simplifiedChallengeName}`);
-                if (claim.name === simplifiedChallengeName) {
-                    // console.log("CLAIM ALREADY EXISTS!");
+                if (claim.id === challenge_id) {
                     return {
                         message: "Already Claimed this Flag!"
                     };
@@ -1199,7 +1196,7 @@ async function ValidateFlag(challenge_id, flag_value, jwt) {
                 {
                     $addToSet: {
                         completions: {
-                            name: simplifiedChallengeName, time: Date.now()
+                            id: challenge_id, time: Date.now()
                         }
                     }
                 }
@@ -1230,12 +1227,21 @@ async function ValidateFlag(challenge_id, flag_value, jwt) {
 
 async function ConvertCompletions(userCompletions, teamCompletions) {
     console.log("[*] Attempting Conversions. . .")
-    // console.log("|____ User Completions: ", userCompletions);
-    // console.log("|____ Team Completions: ", teamCompletions);
+    
+    if (userCompletions && userCompletions.length > 0) {
+        // create new attribute name based on id attribute
+        let readableUserCompletions = userCompletions;
+        for (let item of readableUserCompletions) {
+            const challengeProfile = await ChallengeCollection.findOne({ _id: item.id })
+            if (challengeProfile) {
+                item['name'] = challengeProfile.name;
+            }
+        }
+    }
 
-    if (teamCompletions) {
+    if (teamCompletions && teamCompletions.length > 0) {
         // Iterate through data and modify memberId using for...of to handle async correctly
-        for (const item of teamCompletions) {
+        for (let item of teamCompletions) {
             const memberProfile = await UserCollection.findOne({ _id: item.memberId });
             if (memberProfile) {
                 const memberUsername = memberProfile.username;
@@ -1243,15 +1249,25 @@ async function ConvertCompletions(userCompletions, teamCompletions) {
                 item.memberName = memberUsername;  // Add memberName attribute
                 delete item.memberId; // Delete memberId attribute
             }
+
+            // create new attribute name based on id attribute
+            const challengeProfile = await ChallengeCollection.findOne({ _id: item.id })
+            if (challengeProfile) {
+                item['name'] = challengeProfile.name;
+            }
         }
 
-        // console.log("[*] Team Completions Modified: ", teamCompletions);
+        console.log("|____ User Completions: ", userCompletions);
+        console.log("|____ Team Completions: ", teamCompletions);
 
         return {
             "userCompletions": userCompletions,
             "teamCompletions": teamCompletions,
         }
     } else {
+        console.log("|____ User Completions: ", userCompletions);
+        console.log("|____ Team Completions: ", teamCompletions);
+
         return {
             "userCompletions": userCompletions,
             "teamCompletions": [],
