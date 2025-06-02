@@ -235,7 +235,7 @@ export function AdminPanel() {
               if (msgArea) {
                 setMsgContent("<p style='color: green;'>" + data.message + "</p>");
               }
-              GetUsers()
+              FetchChallenges()
             } else {
               if (msgArea) {
                 setMsgContent("<p style='color: red;'>" + data.message + "</p>");
@@ -344,7 +344,6 @@ export function AdminPanel() {
         if (msgArea) {
           setMsgContent("<p style='color: green;'>" + data.message + "</p>");
         }
-        GetTeams();
       } else {
         if (msgArea) {
           setMsgContent("<p style='color: red;'>" + data.message + "</p>");
