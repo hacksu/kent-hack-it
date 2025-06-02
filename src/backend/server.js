@@ -5,7 +5,8 @@ import GetChallenges, { LoginUser, LoginAdmin, RegisterUser,
     ReplaceLeader, UserRatingChallenge, GetChallengeInfo,
     GetAllUsers, GetAllTeams, RemoveTeam, RemoveUser,
     UpdateChallenge, AdminGetChallenges, CreateChallenge,
-    DeleteChallenge, RegisterAdmin, RemoveAdmin, GetAdmins } from './db.js';
+    DeleteChallenge, RegisterAdmin, RemoveAdmin, GetAdmins,
+    ValidateAdmin } from './db.js';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import sanitize from 'sanitize-filename';
@@ -707,6 +708,143 @@ app.post('/admin/remove_admin', async (req, res) => {
         console.log("Admin Attmepting to Remove Admin: " + data.username)
         const action = await RemoveAdmin(data.username);
         return res.json(action);
+    } else {
+        return res.json(null);
+    }
+});
+
+import multer from 'multer'; // middle-ware for file checking
+import fs from 'fs/promises';
+
+// Set up storage to preserve original filename
+// on default multer uses checksum to name file
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'src/backend/challenge_archives'); // upload destination
+    },
+    filename: (req, file, cb) => {
+        cb(null, SanitizeFileName(file.originalname)); // replace spaces for underscores
+    }
+});
+const upload = multer({ storage: storage });
+
+// file name sanitizing while maintaining file endings (.zip, .txt, etc)
+function SanitizeFileName(filename) {
+    // Find last dot position
+    const lastDotIndex = filename.lastIndexOf('.');
+    
+    let namePart = filename;
+    let extensionPart = '';
+    
+    if (lastDotIndex !== -1) {
+        namePart = filename.slice(0, lastDotIndex);
+        extensionPart = filename.slice(lastDotIndex + 1);
+    }
+    
+    // Replace whitespace with underscores, and remove invalid chars from name part
+    namePart = namePart
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_]/g, '');
+    
+    // Sanitize extension: only letters and numbers
+    extensionPart = extensionPart.replace(/[^a-zA-Z0-9]/g, '');
+    
+    if (extensionPart.length > 0) {
+        return `${namePart}.${extensionPart}`;
+    } else {
+        return namePart; // no extension
+    }
+}
+
+app.post('/admin/upload', upload.single('file'), async (req, res) => {
+    const token = req.cookies.khi_adm_token;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        console.log("Validating Uploaded File")
+
+        // Check Content-Type of the entire request
+        const contentType = req.headers['content-type'];
+        console.log("Request Content-Type:", contentType);
+
+        // Multer puts file info on req.file
+        const file = req.file;
+        if (!file) return res.json({ "acknowledge":false, "message": 'No file uploaded' });
+
+        console.log("Uploaded file MIME type:", file.mimetype);
+        console.log("Original filename:", file.originalname);
+
+        // different browsers may change the mimetype
+        const allowedMimeTypes = ['application/zip', 'application/x-zip-compressed', 'multipart/x-zip'];
+        if (!allowedMimeTypes.includes(file.mimetype) || !file.originalname.endsWith('.zip')) {
+            fs.unlink(file.path, () => {}); // Cleanup
+            return res.json({ acknowledge: false, message: 'Only .zip files are allowed' });
+        }
+
+        console.log("Admin uploading challenge ZIP file")
+        return res.json({ "acknowledge":true, "message": 'File Uploaded Successfully!' });
+    } else {
+        return res.json(null);
+    }
+});
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+async function GetUploads() {
+    const uploadsDir = path.join(__dirname, '/challenge_archives');
+  
+    try {
+      const files = await fs.readdir(uploadsDir);
+      return files; // returns an array of file names
+    } catch (err) {
+      console.error('Error reading uploads directory:', err);
+      return [];
+    }
+}
+
+app.get('/admin/get_uploads', async (req, res) => {
+    const token = req.cookies.khi_adm_token;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        console.log("Fetching listed Uploads")
+        const files = await GetUploads();
+
+        console.log(files)
+        return res.json(files);
+    } else {
+        return res.json(null);
+    }
+});
+
+app.post('/admin/delete_file', async (req, res) => {
+    const token = req.cookies.khi_adm_token;
+    const data = req.body;
+    const validJWT = await DecodeAdminJWT(res, token);
+
+    if (validJWT) {
+        console.log("Verifying Admin Auth")
+
+        if (!(await ValidateAdmin(validJWT.username, data.password))) {
+            console.log("Bad Admin Auth!")
+            return res.json({ "acknowledge":false, "message": 'Error Deleting File!' });
+        }
+        console.log("Valid Admin Auth")
+
+        const filename = SanitizeFileName(data.filename)
+        console.log("Admin Attmepting to Delete File: " + filename)
+
+        const uploadsDir = path.join(__dirname, 'challenge_archives');
+        const filePath = path.join(uploadsDir, filename);
+
+        try {
+            console.log(`Attempting to Delete: ${filePath}`)
+            await fs.unlink(filePath);
+            return res.json({ "acknowledge":true, "message": 'File Deleted Successfully!' });
+        } catch (err) {
+            console.log(`Error Deleting: ${filePath}`)
+            return res.json({ "acknowledge":false, "message": 'Error Deleting File!' });
+        }
     } else {
         return res.json(null);
     }

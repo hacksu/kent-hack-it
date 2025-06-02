@@ -1656,6 +1656,21 @@ async function GetAdmins() {
     return admins;
 }
 
+// check user:pass to verify admin auth
+async function ValidateAdmin(username, password) {
+    const adminProfile = await AdminCollection.findOne({ username: username })
+    if (adminProfile) {
+        // check salted password hash
+        const SALT = process.env.SALT;
+        const salted_password = SALT + password;
+        const hashed_passwd = Hash_SHA256(salted_password);
+        console.log(`${username}:${password} | ${hashed_passwd} --> ${adminProfile.password}`)
+        return (adminProfile.password === hashed_passwd);
+    } else {
+        return false;
+    }
+}
+
 export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
     DoesExist, DoesAdminExist, AddMember, RemoveMember, ValidateFlag,
@@ -1663,4 +1678,4 @@ export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
     GetChallengeInfo, GetAllUsers, GetAllTeams, RemoveTeam,
     RemoveUser, UpdateChallenge, AdminGetChallenges,
     CreateChallenge, DeleteChallenge, RegisterAdmin, RemoveAdmin,
-    GetAdmins };
+    GetAdmins, ValidateAdmin };
