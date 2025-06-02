@@ -10,6 +10,7 @@ export function Login() {
   // internal lambda
   const HandleLogin = async (event) => {
       event.preventDefault();
+      let msgArea = document.getElementById('msg_popup');
       
       try {
         const response = await fetch(`http://${GetBackendHost()}/login`, {
@@ -29,7 +30,6 @@ export function Login() {
         // get the response output from the above fetch call
         const data = await response.json();
         console.log("Server Response:", data.message);
-        let msgArea = document.getElementById('msg_popup');
         
         if (data.message === "Login Successful!") {
           if (msgArea) {

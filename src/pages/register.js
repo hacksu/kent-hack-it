@@ -11,6 +11,7 @@ export function Register() {
   // internal lambda
   const HandleRegisteration = async (event) => {
       event.preventDefault();
+      let msgArea = document.getElementById('msg_popup');
 
       try {
         const response = await fetch(`http://${GetBackendHost()}/register`, {
@@ -30,7 +31,6 @@ export function Register() {
         // get the response output from the above fetch call
         const data = await response.text();
         console.log("Server Response:", data);
-        let msgArea = document.getElementById('msg_popup');
         
         if (data === "User Added Successfully!") {
           if (msgArea) {
