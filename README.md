@@ -34,3 +34,13 @@ Move the `.env` file into the project root directory, then run the following to 
 # if you want to use the latest node binary replace nodejs -> node
 nodejs ./src/backend/server.js
 ```
+
+## :chart_with_upwards_trend: Production
+You will need to install a dependency to use `serve`, this is recommended after running `npm run build`.
+```bash
+sudo npm install -g serve
+```
+Prepare production build and serve as a static server.
+```bash
+npm run build && server -s build
+```

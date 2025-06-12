@@ -35,10 +35,17 @@ export function Leaderboard() {
     
         const data = await response.json();
         if (data) {
-          setUserData({"username": data.username, "team": data.team})
+          if (data.username && data.team) {
+            setUserData({"username": data.username, "team": data.team})
+          } else {
+            setUserData(null)  
+          }
+        } else {
+          setUserData(null)
         }
       } catch (error) {
         console.error("Error sending request:", error);
+        setUserData(null)
       }
     }
     GetInfo();
@@ -75,7 +82,8 @@ export function Leaderboard() {
 
         <div className="container mt-2 d-flex justify-content-center gap-3">
           {/* THIS CARD ONLY SHOWS WHEN A USER IS AUTHENTICATED */}
-          {userData && (
+          {console.log(userData)}
+          {(userData) && (
             <div
               className="card shadow-sm"
               style={{ minWidth: '200px', maxWidth: '300px', width: '100%' }}
