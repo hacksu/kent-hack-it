@@ -1795,7 +1795,7 @@ async function ValidateAdmin(username, password) {
 }
 
 export { LoginUser, LoginAdmin, RegisterUser, GetUserProfile, UpdateUserProfile,
-    GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam,
+    GetTeamInfo, SendTeamRequest, CreateTeam, UpdateTeam, Hash_SHA256,
     DoesExist, DoesAdminExist, AddMember, RemoveMember, ValidateFlag,
     ConvertCompletions, ReplaceLeader, UserRatingChallenge,
     GetChallengeInfo, GetAllUsers, GetAllTeams, RemoveTeam,

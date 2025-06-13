@@ -1,5 +1,5 @@
 import GetChallenges, { LoginUser, LoginAdmin, RegisterUser,
-    GetUserProfile, UpdateUserProfile, GetTeamInfo,
+    GetUserProfile, UpdateUserProfile, GetTeamInfo, Hash_SHA256,
     SendTeamRequest, CreateTeam, UpdateTeam, DoesExist, DoesAdminExist,
     AddMember, RemoveMember, ValidateFlag, ConvertCompletions,
     ReplaceLeader, UserRatingChallenge, GetChallengeInfo,
@@ -257,18 +257,22 @@ app.get('/user/verify', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        // pull username and email from JWT
-        // and check if it exists in the DB
-        const username = validJWT.username;
-        const email = validJWT.email;
+        try {
+            // pull username and email from JWT
+            // and check if it exists in the DB
+            const username = validJWT.username;
+            const email = validJWT.email;
 
-        const userExists = await DoesExist(username, email);
-        if (userExists) {
-            return res.json({
-                authenticated: true,
-                username: validJWT.username
-            });
-        } else {
+            const userExists = await DoesExist(username, email);
+            if (userExists) {
+                return res.json({
+                    authenticated: true,
+                    username: validJWT.username
+                });
+            } else {
+                return res.json({ authenticated: false });
+            }
+        } catch {
             return res.json({ authenticated: false });
         }
     } else {
@@ -281,21 +285,25 @@ app.get('/admin/verify', async (req, res) => {
     const validJWT = await DecodeAdminJWT(res, token);
 
     if (validJWT) {
-        // pull username from JWT
-        // and check if it exists in the DB
-        const username = validJWT.username;
+        try {
+            // pull username from JWT
+            // and check if it exists in the DB
+            const username = validJWT.username;
 
-        console.log("Admin Token Valid")
-        console.log("Checking username in Token")
+            console.log("Admin Token Valid")
+            console.log("Checking username in Token")
 
-        const adminExists = await DoesAdminExist(username);
-        if (adminExists) {
-            console.log("Fully Verified Admin Token!")
-            return res.json({
-                authenticated: true,
-                username: validJWT.username
-            });
-        } else {
+            const adminExists = await DoesAdminExist(username);
+            if (adminExists) {
+                console.log("Fully Verified Admin Token!")
+                return res.json({
+                    authenticated: true,
+                    username: validJWT.username
+                });
+            } else {
+                return res.json({ authenticated: false });
+            }
+        } catch {
             return res.json({ authenticated: false });
         }
     } else {
@@ -308,15 +316,19 @@ app.get('/user/info', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const userData = await GetUserProfile(validJWT.username);
-        
-        if (userData === null) {
-            return res.json(null);
+        try {
+            const userData = await GetUserProfile(validJWT.username);
+            
+            if (userData === null) {
+                return res.json(null);
+            }
+    
+            // { username, email, team, completions, is_leader, user_rates }
+            // console.log(`User Info --> ${JSON.stringify(userData)}`);
+            return res.json(userData);
+        } catch {
+            return res.json({ authenticated: false });
         }
-
-        // { username, email, team, completions, is_leader, user_rates }
-        // console.log(`User Info --> ${JSON.stringify(userData)}`);
-        return res.json(userData);
     } else {
         return res.json({ authenticated: false });
     }
@@ -328,23 +340,27 @@ app.post('/user/update', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        // null | { message, token }
-        const profileUpdate = await UpdateUserProfile(data, validJWT);
-
-        // when profiles are updated a new JWT is generated
-        // incase username or email values have been altered
-        if (profileUpdate) {
-            res.cookie('khi_token', profileUpdate.token, {
-                httpOnly: true,
-                secure: false,           // set to true if using HTTPS
-                sameSite: 'lax',         // or 'none' if cross-site and using HTTPS
-                path: '/',
-                maxAge: 24000 * 60 * 60  // 24 hours
-            });
-            console.log(`[+] Successfully Updated Profile: ${validJWT.username}`);
-            return res.json(profileUpdate);
-        } else {
-            return res.json(null);
+        try {
+            // null | { message, token }
+            const profileUpdate = await UpdateUserProfile(data, validJWT);
+    
+            // when profiles are updated a new JWT is generated
+            // incase username or email values have been altered
+            if (profileUpdate) {
+                res.cookie('khi_token', profileUpdate.token, {
+                    httpOnly: true,
+                    secure: false,           // set to true if using HTTPS
+                    sameSite: 'lax',         // or 'none' if cross-site and using HTTPS
+                    path: '/',
+                    maxAge: 24000 * 60 * 60  // 24 hours
+                });
+                console.log(`[+] Successfully Updated Profile: ${validJWT.username}`);
+                return res.json(profileUpdate);
+            } else {
+                return res.json(null);
+            }
+        } catch {
+            return res.json({ authenticated: false });
         }
     } else {
         return res.json({ authenticated: false });
@@ -357,11 +373,15 @@ app.get('/team/info', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        console.log(`[*] Getting Info for the Team: ${validJWT.username} is in.`);
-        const teamData = await GetTeamInfo(validJWT.username);
-        // null | { ... }
-        // console.log(`Team Info --> "${JSON.stringify(teamData)}"`);
-        return res.json(teamData);
+        try {
+            console.log(`[*] Getting Info for the Team: ${validJWT.username} is in.`);
+            const teamData = await GetTeamInfo(validJWT.username);
+            // null | { ... }
+            // console.log(`Team Info --> "${JSON.stringify(teamData)}"`);
+            return res.json(teamData);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -373,8 +393,12 @@ app.post('/team/request', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const teamRequest = await SendTeamRequest(validJWT.username, data.team_name);
-        return res.json(teamRequest);
+        try {
+            const teamRequest = await SendTeamRequest(validJWT.username, data.team_name);
+            return res.json(teamRequest);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -386,14 +410,18 @@ app.post('/team/create', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const team_name = data.team_name;
-        const team_creator = validJWT.username;
-
-        console.log(`[*] team create post-data --> ${data}`);
-        console.log(`[*] Attempting to create Team: ${team_name}`);
-        const teamCreate = await CreateTeam(team_creator, team_name);
-        // { message }
-        return res.json(teamCreate);
+        try {
+            const team_name = data.team_name;
+            const team_creator = validJWT.username;
+    
+            console.log(`[*] team create post-data --> ${data}`);
+            console.log(`[*] Attempting to create Team: ${team_name}`);
+            const teamCreate = await CreateTeam(team_creator, team_name);
+            // { message }
+            return res.json(teamCreate);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -405,14 +433,18 @@ app.post('/team/update', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const new_team_name = data.team_name;
-        const team_creator = validJWT.username;
-
-        console.log("[*] Attempting to update Team");
-        const teamUpdate = await UpdateTeam(team_creator, new_team_name);
-        // { message }
-        console.log(JSON.stringify(teamUpdate));
-        return res.json(teamUpdate);
+        try {
+            const new_team_name = data.team_name;
+            const team_creator = validJWT.username;
+    
+            console.log("[*] Attempting to update Team");
+            const teamUpdate = await UpdateTeam(team_creator, new_team_name);
+            // { message }
+            console.log(JSON.stringify(teamUpdate));
+            return res.json(teamUpdate);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -424,9 +456,13 @@ app.post('/team/add-member', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const addTeamMember = await AddMember(data.request_id, data.checksum);
-        // null | { message }
-        return res.json(addTeamMember);
+        try {
+            const addTeamMember = await AddMember(data.request_id, data.checksum);
+            // null | { message }
+            return res.json(addTeamMember);    
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -437,9 +473,13 @@ app.post('/team/remove-member', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const removeTeamMember = await RemoveMember(data.member_username, validJWT);
-        // null | { message }
-        return res.json(removeTeamMember);
+        try {
+            const removeTeamMember = await RemoveMember(data.member_username, validJWT);
+            // null | { message }
+            return res.json(removeTeamMember);
+        } catch {
+            return res.json(null);   
+        }
     } else {
         return res.json(null);
     }
@@ -450,10 +490,14 @@ app.post('/team/replace-leader', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const leaderLeaveTeam = await ReplaceLeader(validJWT.username, data);
-        // null | { message }
-        console.log(leaderLeaveTeam);
-        return res.json(leaderLeaveTeam);
+        try {
+            const leaderLeaveTeam = await ReplaceLeader(validJWT.username, data);
+            // null | { message }
+            console.log(leaderLeaveTeam);
+            return res.json(leaderLeaveTeam);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -465,11 +509,16 @@ app.post('/submit-flag', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        console.log("[*] Attempting to check flag value. . .");
-        const checkFlag = await ValidateFlag(data.challenge_id, data.flag, validJWT);
-        // null | { message }
-        console.log(checkFlag);
-        return res.json(checkFlag);
+        try {
+            console.log("[*] Attempting to check flag value. . .");
+            const checkFlag = await ValidateFlag(data.challenge_id, data.flag, validJWT);
+            // null | { message }
+            console.log(checkFlag);
+            return res.json(checkFlag);
+        } catch {
+            console.log("[-] Bad Flag Submission Request!");
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -481,11 +530,15 @@ app.post('/data/get-completions', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        console.log("[*] Attempting to create readable completions. . .");
-        const readableCompletions = await ConvertCompletions(data.userCompletions, data.teamCompletions);
-        // null | { ... }
-        // console.log("[*] CONVERSION-RESULTS: ", readableCompletions);
-        return res.json(readableCompletions);
+        try {
+            console.log("[*] Attempting to create readable completions. . .");
+            const readableCompletions = await ConvertCompletions(data.userCompletions, data.teamCompletions);
+            // null | { ... }
+            // console.log("[*] CONVERSION-RESULTS: ", readableCompletions);
+            return res.json(readableCompletions);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -504,8 +557,12 @@ app.post('/rate-challenge', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const ratingChallenge = await UserRatingChallenge(data, validJWT);
-        return res.json(ratingChallenge);
+        try {
+            const ratingChallenge = await UserRatingChallenge(data, validJWT);
+            return res.json(ratingChallenge);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -604,9 +661,13 @@ app.post('/admin/remove_user', async (req, res) => {
     const validJWT = await DecodeAdminJWT(res, token);
 
     if (validJWT) {
-        console.log("Admin Attmepting to Remove User: " + data.user_id)
-        const action = await RemoveUser(data.user_id);
-        return res.json(action);
+        try {
+            console.log("Admin Attmepting to Remove User: " + data.user_id)
+            const action = await RemoveUser(data.user_id);
+            return res.json(action);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -618,9 +679,13 @@ app.post('/admin/remove_team', async (req, res) => {
     const validJWT = await DecodeAdminJWT(res, token);
 
     if (validJWT) {
-        console.log("Admin Attmepting to Remove Team: " + data.team_id)
-        const action = await RemoveTeam(data.team_id);
-        return res.json(action);
+        try {
+            console.log("Admin Attmepting to Remove Team: " + data.team_id)
+            const action = await RemoveTeam(data.team_id);
+            return res.json(action);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -632,11 +697,15 @@ app.post('/admin/update_challenge', async (req, res) => {
     const validJWT = await DecodeAdminJWT(res, token);
 
     if (validJWT) {
-        console.log("Admin Attmepting to Update Challenge: " + data.challenge_id)
-        const action = await UpdateChallenge(data);
-
-        // { acknowledge, message }
-        return res.json(action);
+        try {
+            console.log("Admin Attmepting to Update Challenge: " + data.challenge_id)
+            const action = await UpdateChallenge(data);
+    
+            // { acknowledge, message }
+            return res.json(action);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -648,11 +717,15 @@ app.post('/admin/create_challenge', async (req, res) => {
     const validJWT = await DecodeAdminJWT(res, token);
 
     if (validJWT) {
-        console.log("Admin Attmepting to Create Challenge: " + data.name)
-        const action = await CreateChallenge(data);
-
-        // { acknowledge, message }
-        return res.json(action);
+        try {
+            console.log("Admin Attmepting to Create Challenge: " + data.name)
+            const action = await CreateChallenge(data);
+    
+            // { acknowledge, message }
+            return res.json(action);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -664,11 +737,15 @@ app.post('/admin/delete_challenge', async (req, res) => {
     const validJWT = await DecodeAdminJWT(res, token);
 
     if (validJWT) {
-        console.log("Admin Attmepting to Delete Challenge: " + data.challenge_id)
-        const action = await DeleteChallenge(data, validJWT.username);
-
-        // { acknowledge, message }
-        return res.json(action);
+        try {
+            console.log("Admin Attmepting to Delete Challenge: " + data.challenge_id)
+            const action = await DeleteChallenge(data, validJWT.username);
+    
+            // { acknowledge, message }
+            return res.json(action);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -705,9 +782,13 @@ app.post('/admin/register', async (req, res) => {
     const validJWT = await DecodeAdminJWT(res, token);
 
     if (validJWT) {
-        const adminData = req.body;
-        const regAdmin = await RegisterAdmin(adminData.username, adminData.password);
-        res.send(regAdmin);
+        try {
+            const adminData = req.body;
+            const regAdmin = await RegisterAdmin(adminData.username, adminData.password);
+            res.send(regAdmin);
+        } catch {
+            res.send("Failed to add Admin!");
+        }
     } else {
         res.send("Failed to add Admin!");
     }
@@ -719,9 +800,13 @@ app.post('/admin/remove_admin', async (req, res) => {
     const validJWT = await DecodeAdminJWT(res, token);
 
     if (validJWT) {
-        console.log("Admin Attmepting to Remove Admin: " + data.username)
-        const action = await RemoveAdmin(data.username);
-        return res.json(action);
+        try {
+            console.log("Admin Attmepting to Remove Admin: " + data.username)
+            const action = await RemoveAdmin(data.username);
+            return res.json(action);
+        } catch {
+            return res.json(null);
+        }
     } else {
         return res.json(null);
     }
@@ -744,29 +829,34 @@ const upload = multer({ storage: storage });
 
 // file name sanitizing while maintaining file endings (.zip, .txt, etc)
 function SanitizeFileName(filename) {
-    // Find last dot position
-    const lastDotIndex = filename.lastIndexOf('.');
-    
-    let namePart = filename;
-    let extensionPart = '';
-    
-    if (lastDotIndex !== -1) {
-        namePart = filename.slice(0, lastDotIndex);
-        extensionPart = filename.slice(lastDotIndex + 1);
-    }
-    
-    // Replace whitespace with underscores, and remove invalid chars from name part
-    namePart = namePart
-        .replace(/\s+/g, '_')
-        .replace(/[^a-zA-Z0-9_]/g, '');
-    
-    // Sanitize extension: only letters and numbers
-    extensionPart = extensionPart.replace(/[^a-zA-Z0-9]/g, '');
-    
-    if (extensionPart.length > 0) {
-        return `${namePart}.${extensionPart}`;
-    } else {
-        return namePart; // no extension
+    try {
+        // Find last dot position
+        const lastDotIndex = filename.lastIndexOf('.');
+        
+        let namePart = filename;
+        let extensionPart = '';
+        
+        if (lastDotIndex !== -1) {
+            namePart = filename.slice(0, lastDotIndex);
+            extensionPart = filename.slice(lastDotIndex + 1);
+        }
+        
+        // Replace whitespace with underscores, and remove invalid chars from name part
+        namePart = namePart
+            .replace(/\s+/g, '_')
+            .replace(/[^a-zA-Z0-9_]/g, '');
+        
+        // Sanitize extension: only letters and numbers
+        extensionPart = extensionPart.replace(/[^a-zA-Z0-9]/g, '');
+        
+        if (extensionPart.length > 0) {
+            return `${namePart}.${extensionPart}`;
+        } else {
+            return namePart; // no extension
+        }
+    } catch {
+        console.error("[-] Error occured Sanatizing Uploaded File Name!")
+        return Hash_SHA256(filename);
     }
 }
 
@@ -775,28 +865,32 @@ app.post('/admin/upload', upload.single('file'), async (req, res) => {
     const validJWT = await DecodeAdminJWT(res, token);
 
     if (validJWT) {
-        console.log("Validating Uploaded File")
-
-        // Check Content-Type of the entire request
-        const contentType = req.headers['content-type'];
-        console.log("Request Content-Type:", contentType);
-
-        // Multer puts file info on req.file
-        const file = req.file;
-        if (!file) return res.json({ "acknowledge":false, "message": 'No file uploaded' });
-
-        console.log("Uploaded file MIME type:", file.mimetype);
-        console.log("Original filename:", file.originalname);
-
-        // different browsers may change the mimetype
-        const allowedMimeTypes = ['application/zip', 'application/x-zip-compressed', 'multipart/x-zip'];
-        if (!allowedMimeTypes.includes(file.mimetype) || !file.originalname.endsWith('.zip')) {
-            fs.unlink(file.path, () => {}); // Cleanup
-            return res.json({ acknowledge: false, message: 'Only .zip files are allowed' });
+        try {
+            console.log("Validating Uploaded File")
+    
+            // Check Content-Type of the entire request
+            const contentType = req.headers['content-type'];
+            console.log("Request Content-Type:", contentType);
+    
+            // Multer puts file info on req.file
+            const file = req.file;
+            if (!file) return res.json({ "acknowledge":false, "message": 'No file uploaded' });
+    
+            console.log("Uploaded file MIME type:", file.mimetype);
+            console.log("Original filename:", file.originalname);
+    
+            // different browsers may change the mimetype
+            const allowedMimeTypes = ['application/zip', 'application/x-zip-compressed', 'multipart/x-zip'];
+            if (!allowedMimeTypes.includes(file.mimetype) || !file.originalname.endsWith('.zip')) {
+                fs.unlink(file.path, () => {}); // Cleanup
+                return res.json({ acknowledge: false, message: 'Only .zip files are allowed' });
+            }
+    
+            console.log("Admin uploading challenge ZIP file")
+            return res.json({ "acknowledge":true, "message": 'File Uploaded Successfully!' });
+        } catch {
+            return res.json(null);
         }
-
-        console.log("Admin uploading challenge ZIP file")
-        return res.json({ "acknowledge":true, "message": 'File Uploaded Successfully!' });
     } else {
         return res.json(null);
     }
@@ -837,27 +931,31 @@ app.post('/admin/delete_file', async (req, res) => {
     const validJWT = await DecodeAdminJWT(res, token);
 
     if (validJWT) {
-        console.log("Verifying Admin Auth")
-
-        if (!(await ValidateAdmin(validJWT.username, data.password))) {
-            console.log("Bad Admin Auth!")
-            return res.json({ "acknowledge":false, "message": 'Error Deleting File!' });
-        }
-        console.log("Valid Admin Auth")
-
-        const filename = SanitizeFileName(data.filename)
-        console.log("Admin Attmepting to Delete File: " + filename)
-
-        const uploadsDir = path.join(__dirname, 'challenge_archives');
-        const filePath = path.join(uploadsDir, filename);
-
         try {
-            console.log(`Attempting to Delete: ${filePath}`)
-            await fs.unlink(filePath);
-            return res.json({ "acknowledge":true, "message": 'File Deleted Successfully!' });
-        } catch (err) {
-            console.log(`Error Deleting: ${filePath}`)
-            return res.json({ "acknowledge":false, "message": 'Error Deleting File!' });
+            console.log("Verifying Admin Auth")
+    
+            if (!(await ValidateAdmin(validJWT.username, data.password))) {
+                console.log("Bad Admin Auth!")
+                return res.json({ "acknowledge":false, "message": 'Error Deleting File!' });
+            }
+            console.log("Valid Admin Auth")
+    
+            const filename = SanitizeFileName(data.filename)
+            console.log("Admin Attmepting to Delete File: " + filename)
+    
+            const uploadsDir = path.join(__dirname, 'challenge_archives');
+            const filePath = path.join(uploadsDir, filename);
+    
+            try {
+                console.log(`Attempting to Delete: ${filePath}`)
+                await fs.unlink(filePath);
+                return res.json({ "acknowledge":true, "message": 'File Deleted Successfully!' });
+            } catch (err) {
+                console.log(`Error Deleting: ${filePath}`)
+                return res.json({ "acknowledge":false, "message": 'Error Deleting File!' });
+            }
+        } catch {
+            return res.json(null);
         }
     } else {
         return res.json(null);
