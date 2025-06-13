@@ -13,9 +13,6 @@ export function Profile() {
   const [email, SetEmail] = useState("");
   const [password, SetPassword] = useState("");
   const [newPassword, SetNewPassword] = useState("");
-  
-  // eslint-disable-next-line
-  const [profileUpdateMsg, SetProfileUpdateMsg] = useState("");
 
   const ShowTeamPage = () => {
     window.location.href = "/profile?mode=1";
@@ -31,6 +28,8 @@ export function Profile() {
       form.classList.add('was-validated');
       return;
     }
+
+    let msgArea = document.getElementById('msg_popup');
 
     try {
       const response = await fetch(`http://${GetBackendHost()}/user/update`, {
@@ -50,9 +49,34 @@ export function Profile() {
       // null | { message }
       const data = await response.json();
       if (data) {
-        SetProfileUpdateMsg(data.message);
+        if (msgArea) {
+          msgArea.innerHTML = "<p style='color: green;'>" + data.message + "</p>";
+          GetInfo();
+        }
       } else {
-        SetProfileUpdateMsg("Failed to Update Profile!")
+        if (msgArea) {
+          msgArea.innerHTML = "<p style='color: red;'>Failed to Update Profile!</p>";
+        }
+      }
+    } catch (error) {
+      if (msgArea) {
+        msgArea.innerHTML = "<p style='color: red;'>Failed to Update Profile!</p>";
+      }
+      console.error("Error sending request:", error);
+    }
+  }
+
+  async function GetInfo() {
+    try {
+      const response = await fetch(`http://${GetBackendHost()}/user/info`, {
+        method: "GET",
+        credentials: 'include'  // ensures cookies are sent
+      });
+  
+      const data = await response.json();
+      if (data) {
+        SetCurrentUsername(data.username);
+        SetCurrentEmail(data.email);
       }
     } catch (error) {
       console.error("Error sending request:", error);
@@ -68,22 +92,6 @@ export function Profile() {
     }
     Verify();
     
-    async function GetInfo() {
-      try {
-        const response = await fetch(`http://${GetBackendHost()}/user/info`, {
-          method: "GET",
-          credentials: 'include'  // ensures cookies are sent
-        });
-    
-        const data = await response.json();
-        if (data) {
-          SetCurrentUsername(data.username);
-          SetCurrentEmail(data.email);
-        }
-      } catch (error) {
-        console.error("Error sending request:", error);
-      }
-    }
     GetInfo();
   }, []); // run once on page-load
 
@@ -108,6 +116,8 @@ export function Profile() {
           <header className="App-header">
             <div className="container mt-5">
               <div className="row justify-content-center">
+                <div id='msg_popup'>
+                </div>
                 <div className="col-md-6">
                   <div className="card shadow">
                     <div className="card-body">
