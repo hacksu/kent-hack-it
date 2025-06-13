@@ -89,6 +89,13 @@ app.use(cors({
     credentials: true                // allow cookies
 }));
 
+// Custom Error Handler to minimize verbose output
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).json({ error: 'An unexpected error occurred.' });
+});
+
+// attempting to cover up digital foot-print
 app.disable('x-powered-by');
 
 /*
