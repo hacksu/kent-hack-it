@@ -366,7 +366,7 @@ app.post('/team/request', async (req, res) => {
     const validJWT = await DecodeJWT(res, token);
 
     if (validJWT) {
-        const teamRequest = await SendTeamRequest(data.sender, data.team_name);
+        const teamRequest = await SendTeamRequest(validJWT.username, data.team_name);
         return res.json(teamRequest);
     } else {
         return res.json(null);

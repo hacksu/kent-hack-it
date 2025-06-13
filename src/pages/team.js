@@ -88,7 +88,6 @@ const Team = () => {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          "sender": profileData.username,
           "team_name": reqTeamName
         }),
         credentials: 'include'  // ensures cookies are sent

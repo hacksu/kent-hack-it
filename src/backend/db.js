@@ -890,6 +890,21 @@ async function SendTeamRequest(sender, team_name) {
     // in the database or if it is a new join-request
     const teamRecord = await TeamCollection.findOne({ name: team_name });
     if (teamRecord) {
+        // check if the sender is already inclueded in the team profile based on team_name
+        const userRecord = await UserCollection.findOne({ username: sender });
+        if (userRecord) {
+            if (userRecord.team_id === teamRecord._id.toString()) {
+                return {
+                    "message": "Could not send request, try again!"
+                };
+            }
+        } else {
+            // user not found
+            return {
+                "message": "Could not send request, try again!"
+            };
+        }
+
         // if the team already has 3 members we need to drop
         // this join-request due to the team being full
         if (teamRecord.members.length === 3) {
@@ -909,7 +924,6 @@ async function SendTeamRequest(sender, team_name) {
         if (requestObject === null) {
             // pull the users _id from the sender variable so if they
             // change their username we maintain data-connection
-            const userRecord = await UserCollection.findOne({ username: sender });
             if (userRecord) {
                 /*
                     sender_id: String, // '_id'
