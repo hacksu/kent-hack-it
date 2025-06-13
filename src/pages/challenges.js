@@ -72,8 +72,7 @@ export function Challenges() {
     const filteredChallenges = [];
 
     for (const challenge of data) {
-      const targetName = challenge.name.replaceAll(' ', '_');
-      const exists = profileData.completions.find(chall => chall.name === targetName);
+      const exists = profileData.completions.find(chall => chall.id === challenge._id);
       if (!exists) {
         filteredChallenges.push(challenge);
       }
@@ -94,8 +93,7 @@ export function Challenges() {
     const filteredChallenges = [];
 
     for (const challenge of data) {
-      const targetName = challenge.name.replaceAll(' ', '_');
-      const exists = teamData.completions.find(chall => chall.name === targetName);
+      const exists = teamData.completions.find(chall => chall.id === challenge._id);
       if (!exists) {
         filteredChallenges.push(challenge);
       }
