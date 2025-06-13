@@ -132,9 +132,6 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
                     showPasswordPrompt((password) => {
                       if (password !== null) {
                         LeaderLeaving(password);
-                      } else {
-                        // User cancelled password input
-                        console.log("Password prompt cancelled");
                       }
                     });
                   }

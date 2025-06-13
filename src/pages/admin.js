@@ -25,7 +25,6 @@ export function Admin() {
       });
 
       const data = await response.json();
-      console.log("Server Response:", data.message);
       let msgArea = document.getElementById('msg_popup');
       
       if (data.message === "Login Successful!") {

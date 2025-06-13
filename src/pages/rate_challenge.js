@@ -47,7 +47,6 @@ export function RatingPage() {
       });
 
       const data = await response.json();
-      console.log("Challenge Details: ", data);
       return data;
     } catch (error) {
       console.error("Error sending request:", error);
@@ -73,9 +72,6 @@ export function RatingPage() {
 
   // Handle form submission for each challenge
   const handleSubmit = async (event, challengeName) => {
-    //event.preventDefault();  // Prevent page reload
-    console.log(`Submitted for ${challengeName}: Rating: ${ratings[challengeName]}`);
-    // Add your logic here to send the data to an API or handle it further
     try {
       const response = await fetch(`http://${GetBackendHost()}/rate-challenge`, {
         method: "POST",
@@ -90,9 +86,6 @@ export function RatingPage() {
       });
 
       const data = await response.json();
-      if (data) {
-        console.log(data.message)
-      }
     } catch (error) {
       console.error("Error sending request:", error);
     }

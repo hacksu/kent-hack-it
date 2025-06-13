@@ -29,7 +29,6 @@ export function Login() {
 
         // get the response output from the above fetch call
         const data = await response.json();
-        console.log("Server Response:", data.message);
         
         if (data.message === "Login Successful!") {
           if (msgArea) {

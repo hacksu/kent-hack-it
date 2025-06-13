@@ -30,7 +30,6 @@ export function Register() {
 
         // get the response output from the above fetch call
         const data = await response.text();
-        console.log("Server Response:", data);
         
         if (data === "User Added Successfully!") {
           if (msgArea) {

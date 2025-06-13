@@ -81,7 +81,6 @@ export function AdminPanel() {
 
       const data = await response.json();
       if (data) {
-        console.log(data)
         setUsers(data);
       }
     } catch (err) {
@@ -247,9 +246,6 @@ export function AdminPanel() {
               setMsgContent("<p style='color: red;'> Error Occured! </p>");
             }
           }
-        } else {
-          // User cancelled password input
-          console.log("Password prompt cancelled");
         }
       });
     }
@@ -383,7 +379,6 @@ export function AdminPanel() {
 
       // get the response output from the above fetch call
       const data = await response.text();
-      console.log("Server Response:", data);
       
       if (data === "Admin Added Successfully!") {
         if (msgArea) {
@@ -477,7 +472,6 @@ export function AdminPanel() {
       const data = await response.json();
       
       if (data) {
-        console.log(data)
         setFiles(data);
       }
     } catch (error) {
@@ -571,9 +565,6 @@ export function AdminPanel() {
               setMsgContent("<p style='color: red;'> Error Occured! </p>");
             }
           }
-        } else {
-          // User cancelled password input
-          console.log("Password prompt cancelled");
         }
       });
     }

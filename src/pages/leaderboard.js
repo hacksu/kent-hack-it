@@ -82,7 +82,6 @@ export function Leaderboard() {
 
         <div className="container mt-2 d-flex justify-content-center gap-3">
           {/* THIS CARD ONLY SHOWS WHEN A USER IS AUTHENTICATED */}
-          {console.log(userData)}
           {(userData) && (
             <div
               className="card shadow-sm"

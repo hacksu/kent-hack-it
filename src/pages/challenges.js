@@ -62,12 +62,10 @@ export function Challenges() {
 
   const SelfFilterChallenges = useCallback(async (data) => {
     if (!profileData) {
-      console.log("No Profile Data!");
       return data;
     }
 
     if (profileData.completions.length === 0) {
-      console.log("No Completions on Profile!");
       return data;
     }
 
@@ -78,8 +76,6 @@ export function Challenges() {
       const exists = profileData.completions.find(chall => chall.name === targetName);
       if (!exists) {
         filteredChallenges.push(challenge);
-      } else {
-        console.log("Completed: ", challenge.name);
       }
     }
 
@@ -118,7 +114,6 @@ export function Challenges() {
       const selfFilteredData = await SelfFilterChallenges(data);
   
       if (!teamData || showSelfCompleted) {
-        console.log("Heres your unfinished business!: ", selfFilteredData);
         setChallenges(selfFilteredData);
       } else {
         setChallenges(teamFilteredData);
