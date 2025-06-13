@@ -132,6 +132,10 @@ function Generate_Checksum() {
     return Hash_SHA256(crypto.randomBytes(64).toString('hex'));
 }
 
+function SanitizeAlphaNumeric(input) {
+    return input.replace(/[^a-zA-Z0-9]/g, '');
+}
+
 async function GenerateJWT(username, email) {
     username = SanitizeString(username);
     email = SanitizeString(email);
@@ -207,7 +211,7 @@ async function GenerateAdminJWT(username) {
 async function UpdateTeamCompletions(team_id) {
     if (team_id === "None" || !team_id) return;
     console.log("[*] Attempting to Update Team Completions. . .");
-    let teamProfile = await TeamCollection.findOne({ _id: team_id });
+    let teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id) });
     if (teamProfile) {
         const mergedCompletions = [];  // Initialize as an array of objects
         const teamMembers = teamProfile.members;
@@ -220,7 +224,7 @@ async function UpdateTeamCompletions(team_id) {
         // remove entries within TeamCollections.completions that contain
         // memberIds that are not contained in the teamMembers Array
         await TeamCollection.updateOne(
-            { _id: team_id },
+            { _id: SanitizeAlphaNumeric(team_id) },
             {
                 $pull: {
                     completions: {
@@ -231,11 +235,11 @@ async function UpdateTeamCompletions(team_id) {
         );
 
         // reference update after a modification
-        teamProfile = await TeamCollection.findOne({ _id: team_id });
+        teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id) });
         console.log("AFTER: ", teamProfile.completions);
 
         for (const memberId of teamMembers) {
-            const memberProfile = await UserCollection.findOne({ _id: memberId });
+            const memberProfile = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(memberId) });
 
             if (!memberProfile || !memberProfile.completions) {
                 continue;
@@ -246,7 +250,7 @@ async function UpdateTeamCompletions(team_id) {
                 const [index, { id, time }] = data; // break down the entry
                 // console.log("Completion Data -> ", { name, time });
 
-                const challengeProfile = await ChallengeCollection.findOne({ _id: id })
+                const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(id) })
                 if (challengeProfile) {
                     // Find if the challenge already exists in mergedCompletions
                     const existingChallenge = mergedCompletions.find(completion => completion.id === id);
@@ -272,7 +276,7 @@ async function UpdateTeamCompletions(team_id) {
 
         // Update the team completions as an array
         await TeamCollection.updateOne(
-            { _id: team_id },
+            { _id: SanitizeAlphaNumeric(team_id) },
             { $set: { completions: mergedCompletions } }
         );
 
@@ -342,7 +346,7 @@ async function GetLeaderboardData() {
         user.name = user.username;
     
         for (const completion of user.completions) {
-            const challengeProfile = await ChallengeCollection.findOne({ _id: completion.id });
+            const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(completion.id) });
             if (challengeProfile) {
                 user.points += challengeProfile.points;
             }
@@ -561,7 +565,7 @@ async function GetUserProfile(username) {
     }
 
     if (userRecord.team_id !== "None") {
-        const teamRecord = await TeamCollection.findOne({ _id: userRecord.team_id });
+        const teamRecord = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(userRecord.team_id) });
         
         // check if the connection matches
         if (teamRecord) {
@@ -680,11 +684,11 @@ async function GetTeamInfo(username) {
         return null;
     }
 
-    const teamRecord = await TeamCollection.findOne({ _id: userProfile.team_id });
+    const teamRecord = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(userProfile.team_id) });
     
     // null | { ... }
     if (teamRecord) {
-        const leader_record = await UserCollection.findOne({ _id: teamRecord.team_leader_id });
+        const leader_record = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(teamRecord.team_leader_id) });
         const members_list = await FetchMemberNames(teamRecord.members);
 
         if (leader_record) {
@@ -704,7 +708,7 @@ async function GetTeamInfo(username) {
                 // need to ensure this Array population finishes before returning
                 const join_requests = await Promise.all(
                     requests.map(async (request) => {
-                        const sender_profile = await UserCollection.findOne({ _id: request.sender_id });
+                        const sender_profile = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(request.sender_id) });
                         if (sender_profile) {
                             return {
                                 "_id": request._id,
@@ -786,7 +790,7 @@ async function CreateTeam(team_creator, team_name) {
                 
                 // update leader_record to show theyre on a team
                 const leaderUpdate = await UserCollection.updateOne(
-                    { _id: leader_id },
+                    { _id: SanitizeAlphaNumeric(leader_id) },
                     { $set: { team_id: addNewTeam._id } }
                 );
 
@@ -831,7 +835,7 @@ async function UpdateTeam(team_creator, new_team_name) {
     const leader_record = await UserCollection.findOne({ username: team_creator });
     if (leader_record) {
         // check if the team_exists
-        const team_exists = await TeamCollection.findOne({ _id: leader_record.team_id })
+        const team_exists = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(leader_record.team_id) })
         if (team_exists) {
             // check if the name matches
             if (new_team_name === team_exists.name) {
@@ -851,7 +855,7 @@ async function UpdateTeam(team_creator, new_team_name) {
 
             // update the name attribute of the team entry
             const updateTeamName = await TeamCollection.updateOne(
-                { _id: leader_record.team_id },
+                { _id: SanitizeAlphaNumeric(leader_record.team_id) },
                 { $set: { name: new_team_name } }
             );
 
@@ -986,13 +990,13 @@ async function AddMember(request_id, checksum) {
 
     // find the request object that has matching attributes
     // to request_id and checksum
-    const joinRequest = await TeamRequestCollection.findOne({ _id: request_id, checksum: checksum })
+    const joinRequest = await TeamRequestCollection.findOne({ _id: SanitizeAlphaNumeric(request_id), checksum: checksum })
     if (joinRequest) {
         console.log("[+] Found Request Object!");
 
         // if there are already 3 members we need to drop this
         // addMember request
-        const teamProfile = await TeamCollection.findOne({ _id: joinRequest.team_id })
+        const teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(joinRequest.team_id) })
         if (teamProfile) {
             if (teamProfile.members.length === 3) {
                 console.log("[-] This Team has reached Maximum number of Members!");
@@ -1005,7 +1009,7 @@ async function AddMember(request_id, checksum) {
         
         // add the sender_id into the team object where _id matches team_id
         const insertNewMember = await TeamCollection.updateOne(
-            { _id: joinRequest.team_id },
+            { _id: SanitizeAlphaNumeric(joinRequest.team_id) },
             { $addToSet: { members: joinRequest.sender_id } }
         );
 
@@ -1016,7 +1020,7 @@ async function AddMember(request_id, checksum) {
 
         // update sender_id user object to show they are on the team
         const updateMemberProfile = await UserCollection.updateOne(
-            { _id: joinRequest.sender_id },
+            { _id: SanitizeAlphaNumeric(joinRequest.sender_id) },
             { $set: { team_id: joinRequest.team_id } }
         );
 
@@ -1026,7 +1030,7 @@ async function AddMember(request_id, checksum) {
         }
 
         // remove all join requests that match sender_id
-        const result = await TeamRequestCollection.deleteMany({ sender_id: joinRequest.sender_id });
+        const result = await TeamRequestCollection.deleteMany({ sender_id: SanitizeAlphaNumeric(joinRequest.sender_id) });
         if (result) {
             console.log(`[*] ${result.deletedCount} requests sent by "${joinRequest.sender_id}" were deleted`);
         }
@@ -1082,7 +1086,7 @@ async function RemoveMember(member_username, jwt) {
     // update the team profile and remove the member from the
     // members Array
     const removeMember = await TeamCollection.updateOne(
-        { _id: memberProfile.team_id },
+        { _id: SanitizeAlphaNumeric(memberProfile.team_id) },
         { $pull: { members: member_id } }
     );
 
@@ -1094,7 +1098,7 @@ async function RemoveMember(member_username, jwt) {
     // update the user profile of member_username and set their
     // team attribute to None
     const updateMemberProfile = await UserCollection.updateOne(
-        { _id: memberProfile._id },
+        { _id: SanitizeAlphaNumeric(memberProfile._id) },
         { $set: { team_id: "None" } }
     );
 
@@ -1118,7 +1122,7 @@ async function SetNewLeader(teamProfile) {
     let maxCompletions = -1;
 
     for (const member_id of teamProfile.members) {
-        const memberProfile = await UserCollection.findOne({ _id: member_id });
+        const memberProfile = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(member_id) });
         if (memberProfile && Array.isArray(memberProfile.completions)) {
             const numCompletions = memberProfile.completions.length;
 
@@ -1241,7 +1245,7 @@ async function ValidateFlag(challenge_id, flag_value, jwt) {
     }
 
     // find the challenge object based off the id
-    const chall = await ChallengeCollection.findOne({ _id: challenge_id })
+    const chall = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(challenge_id) })
     if (chall) {
         // check if the user has already claimed the flag:
         // before doing an insert check if there is an object with
@@ -1314,7 +1318,8 @@ async function ConvertCompletions(userCompletions, teamCompletions) {
         // create new attribute name based on id attribute
         let readableUserCompletions = userCompletions;
         for (let item of readableUserCompletions) {
-            const challengeProfile = await ChallengeCollection.findOne({ _id: item.id })
+            // sanitize the item (alphanum)
+            const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(item.id) })
             if (challengeProfile) {
                 item['name'] = challengeProfile.name;
             }
@@ -1324,7 +1329,8 @@ async function ConvertCompletions(userCompletions, teamCompletions) {
     if (teamCompletions && teamCompletions.length > 0) {
         // Iterate through data and modify memberId using for...of to handle async correctly
         for (let item of teamCompletions) {
-            const memberProfile = await UserCollection.findOne({ _id: item.memberId });
+            // sanitize the item (alphanum)
+            const memberProfile = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(item.memberId) });
             if (memberProfile) {
                 const memberUsername = memberProfile.username;
                 // Replace memberId with memberName
@@ -1333,7 +1339,7 @@ async function ConvertCompletions(userCompletions, teamCompletions) {
             }
 
             // create new attribute name based on id attribute
-            const challengeProfile = await ChallengeCollection.findOne({ _id: item.id })
+            const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(item.id) })
             if (challengeProfile) {
                 item['name'] = challengeProfile.name;
             }
@@ -1453,7 +1459,7 @@ async function GetAllUsers() {
         // resolve team_id to team name for readability
         const team_id = user.team_id;
         if (team_id !== "None") {
-            const teamProfile = await TeamCollection.findOne({ _id: team_id })
+            const teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id) })
             if (teamProfile) {
                 // console.log(teamProfile.name);
                 user.team_id = teamProfile.name;
@@ -1475,7 +1481,7 @@ async function GetAllTeams() {
         // resolve members _id to usernames for readability
         let members = [];
         for (let user_id of team.members) {
-            const userProfile = await UserCollection.findOne({ _id: user_id });
+            const userProfile = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(user_id) });
             if (userProfile) {
                 members.push(userProfile.username);
             } else {
@@ -1484,7 +1490,7 @@ async function GetAllTeams() {
         }
 
         console.log("Team LeaderID: " + team.team_leader_id)
-        const leaderProfile = await UserCollection.findOne({ _id: team.team_leader_id });
+        const leaderProfile = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(team.team_leader_id) });
         if (leaderProfile) {
             members.push(leaderProfile.username);
         } else {
@@ -1506,7 +1512,7 @@ async function RemoveTeam(team_id) {
     }
 
     // change every member and leader team_id to None before deletion
-    const teamProfile = await TeamCollection.findOne({ _id: team_id.toString() })
+    const teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id.toString()) })
     if (teamProfile) {
         // remove all join requests to this team
         await TeamRequestCollection.deleteMany({ team_id: teamProfile._id.toString() });
@@ -1545,7 +1551,7 @@ async function RemoveTeam(team_id) {
 
 async function RemoveUser(user_id) {
     // if the user is a team leader we need to update the team
-    const userProfile = await UserCollection.findOne({ _id: user_id })
+    const userProfile = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(user_id) })
     if (userProfile && userProfile.team_id !== "None") {
         const teamProfile = await TeamCollection.findOne({ _id: userProfile.team_id })
         
@@ -1561,7 +1567,7 @@ async function RemoveUser(user_id) {
         }
     }
 
-    const action = await UserCollection.deleteOne({ _id: user_id });
+    const action = await UserCollection.deleteOne({ _id: SanitizeAlphaNumeric(user_id) });
     if (action.deletedCount === 1) {
         console.log("User Deleted!")
         return { "acknowledge":true, "message":"User Deleted Successfully!" }
@@ -1585,9 +1591,9 @@ async function UpdateChallenge(data) {
     */
 
     const action = await ChallengeCollection.updateOne(
-        { _id: data.challenge_id },
+        { _id: SanitizeAlphaNumeric(data.challenge_id) },
         { $set: {
-            "challenge_id": data.challenge_id,
+            "challenge_id": SanitizeAlphaNumeric(data.challenge_id),
             "name": data.name,
             "description": data.description,
             "category": data.category,
@@ -1698,7 +1704,7 @@ async function DeleteChallenge(data, adminUsername) {
         }
 
         console.log("Attempting to Delete Challenge Entry from DB. . .")
-        const action = await ChallengeCollection.deleteOne({ _id: data.challenge_id })
+        const action = await ChallengeCollection.deleteOne({ _id: SanitizeAlphaNumeric(data.challenge_id) })
         
         if (action.acknowledged && action.deletedCount !== 0) {
             console.log("Deleted Challenge")
