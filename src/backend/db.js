@@ -1404,13 +1404,15 @@ async function UserRatingChallenge(ratingData, jwt) {
 
     // iterate the users completions
     for (const data of Object.entries(userProfile.completions)) {
-        const [index, { id, time }] = data; // break down the entry
+        const [index, { id, time }] = data; // break down the user completion entry
         const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(id) })
 
         if (challengeProfile) {
-            // users completions have the challenge id listed as completed
-            if (challengeProfile._id.toString() === SanitizeAlphaNumeric(id)) {
+            // check if the challengeID given in the request is contained in the users
+            // completion data in the database
+            if (challengeProfile._id.toString() === challengeID) {
                 console.log("[*] User has completed this challenge!")
+                console.log(challengeProfile)
                 completedChallenge = true;
                 break;
             }
