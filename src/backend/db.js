@@ -306,14 +306,11 @@ async function GetChallenges() {
 }
 export default GetChallenges;
 
-// data = { challenge_name }
+// data = { challenge_id }
 async function GetChallengeInfo(data) {
-    const challengeName = SanitizeString(data.challenge_name)
-    if (challengeName === null) {
-        return null
-    } else {
-        const challengeProfile = await ChallengeCollection.findOne({ name: challengeName.replaceAll('_', ' ') })
-        
+    const challengeID = SanitizeAlphaNumeric(data.challenge_id)
+    const challengeProfile = await ChallengeCollection.findOne({ _id: challengeID })
+    if (challengeProfile) {
         return {
             "name": challengeProfile.name,
             "description": challengeProfile.description,
@@ -321,6 +318,8 @@ async function GetChallengeInfo(data) {
             "difficulty": challengeProfile.difficulty,
             "rating": challengeProfile.rating,
         }
+    } else {
+        return null;
     }
 }
 
@@ -1364,8 +1363,17 @@ async function ConvertCompletions(userCompletions, teamCompletions) {
 }
 
 async function UserRatingChallenge(ratingData, jwt) {
-    const userProfile = await UserCollection.findOne({ username: jwt.username, email: jwt.email })
-    if (!userProfile || !ratingData) {
+    const username = SanitizeString(jwt.username);
+    const email = SanitizeString(jwt.email);
+
+    if (!ratingData || username === null || email === null) {
+        console.log("[-] Error rating username or email in JWT malformed!");
+        return null;
+    }
+
+    const userProfile = await UserCollection.findOne({ username: username, email: email })
+    if (!userProfile) {
+        console.log("[-] Profile could not be Found!");
         return null;
     }
 
@@ -1373,11 +1381,7 @@ async function UserRatingChallenge(ratingData, jwt) {
     let completedChallenge = false;
 
     // check that numberRating is a valid number
-    ratingData.challenge_name = SanitizeString(ratingData.challenge_name);
-    if (ratingData.challenge_name === null) {
-        console.log("[-] Error rating challenge_name attribute malformed!");
-        return null;
-    }
+    const challengeID = SanitizeAlphaNumeric(ratingData.challenge_id);
 
     // Check if numberRating is a valid number
     if ( !ValidRatingNumber(ratingData.rating) ) {
@@ -1387,27 +1391,26 @@ async function UserRatingChallenge(ratingData, jwt) {
     }
     
     const numberRating = ratingData.rating;
-    const challengeName = ratingData.challenge_name.replaceAll('_', ' ');
 
-    console.log("Rating Challenge: " + challengeName);
+    console.log("Rating Challenge ID: " + challengeID);
     console.log("|______" + numberRating);
 
     // check if this user has already rated the challenge
     // in ratingData
-    if (userProfile.ratings.includes(challengeName)) {
-        console.log("[*] " + userProfile.username + " has already submitted a rating for: " + challengeName);
+    if (userProfile.ratings.includes(challengeID)) {
+        console.log("[*] " + userProfile.username + " has already submitted a rating for challenge_id: " + challengeID);
         return null;
     }
 
     // iterate the users completions
     for (const data of Object.entries(userProfile.completions)) {
-        const [index, { name, time }] = data; // break down the entry
-        const challengeProfile = await ChallengeCollection.findOne({ name: name.replaceAll('_', ' ') })
+        const [index, { id, time }] = data; // break down the entry
+        const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(id) })
 
         if (challengeProfile) {
-            // users completions have the challenge name
-            // listed as completed
-            if (challengeProfile.name === challengeName) {
+            // users completions have the challenge id listed as completed
+            if (challengeProfile._id.toString() === SanitizeAlphaNumeric(id)) {
+                console.log("[*] User has completed this challenge!")
                 completedChallenge = true;
                 break;
             }
@@ -1416,23 +1419,24 @@ async function UserRatingChallenge(ratingData, jwt) {
 
     // they didnt complete the challenge
     if (!completedChallenge) {
+        console.log("[-] User tried rating a challenge they have not completed!")
         return null;
     } else {
         // they completed the challenge we can take their number rating
         // and apply it to the challenge entry in the db
         await ChallengeCollection.updateOne(
-            { name: challengeName },
+            { _id: challengeID },
             { $push: { user_rates: Number(numberRating) } } // user_rates are used to calulate rating attribute
-        )
+        );
 
         // update the challenges rating attribute based on its user_rates
-        const updatedChallenge = await ChallengeCollection.findOne({ name: challengeName });
+        const updatedChallenge = await ChallengeCollection.findOne({ _id: challengeID });
         if (updatedChallenge && updatedChallenge.user_rates.length > 0) {
             const total = updatedChallenge.user_rates.reduce((sum, r) => sum + r, 0);
             const avg = total / updatedChallenge.user_rates.length;
 
             await ChallengeCollection.updateOne(
-                { name: challengeName },
+                { _id: challengeID },
                 { $set: { rating: avg } }
             );
         }
@@ -1441,8 +1445,10 @@ async function UserRatingChallenge(ratingData, jwt) {
         // they cannot spam ratings for a challenge
         await UserCollection.updateOne(
             { _id: userProfile._id },
-            { $addToSet: { ratings: challengeName } }
-        )
+            { $addToSet: { ratings: challengeID } }
+        );
+
+        console.log("[+] Rate Uploaded Successfully!")
 
         return {
             "message": "Rate Uploaded Successfully!"

@@ -22,7 +22,7 @@ export function RatingPage() {
         let unratedChalls = data.completions;
 
         if (data.user_rates) {
-          unratedChalls = unratedChalls.filter(c => !data.user_rates.includes(c.name.replace(/_/g, " ")));
+          unratedChalls = unratedChalls.filter(c => !data.user_rates.includes(c.id));
         }
         setUnratedChallenges(unratedChalls);
       }
@@ -35,14 +35,14 @@ export function RatingPage() {
     GetProfileDetails();
   }, []); // runs once when the component mounts
 
-  async function GetChallengeDetails(challengeName) {
+  async function GetChallengeDetails(challengeID) {
     try {
       const response = await fetch(`http://${GetBackendHost()}/challenge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ "challenge_name": challengeName }),
+        body: JSON.stringify({ "challenge_id": challengeID }),
         credentials: 'include'  // ensures cookies are sent
       });
 
@@ -54,24 +54,29 @@ export function RatingPage() {
   }
 
   // Fetch the details for each challenge when the component mounts
-  const fetchChallengeData = async (challengeName) => {
-    const data = await GetChallengeDetails(challengeName);
-    setChallengeDetails((prevData) => ({
-      ...prevData,
-      [challengeName]: data
-    }));
+  const fetchChallengeData = async (challengeID) => {
+    const data = await GetChallengeDetails(challengeID);
+    if (data) {
+      setChallengeDetails((prevData) => ({
+        ...prevData,
+        [challengeID]: data
+      }));
+    }
   };
 
   // Handle rating change for each challenge
-  const handleRatingChange = (challengeName, newRating) => {
+  const handleRatingChange = (challengeID, newRating) => {
     setRatings((prevRatings) => ({
       ...prevRatings,
-      [challengeName]: newRating,
+      [challengeID]: newRating,
     }));
   };
 
   // Handle form submission for each challenge
-  const handleSubmit = async (event, challengeName) => {
+  const handleSubmit = async (event, challengeID) => {
+    event.preventDefault();
+    let msgArea = document.getElementById('msg_popup');
+
     try {
       const response = await fetch(`http://${GetBackendHost()}/rate-challenge`, {
         method: "POST",
@@ -79,15 +84,28 @@ export function RatingPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          "challenge_name": challengeName,
-          "rating": ratings[challengeName],
+          "challenge_id": challengeID,
+          "rating": ratings[challengeID],
         }),
         credentials: 'include'  // ensures cookies are sent
       });
 
       const data = await response.json();
+      if (data) {
+        if (msgArea) {
+          msgArea.innerHTML = "<p style='color: green;'>" + data.message + "</p>";
+          GetProfileDetails();
+        }
+      } else {
+        if (msgArea) {
+          msgArea.innerHTML = "<p style='color: red;'>Error Rating Challenge!</p>";
+        }
+      }
     } catch (error) {
       console.error("Error sending request:", error);
+      if (msgArea) {
+        msgArea.innerHTML = "<p style='color: red;'>Error Rating Challenge!</p>";
+      }
     }
   };
 
@@ -95,8 +113,9 @@ export function RatingPage() {
     <div className="App">
       <Navbar />
       <div className="container mt-4">
+        <div id='msg_popup' style={{ fontSize: "2rem", fontWeight: 'bold' }}>
+        </div>
         <h2 className="mb-3">Rating Page</h2>
-
         <div className="row justify-content-center">
           {(profileData && unratedChallenges.length > 0) ? (
             <>
@@ -108,26 +127,25 @@ export function RatingPage() {
                 >
                   <div className="card h-100 shadow-sm p-2">
                     <div className="card-body p-2">
-                      <h6 className="card-title mb-1">{challenge.name.replaceAll('_', ' ')}</h6>
-
                       {/* Fetch challenge details if not already loaded */}
-                      {challengeDetails[challenge.name] ? (
+                      {challengeDetails[challenge.id] ? (
                         <>
+                        <h6 className="card-title mb-1">{challengeDetails[challenge.id].name}</h6>
                           <small className="text-muted">
-                            {challengeDetails[challenge.name].category} | Difficulty: {challengeDetails[challenge.name].difficulty}
+                            {challengeDetails[challenge.id].category} | Difficulty: {challengeDetails[challenge.id].difficulty}
                           </small>
-                          <p className="card-text small mt-2">{challengeDetails[challenge.name].description}</p>
+                          <p className="card-text small mt-2">{challengeDetails[challenge.id].description}</p>
                           <p className="card-text small mb-1">
-                            ⭐ {challengeDetails[challenge.name].rating} / 5
+                            ⭐ {challengeDetails[challenge.id].rating} / 5
                           </p>
 
-                          <form onSubmit={(event) => handleSubmit(event, challenge.name)}>
+                          <form onSubmit={(event) => handleSubmit(event, challenge.id)}>
                             <div>
-                              <label htmlFor={`rating-${challenge.name}`}>Rating (1-5): </label>
+                              <label htmlFor={`rating-${challenge.id}`}>Rating (1-5): </label>
                               <select
-                                id={`rating-${challenge.name}`}
-                                value={ratings[challenge.name] || "select rating"} // default rating if not set
-                                onChange={(e) => handleRatingChange(challenge.name, e.target.value)}
+                                id={`rating-${challenge.id}`}
+                                value={ratings[challenge.id] || "select rating"} // default rating if not set
+                                onChange={(e) => handleRatingChange(challenge.id, e.target.value)}
                               >
                                 {["select rating", 1, 2, 3, 4, 5].map((value) => (
                                   <option key={value} value={value}>
@@ -148,7 +166,7 @@ export function RatingPage() {
                       ) : (
                         <>
                           <p>Loading Challenge Info. . .</p>
-                          {fetchChallengeData(challenge.name)} {/* Fetch the data on load */}
+                          {fetchChallengeData(challenge.id)} {/* Fetch the data on load */}
                         </>
                       )}
                     </div>

@@ -132,6 +132,7 @@ app.get('/challenges', async (req, res) => {
 
 app.post('/challenge', async (req, res) => {
     const data = req.body;
+    // fetches details from given challenge id
     const challenge_details = await GetChallengeInfo(data);
     res.json(challenge_details);
 });
@@ -560,7 +561,8 @@ app.post('/rate-challenge', async (req, res) => {
         try {
             const ratingChallenge = await UserRatingChallenge(data, validJWT);
             return res.json(ratingChallenge);
-        } catch {
+        } catch (err) {
+            console.error(err)
             return res.json(null);
         }
     } else {
