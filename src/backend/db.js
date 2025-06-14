@@ -420,10 +420,9 @@ async function DoesAdminExist(username) {
 
 async function RegisterUser(username, password, email) {
     username = SanitizeString(username);
-    password = SanitizeString(password);
     email = SanitizeString(email);
 
-    if (username === null || password === null || email === null) {
+    if (username === null || email === null) {
         return "Login Failed!";
     }
 
@@ -455,9 +454,8 @@ async function RegisterUser(username, password, email) {
 
 async function LoginUser(username, password) {
     username = SanitizeString(username);
-    password = SanitizeString(password);
 
-    if (username === null || password === null) {
+    if (username === null) {
         return "Username of Password Incorrect!";
     }
 
@@ -502,9 +500,8 @@ async function LoginUser(username, password) {
 
 async function LoginAdmin(username, password) {
     username = SanitizeString(username);
-    password = SanitizeString(password);
 
-    if (username === null || password === null) {
+    if (username === null) {
         console.log("Potentially Malformed Data!");
         return "Username of Password Incorrect!";
     }
@@ -1729,9 +1726,8 @@ async function DeleteChallenge(data, adminUsername) {
 
 async function RegisterAdmin(username, password) {
     username = SanitizeString(username);
-    password = SanitizeString(password);
 
-    if (username === null || password === null) {
+    if (username === null) {
         return "Register Failed!";
     }
 
