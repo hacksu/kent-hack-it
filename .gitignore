@@ -5,7 +5,7 @@
 /coverage
 /build
 
-/src/backend/challenge_archives/*.zip
+backend/challenge_archives/*.zip
 
 .DS_Store
 .env
