@@ -4,24 +4,14 @@ Website repo for the Kent Hack It CTF
 ## What is this?
 The frontend uses ReactJS that communicates to a ExpressJS backend that handles: user login/registration, team creation/joining, and flag submission.
 
-## :hammer: Install Dependencies
+## :computer: Development Installation
+### :hammer: Install Dependencies
 ```bash
 # if you do not have NodeJS installed
 sudo apt update && sudo apt install nodejs npm
-
-# use npm to install latest node
-sudo npm install -g n && sudo n stable
-
-# if you do not want to keep the older nodejs binary on the system:
-# replace old nodejs for new nodejs
-$oldNode = $(which nodejs)
-sudo rm -f $oldNode
-
-# create a symlink named nodejs to execute the node binary
-sudo ln -s $(which node) $oldNode
 ```
 
-## :wrench: Build
+### :wrench: Build
 ```bash
 # installs dependencies/packages tracked by this project
 npm install .
@@ -31,16 +21,22 @@ npm start
 
 Move the `.env` file into the project root directory, then run the following to run the backend locally.
 ```bash
-# if you want to use the latest node binary replace nodejs -> node
-nodejs ./src/backend/server.js
+nodejs backend/server.mjs
 ```
 
 ## :chart_with_upwards_trend: Production
-You will need to install a dependency to use `serve`, this is recommended after running `npm run build`.
+This project uses Docker :whale: for production set-up
 ```bash
-sudo npm install -g serve
+sudo apt update && sudo apt install docker.io docker-compose
 ```
-Prepare production build and serve as a static server.
+The following commands will build the docker via compose which builds the multi-docker system.
 ```bash
-npm run build && server -s build
+cd docker
+docker network create traefik
+docker-compose -p khi up --build
+```
+The following commands will build ONLY the khi website docker.
+```bash
+docker build -f docker/Dockerfile -t image_name .
+docker run -d -p 8080:80 --name docker_name image_name
 ```

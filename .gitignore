@@ -4,6 +4,7 @@
 
 /coverage
 /build
+/docker/resumes
 
 backend/challenge_archives/*.zip
 
