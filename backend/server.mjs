@@ -67,7 +67,7 @@ const app = express();
 #################################################################
 */
 const host = "0.0.0.0"
-const port = process.env.REACT_APP_BACKEND_PORT;
+const port = 4000;
 
 // Allows data to be sent from post requests
 app.use(express.urlencoded({ extended: true }));
@@ -75,8 +75,8 @@ app.use(express.json()); // middleware to handle JSON
 app.use(cookieParser()); // Access cookies
 
 const allowedOrigins = [
-    `http://localhost:${process.env.FRONT_END_PORT}`,                  // local dev
-    `http://${process.env.LAN_HOST}:${process.env.FRONT_END_PORT}`,   // LAN live frontend
+    `http://localhost:80`,                  // local dev
+    `http://localhost:8080`,
     // 'https://khi.io'                     // production site
 ];
 

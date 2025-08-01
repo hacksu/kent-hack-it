@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import AdminNavbar, { VerifyAdminSession, GetBackendHost } from '../components/admin_navbar.js';
+import AdminNavbar, { VerifyAdminSession } from '../components/admin_navbar.js';
 import showPasswordPrompt from '../components/prompt.js';
 import '../App.css';
 
@@ -16,7 +16,7 @@ export function AdminPanel() {
 
   async function GetTeams() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/get_teams`, {
+      const response = await fetch(`/api/admin/get_teams`, {
         method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });
@@ -36,7 +36,7 @@ export function AdminPanel() {
   async function removeTeam(id) {
     let msgArea = document.getElementById('msg_popup');
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/remove_team`, {
+      const response = await fetch(`/api/admin/remove_team`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -74,7 +74,7 @@ export function AdminPanel() {
 
   async function GetUsers() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/get_users`, {
+      const response = await fetch(`/api/admin/get_users`, {
         method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });
@@ -94,7 +94,7 @@ export function AdminPanel() {
   async function removeUser(user_id) {
     let msgArea = document.getElementById('msg_popup');
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/remove_user`, {
+      const response = await fetch(`/api/admin/remove_user`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -149,7 +149,7 @@ export function AdminPanel() {
 
   async function FetchChallenges() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/challenges`);
+      const response = await fetch(`/api/challenges`);
       const data = await response.json();
       if (data) setChallenges(data);
     } catch (err) {
@@ -159,7 +159,7 @@ export function AdminPanel() {
 
   async function GetChallengeInfo(id) {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/fetch_challenges`);
+      const response = await fetch(`/api/admin/fetch_challenges`);
       const data = await response.json();
       if (data) {
         const challenge = data.find(c => c._id === id);
@@ -216,7 +216,7 @@ export function AdminPanel() {
       showPasswordPrompt(async (password) => {
         if (password !== null) {
           try {
-            const response = await fetch(`http://${GetBackendHost()}/admin/delete_challenge`, {
+            const response = await fetch(`/api/admin/delete_challenge`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -256,7 +256,7 @@ export function AdminPanel() {
     let msgArea = document.getElementById('msg_popup');
     
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/update_challenge`, {
+      const response = await fetch(`/api/admin/update_challenge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -317,7 +317,7 @@ export function AdminPanel() {
     let msgArea = document.getElementById('msg_popup');
 
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/create_challenge`, {
+      const response = await fetch(`/api/admin/create_challenge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -363,7 +363,7 @@ export function AdminPanel() {
     let msgArea = document.getElementById('msg_popup');
 
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/register`, {
+      const response = await fetch(`/api/admin/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -404,7 +404,7 @@ export function AdminPanel() {
   const [admins, setAdmins] = useState([]);
   async function getAdmins() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/fetch_admins`, {
+      const response = await fetch(`/api/admin/fetch_admins`, {
         method: "GET",
         credentials: 'include'
       });
@@ -423,7 +423,7 @@ export function AdminPanel() {
     let msgArea = document.getElementById('msg_popup');
 
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/remove_admin`, {
+      const response = await fetch(`/api/admin/remove_admin`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -464,7 +464,7 @@ export function AdminPanel() {
 
   async function fetchUploads() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/get_uploads`, {
+      const response = await fetch(`/api/admin/get_uploads`, {
         method: "GET",
         credentials: 'include'
       });
@@ -502,7 +502,7 @@ export function AdminPanel() {
     let msgArea = document.getElementById('msg_popup');
 
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/upload`, {
+      const response = await fetch(`/api/admin/upload`, {
         method: "POST",
         body: formData,
         credentials: 'include'
@@ -535,7 +535,7 @@ export function AdminPanel() {
       showPasswordPrompt(async (password) => {
         if (password !== null) {
           try {
-            const response = await fetch(`http://${GetBackendHost()}/admin/delete_file`, {
+            const response = await fetch(`/api/admin/delete_file`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -1202,7 +1202,7 @@ export function AdminPanel() {
                         style={{ fontSize: '0.9rem', minWidth: '300px', maxWidth: '600px' }}
                       >
                         <a
-                          href={`http://${GetBackendHost()}/download/${file}`}
+                          href={`/api/download/${file}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-decoration-none text-muted flex-grow-1 custom-hover-dark"

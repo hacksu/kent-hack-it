@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
-import Navbar, { VerifySession, LogoutUser, GetBackendHost } from '../components/navbar.js';
+import Navbar, { VerifySession, LogoutUser } from '../components/navbar.js';
 
 export function Challenges() {
   const [challenges, setChallenges] = useState([]);
@@ -16,7 +16,7 @@ export function Challenges() {
 
   async function GetProfileDetails() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/user/info`, {
+      const response = await fetch(`/api/user/info`, {
         method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });
@@ -42,7 +42,7 @@ export function Challenges() {
   // and used to allow team-members to view their team stats
   async function GetTeamDetails() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/team/info`, {
+      const response = await fetch(`/api/team/info`, {
         method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });
@@ -105,7 +105,7 @@ export function Challenges() {
   
   const FetchChallenges = useCallback(async () => {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/challenges`);
+      const response = await fetch(`/api/challenges`);
       const data = await response.json();
   
       const teamFilteredData = await TeamFilterChallenges(data);

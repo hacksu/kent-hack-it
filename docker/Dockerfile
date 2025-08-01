@@ -1,7 +1,7 @@
 FROM nginx:latest
 WORKDIR /
 
-# setup for mongo container:
+# setup for mongo container manually:
 # docker run -d --name khi_db -e MONGO_INITDB_ROOT_USERNAME=env.user -e MONGO_INITDB_ROOT_PASSWORD=env.password -e MONGO_INITDB_DATABASE=env.db -v mongodb_data:/data/db -p 27017:27017 mongo:latest
 RUN apt-get update && apt-get install -y supervisor sudo nodejs npm net-tools
 

@@ -1,7 +1,7 @@
 import '../App.css';
 import { useState } from 'react'; // needed to allow for form interaction
 
-import Navbar, { GetBackendHost } from '../components/navbar.js'
+import Navbar from '../components/navbar.js'
 
 export function Login() {
   const [username, SetUsername] = useState(""); // variable pair to modify a variable based on a funct-name
@@ -13,7 +13,7 @@ export function Login() {
       let msgArea = document.getElementById('msg_popup');
       
       try {
-        const response = await fetch(`http://${GetBackendHost()}/login`, {
+        const response = await fetch(`/api/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

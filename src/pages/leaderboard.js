@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Navbar, { GetBackendHost } from '../components/navbar.js';
+import Navbar from '../components/navbar.js';
 import '../App.css';
 
 export function Leaderboard() {
@@ -9,7 +9,7 @@ export function Leaderboard() {
 
   async function FetchLeaderboard() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/data/leaderboard`, {
+      const response = await fetch(`/api/data/leaderboard`, {
         method: "GET",
         credentials: 'include'
       });
@@ -28,7 +28,7 @@ export function Leaderboard() {
   useEffect(() => {
     async function GetInfo() {
       try {
-        const response = await fetch(`http://${GetBackendHost()}/user/info`, {
+        const response = await fetch(`/api/user/info`, {
           method: "GET",
           credentials: 'include'  // ensures cookies are sent
         });

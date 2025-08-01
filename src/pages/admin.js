@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AdminNavbar, { GetBackendHost } from '../components/admin_navbar.js'
+import AdminNavbar from '../components/admin_navbar.js'
 import '../App.css';
 
 export function Admin() {
@@ -10,7 +10,7 @@ export function Admin() {
     event.preventDefault();
     
     try {
-      const response = await fetch(`http://${GetBackendHost()}/admin/login`, {
+      const response = await fetch(`/api/admin/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

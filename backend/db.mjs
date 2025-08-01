@@ -12,9 +12,10 @@ function MongoURI() {
     const db_pass = process.env.DB_PASS;
     const db_name = process.env.DB_NAME;
 
-    return "mongodb://" + db_user + ":" + db_pass + "@localhost:27017/" + db_name;
+    return "mongodb://" + db_user + ":" + db_pass + "@khi_db:27017/" + db_name + "?authSource=admin";
 }
 
+console.log(`[*] Attempting to Connect to: ${MongoURI()}`);
 // Connect to MongoDB
 mongoose.connect(MongoURI()).then(() => {
     console.log('Connected to MongoDB');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../App.css';
-import Navbar, { GetBackendHost } from '../components/navbar.js';
+import Navbar from '../components/navbar.js';
 
 export function RatingPage() {
   const [profileData, SetProfileData] = useState(null);
@@ -10,7 +10,7 @@ export function RatingPage() {
 
   async function GetProfileDetails() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/user/info`, {
+      const response = await fetch(`/api/user/info`, {
         method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });
@@ -37,7 +37,7 @@ export function RatingPage() {
 
   async function GetChallengeDetails(challengeID) {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/challenge`, {
+      const response = await fetch(`/api/challenge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +78,7 @@ export function RatingPage() {
     let msgArea = document.getElementById('msg_popup');
 
     try {
-      const response = await fetch(`http://${GetBackendHost()}/rate-challenge`, {
+      const response = await fetch(`/api/rate-challenge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

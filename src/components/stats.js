@@ -1,5 +1,4 @@
 import '../App.css';
-import { GetBackendHost } from '../components/navbar.js';
 import { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 
@@ -14,7 +13,7 @@ const Stats = ({ TEAM_DATA, PROFILE_DATA }) => {
   // Define the GatherData function inside the component
   async function GatherData() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/data/get-completions`, {
+      const response = await fetch(`/api/data/get-completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

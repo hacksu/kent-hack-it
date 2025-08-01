@@ -2,11 +2,11 @@ import '../App.css';
 import showPasswordPrompt from '../components/prompt.js';
 
 const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
-                      SetNewTeamName, BackendHost, SetTeamUpdateMsg }) => {
+                      SetNewTeamName, SetTeamUpdateMsg }) => {
   
   const RemoveMember = async (member_name) => {
     try {
-      const response = await fetch(`http://${BackendHost}/team/remove-member`, {
+      const response = await fetch(`/api/team/remove-member`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -34,7 +34,7 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
   };
   const AddMember = async (req_id, checksum) => {
     try {
-      const response = await fetch(`http://${BackendHost}/team/add-member`, {
+      const response = await fetch(`/api/team/add-member`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -65,7 +65,7 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
   
   const LeaderLeaving = async (passwd) => {
     try {
-      const response = await fetch(`http://${BackendHost}/team/replace-leader`, {
+      const response = await fetch(`/api/team/replace-leader`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
