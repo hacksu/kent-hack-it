@@ -38,6 +38,7 @@ async function VerifyAdminSession() {
     return (data.authenticated === true);
   } catch (error) {
     console.error("Error sending request:", error);
+    return false;
   }
 }
 
