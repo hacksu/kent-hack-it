@@ -1,7 +1,10 @@
 #!/bin/bash
+# THIS SCRIPT IS RESPONSIBLE FOR CREATING THE SUPER ADMIN
+# FOR THE KHI WEBSITE (THIS ADMIN CANNOT BE REMOVED FROM THE ADMIN PANEL)
 
 username="admin" # OPTIONAL to change
 password="admin" # CHANGE THIS IN PRODUCTION
+
 salt="" # SALT .env
 hashed=$(echo -n "${salt}${password}" | sha256sum | awk '{print $1}')
 

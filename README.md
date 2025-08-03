@@ -35,9 +35,8 @@ npm run build
 The following commands will build the docker via compose which builds the multi-docker system.
 You will also need to move the docker related `.env` into the docker folder (dir of Dockerfile) before running the following:
 ```bash
-cd docker
 docker network create traefik
-docker-compose -p khi up --build
+docker-compose --env-file .env -p khi -f docker/docker-compose.yml up --build
 ```
 The following commands will build ONLY the khi website docker image that you later start via `docker run -d ...`.
 ```bash
