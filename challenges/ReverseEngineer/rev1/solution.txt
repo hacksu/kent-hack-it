@@ -1,0 +1,3 @@
+This generator uses insecure randomess, therefor we need to get an epoch in minutes estimate using a pair of given credentials. The attacker will need to hardcode their epoch minute value and give in the credentials they were given in order to generate the mfa code they pass to the system in order to then recv the flag!
+
+The flag is sent via the python script, it will capture and hold the correct MFA for the credentials coded within it and use socket server to accept connections from an attackers netcat (nc) and from there they will give the code where the python app will perform a comparison and send a response.
