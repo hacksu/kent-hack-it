@@ -1,0 +1,5 @@
+mkdir build
+cd build
+cmake ../ && make
+
+Challenge box will run `tunnet` and the player is given the compiled `client`.
