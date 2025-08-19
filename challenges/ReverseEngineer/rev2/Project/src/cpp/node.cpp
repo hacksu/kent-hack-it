@@ -1,11 +1,11 @@
 #include <node.hpp>
 
 Node::Node(): initialized(false) {}
-Node::Node(std::string n, std::string u, std::string p) {
+Node::Node(std::string n, std::string u, std::string p, std::vector<std::string> notes_) {
     name = n;
     username = u;
     password = p;
-    notes = {};
+    notes = notes_;
     initialized = true;
 }
 

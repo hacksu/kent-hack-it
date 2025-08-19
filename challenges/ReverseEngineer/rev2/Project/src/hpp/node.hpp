@@ -9,7 +9,7 @@
 class Node {
 public:
     Node();
-    Node(std::string n, std::string u, std::string p);
+    Node(std::string n, std::string u, std::string p, std::vector<std::string> notes_ = {});
     bool Accept(const std::string& u, const std::string& p);
 
     std::string GetName() const;
