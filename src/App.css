@@ -50,10 +50,21 @@
   font-size: 1.5rem;
   color: white !important;
   text-decoration: none;
+  padding: 0.25rem 0.5rem !important;
+}
+
+.navbar-brand img {
+  transition: all 0.3s ease;
+  margin: 0;
 }
 
 .navbar-brand:hover {
   color: #f0f0f0 !important;
+}
+
+.navbar-brand:hover img {
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
 }
 
 .nav-link {
