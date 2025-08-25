@@ -2,7 +2,6 @@
   "name": "kent-hack-it",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -24,8 +23,8 @@
     "web-vitals": "^2.1.4"
   },
   "engines": {
-    "node": ">=18.19.1",
-    "npm": ">=9.2.0"
+    "node": ">=18.19",
+    "npm": ">=9.2"
   },
   "scripts": {
     "start": "react-scripts start",

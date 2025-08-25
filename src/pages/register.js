@@ -1,7 +1,7 @@
 import '../App.css';
 import { useState } from 'react'; // needed to allow for form interaction
 
-import Navbar, { GetBackendHost } from '../components/navbar.js'
+import Navbar from '../components/navbar.js'
 
 export function Register() {
   const [username, SetUsername] = useState(""); // variable pair to modify a variable based on a funct-name
@@ -14,7 +14,7 @@ export function Register() {
       let msgArea = document.getElementById('msg_popup');
 
       try {
-        const response = await fetch(`http://${GetBackendHost()}/register`, {
+        const response = await fetch(`/api/register`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

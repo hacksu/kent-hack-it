@@ -1,14 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'; // needed to interact with the React App BrowserRouter
 
-function GetBackendHost() {
-  const BACKEND_HOST = process.env.REACT_APP_BACKEND_HOST;
-  const BACKEND_PORT = process.env.REACT_APP_BACKEND_PORT;
-  return `${BACKEND_HOST}:${BACKEND_PORT}`;
-}
-
 async function LogoutAdmin() {
-  const response = await fetch(`http://${GetBackendHost()}/admin/logout`, {
+  const response = await fetch(`/api/admin/logout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -35,7 +29,7 @@ const HandleLogout = async (event) =>  {
 
 async function VerifyAdminSession() {
   try {
-    const response = await fetch(`http://${GetBackendHost()}/admin/verify`, {
+    const response = await fetch(`/api/admin/verify`, {
       method: "GET",
       credentials: 'include'
     });
@@ -44,6 +38,7 @@ async function VerifyAdminSession() {
     return (data.authenticated === true);
   } catch (error) {
     console.error("Error sending request:", error);
+    return false;
   }
 }
 
@@ -94,4 +89,4 @@ function AdminNavbar() {
 }
 export default AdminNavbar;
 
-export { VerifyAdminSession, LogoutAdmin, GetBackendHost };
+export { VerifyAdminSession, LogoutAdmin };

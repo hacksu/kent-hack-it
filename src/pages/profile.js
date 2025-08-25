@@ -2,7 +2,7 @@ import '../App.css';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from "react-router-dom";
 import Team from './team.js'
-import Navbar, { VerifySession, GetBackendHost } from '../components/navbar.js'
+import Navbar, { VerifySession } from '../components/navbar.js'
 
 export function Profile() {
   const [currentUsername, SetCurrentUsername] = useState("");
@@ -32,7 +32,7 @@ export function Profile() {
     let msgArea = document.getElementById('msg_popup');
 
     try {
-      const response = await fetch(`http://${GetBackendHost()}/user/update`, {
+      const response = await fetch(`/api/user/update`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -68,7 +68,7 @@ export function Profile() {
 
   async function GetInfo() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/user/info`, {
+      const response = await fetch(`/api/user/info`, {
         method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../App.css';
-import Navbar, { GetBackendHost } from '../components/navbar.js';
+import Navbar from '../components/navbar.js';
 
 export function RatingPage() {
   const [profileData, SetProfileData] = useState(null);
@@ -10,7 +10,7 @@ export function RatingPage() {
 
   async function GetProfileDetails() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/user/info`, {
+      const response = await fetch(`/api/user/info`, {
         method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });
@@ -37,7 +37,7 @@ export function RatingPage() {
 
   async function GetChallengeDetails(challengeID) {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/challenge`, {
+      const response = await fetch(`/api/challenge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +78,7 @@ export function RatingPage() {
     let msgArea = document.getElementById('msg_popup');
 
     try {
-      const response = await fetch(`http://${GetBackendHost()}/rate-challenge`, {
+      const response = await fetch(`/api/rate-challenge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -110,7 +110,7 @@ export function RatingPage() {
   };
 
   return (
-    <div className="App">
+    <div className="App page-background">
       <Navbar />
       <div className="container mt-4">
         <div id='msg_popup' style={{ fontSize: "2rem", fontWeight: 'bold' }}>
@@ -130,20 +130,21 @@ export function RatingPage() {
                       {/* Fetch challenge details if not already loaded */}
                       {challengeDetails[challenge.id] ? (
                         <>
-                        <h6 className="card-title mb-1">{challengeDetails[challenge.id].name}</h6>
+                        <h6 className="card-title mb-1" style={{ color: '#2e5c87' }}>{challengeDetails[challenge.id].name}</h6>
                           <small className="text-muted">
                             {challengeDetails[challenge.id].category} | Difficulty: {challengeDetails[challenge.id].difficulty}
                           </small>
-                          <p className="card-text small mt-2">{challengeDetails[challenge.id].description}</p>
-                          <p className="card-text small mb-1">
+                          <p className="card-text small mt-2" style={{ color: '#333' }}>{challengeDetails[challenge.id].description}</p>
+                          <p className="card-text small mb-1" style={{ color: '#333' }}>
                             ⭐ {challengeDetails[challenge.id].rating} / 5
                           </p>
 
                           <form onSubmit={(event) => handleSubmit(event, challenge.id)}>
                             <div>
-                              <label htmlFor={`rating-${challenge.id}`}>Rating (1-5): </label>
+                              <label htmlFor={`rating-${challenge.id}`} style={{ color: '#2e5c87', fontWeight: '500' }}>Rating (1-5): </label>
                               <select
                                 id={`rating-${challenge.id}`}
+                                className="form-control form-control-sm mt-1"
                                 value={ratings[challenge.id] || "select rating"} // default rating if not set
                                 onChange={(e) => handleRatingChange(challenge.id, e.target.value)}
                               >

@@ -1,0 +1,51 @@
+services:
+  db:
+    image: mongo:latest
+    container_name: khi_db
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_PASS}
+      - MONGO_INITDB_DATABASE=khi2025
+    volumes:
+      - db_data:/data/db
+      - ./init_mongo.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_internal
+
+  app:
+    depends_on:
+      db:
+        condition: service_healthy
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - DATABASE_URL=mongodb://${DB_USER}:${DB_PASS}@khi_db:27017/khi2025?authSource=admin
+      - ORIGIN=http://0.0.0.0:80
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.khi.rule=Host(`khi.io`)"
+      - "traefik.http.routers.khi.entrypoints=websecure"
+      - "traefik.http.routers.khi.tls.certresolver=letsencrypt"
+      - "traefik.http.services.khi.loadbalancer.server.port=80"
+    volumes:
+      - ./resumes:/app/resumes
+    networks:
+      - app_internal
+      - traefik
+
+networks:
+  app_internal:
+  traefik:
+    external: true
+
+volumes:
+  db_data:

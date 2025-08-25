@@ -4,12 +4,14 @@
 
 /coverage
 /build
+/docker/resumes
 
-/src/backend/challenge_archives/*.zip
+backend/challenge_archives/*.zip
 
 .DS_Store
 .env
 .env.*
+/docker/.env
 
 npm-debug.log*
 yarn-debug.log*

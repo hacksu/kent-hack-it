@@ -1,6 +1,6 @@
 import '../App.css';
 import { useState, useEffect } from 'react';
-import Navbar, { GetBackendHost } from '../components/navbar.js'
+import Navbar from '../components/navbar.js'
 
 import LeaderView from '../components/leader_view.js';
 import MemberView from '../components/member_view.js';
@@ -33,7 +33,7 @@ const Team = () => {
 
   async function GetProfileDetails() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/user/info`, {
+      const response = await fetch(`/api/user/info`, {
         method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });
@@ -62,7 +62,7 @@ const Team = () => {
   // and used to allow team-members to view their team stats
   async function GetTeamDetails() {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/team/info`, {
+      const response = await fetch(`/api/team/info`, {
         method: "GET",
         credentials: 'include'  // ensures cookies are sent
       });
@@ -82,7 +82,7 @@ const Team = () => {
 
   const SendJoinRequest = async () => {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/team/request`, {
+      const response = await fetch(`/api/team/request`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -101,7 +101,7 @@ const Team = () => {
   };
   const CreateNewTeam = async () => {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/team/create`, {
+      const response = await fetch(`/api/team/create`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -125,7 +125,7 @@ const Team = () => {
   };
   const UpdateTeamName = async () => {
     try {
-      const response = await fetch(`http://${GetBackendHost()}/team/update`, {
+      const response = await fetch(`/api/team/update`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -257,7 +257,6 @@ const Team = () => {
                             UpdateTeamName={() => UpdateTeamName()}
                             newTeamName={newTeamName} 
                             SetNewTeamName={SetNewTeamName}
-                            BackendHost={GetBackendHost()}
                             SetTeamUpdateMsg={SetTeamUpdateMsg}
                           />
                         </>
