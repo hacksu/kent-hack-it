@@ -158,7 +158,7 @@ export function Challenges() {
   }, [profileData, FetchChallenges]);
 
   return (
-    <div className="App">
+    <div className="App page-background">
       <Navbar />
       <div className="container mt-4">
         <h2 className="mb-3">Challenges</h2>
@@ -224,8 +224,8 @@ export function Challenges() {
             </div>
           ))}
         </div>
+        <Link className="navbar-brand btn btn-md btn-info" to="/rate-challenge">Rate Challenges</Link>
       </div>
-      <Link className="navbar-brand btn btn-md btn-info" to="/rate-challenge">Rate Challenges</Link>
     </div>
   );
 }
