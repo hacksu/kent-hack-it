@@ -1,0 +1,246 @@
+.App {
+  text-align: center;
+  font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background: linear-gradient(135deg, #3e6a3d 0%, #2e5c87 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Custom navbar styling */
+.navbar {
+  font-weight: 500;
+  background: linear-gradient(90deg, #61cf5a 0%, #4a9eff 100%) !important;
+  border: none;
+}
+
+.navbar-brand {
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: white !important;
+  text-decoration: none;
+}
+
+.navbar-brand:hover {
+  color: #f0f0f0 !important;
+}
+
+.nav-link {
+  font-weight: 400;
+  color: white !important;
+}
+
+.nav-link:hover {
+  color: #000000 !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 4px;
+}
+
+/* Override Bootstrap's navbar-light class */
+.navbar-light {
+  background: linear-gradient(90deg, #61cf5a 0%, #4a9eff 100%) !important;
+}
+
+/* Style the navbar toggler for mobile */
+.navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+/* Global page styling to match navbar theme */
+body {
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif !important;
+  background-color: #f8f9fa;
+  color: #2d5a2d;
+}
+
+/* Main content containers */
+.container, .container-fluid {
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+/* Cards and content sections */
+.card {
+  border: 1px solid #4a9eff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px rgba(74, 158, 255, 0.1) !important;
+  background-color: white;
+}
+
+.card:hover {
+  box-shadow: 0 6px 12px rgba(74, 158, 255, 0.2) !important;
+  transition: box-shadow 0.3s ease;
+  border-color: #61cf5a !important;
+}
+
+/* Buttons to match blue-green theme */
+.btn-primary {
+  background: linear-gradient(45deg, #61cf5a 0%, #4a9eff 100%) !important;
+  border: none !important;
+  color: white !important;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-weight: 500;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(45deg, #4fb547 0%, #3a8ae6 100%) !important;
+  border: none !important;
+  color: white !important;
+  transform: translateY(-1px);
+  transition: all 0.3s ease;
+}
+
+.btn-outline-primary {
+  color: #4a9eff !important;
+  border-color: #4a9eff !important;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-weight: 500;
+}
+
+.btn-outline-primary:hover {
+  background: linear-gradient(45deg, #61cf5a 0%, #4a9eff 100%) !important;
+  border-color: #4a9eff !important;
+  color: white !important;
+}
+
+.btn-secondary {
+  background-color: #2e5c87 !important;
+  border-color: #2e5c87 !important;
+  color: white !important;
+}
+
+.btn-secondary:hover {
+  background-color: #1e4c77 !important;
+  border-color: #1e4c77 !important;
+  color: white !important;
+}
+
+/* Links to match blue-green theme */
+.link-primary, a {
+  color: #4a9eff !important;
+  text-decoration: none;
+}
+
+.link-primary:hover, a:hover {
+  color: #61cf5a !important;
+  text-decoration: underline;
+}
+
+/* Headers and text styling */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  color: white;
+  font-weight: 600;
+}
+
+/* Forms and inputs */
+.form-control {
+  border: 1px solid #4a9eff !important;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+.form-control:focus {
+  border-color: #61cf5a !important;
+  box-shadow: 0 0 0 0.2rem rgba(97, 207, 90, 0.25) !important;
+}
+
+.form-label {
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  color: #2e5c87;
+  font-weight: 500;
+}
+
+/* Tables */
+.table {
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+  background-color: rgba(74, 158, 255, 0.05);
+}
+
+/* Alerts */
+.alert-success {
+  background-color: rgba(97, 207, 90, 0.1) !important;
+  border-color: #61cf5a !important;
+  color: #2e5c87 !important;
+}
+
+.alert-primary {
+  background-color: rgba(74, 158, 255, 0.1) !important;
+  border-color: #4a9eff !important;
+  color: #2e5c87 !important;
+}
+
+/* Page-specific overrides */
+.App-header {
+  background: linear-gradient(135deg, #3e6a3d 0%, #2e5c87 100%);
+  color: white;
+}
+
+/* Badge styling */
+.badge {
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+.badge-primary {
+  background: linear-gradient(45deg, #61cf5a 0%, #4a9eff 100%) !important;
+}
+
+/* Pagination */
+.page-link {
+  color: #4a9eff !important;
+}
+
+.page-link:hover {
+  color: #61cf5a !important;
+  background-color: rgba(74, 158, 255, 0.1) !important;
+  border-color: #4a9eff !important;
+}
+
+.page-item.active .page-link {
+  background: linear-gradient(45deg, #61cf5a 0%, #4a9eff 100%) !important;
+  border-color: #4a9eff !important;
+}
+
+/* Page background class for consistent theming */
+.page-background {
+  background: linear-gradient(135deg, #3e6a3d 0%, #2e5c87 100%);
+  min-height: 100vh;
+  color: white;
+  padding-top: 0;
+}
