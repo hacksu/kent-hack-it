@@ -31,6 +31,7 @@ jobs:
             echo "Pulling Changes from Github"
             git pull
             echo "Building docker"
+            cd docker
             docker compose build
             echo "Starting docker"
             docker compose up -d --force-recreate
