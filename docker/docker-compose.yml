@@ -30,7 +30,7 @@ services:
       - ORIGIN=http://0.0.0.0:80
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.khi.rule=Host(`khi.io`)"
+      - "traefik.http.routers.khi.rule=Host(`ctf.hacksu.com`)"
       - "traefik.http.routers.khi.entrypoints=websecure"
       - "traefik.http.routers.khi.tls.certresolver=letsencrypt"
       - "traefik.http.services.khi.loadbalancer.server.port=80"
