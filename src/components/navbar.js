@@ -1,46 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'; // needed to interact with the React App BrowserRouter
 
-
-async function LogoutUser() {
-  const response = await fetch(`/api/logout`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: 'include'  // ensures cookies are sent
-  });
-
-  const data = await response.json();
-  if (data.message === "Logged out!") {
-    // Cookie Cleared!
-    window.location.href = "/";
-  }
-}
-
-const HandleLogout = async (event) =>  {
-  event.preventDefault();
-
+export async function VerifyAuth() {
   try {
-    await LogoutUser();
-  } catch (error) {
-    console.error("Error sending request:", error);
-  }
-}
-
-// Allow other pages to access this function (DRY)
-async function VerifySession() {
-  // ask the backend if this session is valid
-  try {
-    const response = await fetch(`/api/user/verify`, {
-      method: "GET",
-      credentials: 'include'  // ensures cookies are sent
+    // send a get-req to the backend to determine auth-status
+    const req = await fetch('/api/authenticated', {
+      credentials: "include", // important so cookies are sent!
     });
-
-    const data = await response.json();
-    return (data.authenticated === true);
-  } catch (error) {
-    console.error("Error sending request:", error);
+    const isAuth = await req.json();
+    return isAuth.message === "Authorized";
+  } catch (err) {
     return false;
   }
 }
@@ -48,72 +17,84 @@ async function VerifySession() {
 function Navbar() {
   const [authenticated, SetAuthenticated] = useState(false);
 
-  // runs periodically
   useEffect(() => {
-    async function Verify() {
-      SetAuthenticated(await VerifySession());
+    const checkAuth = async () => {
+      const result = await VerifyAuth();
+      SetAuthenticated(result);
+    };
+    checkAuth();
+  }, []);
+
+  const HandleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "GET",
+        credentials: "include", // include cookies
+      });
+      
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Logout failed:", err);
     }
-    Verify();
-  }, []); // [] means execute this once on page-load
+  };
 
   return (
-      <nav className="navbar navbar-expand-lg navbar-light bg-light">
-          <div className="container-fluid">
-              <Link className="navbar-brand d-flex align-items-center" to="/">
-                <img 
-                  src="/2026_KHI_Logo_Transparent.png" 
-                  alt="KHI Logo" 
-                  height="80" 
-                  className=""
-                />
-              </Link>
-              <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                  aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                  <span className="navbar-toggler-icon"></span>
-              </button>
-              <div className="collapse navbar-collapse" id="navbarNav">
-                  <ul className="navbar-nav ms-auto">
-                      <li className="nav-item">
-                          <Link className="nav-link" to="/">Home</Link>
-                      </li>
-                      <li className="nav-item">
-                          <Link className="nav-link" to="/compete">Compete</Link>
-                      </li>
-                      <li className="nav-item">
-                          <Link className="nav-link" to="/leaderboard">Leaderboard</Link>
-                      </li>
+    <nav className="navbar navbar-expand-lg navbar-light bg-light">
+      <div className="container-fluid">
+        <Link className="navbar-brand d-flex align-items-center" to="/">
+          <img
+            src="/2026_KHI_Logo_Transparent.png"
+            alt="KHI Logo"
+            height="80"
+          />
+        </Link>
 
-                      {authenticated ? (
-                        <>
-                          <li className="nav-item">
-                              <Link className="nav-link" to="/profile">
-                                Profile
-                              </Link>
-                          </li>
-                          <li className="nav-item">
-                            <Link className="nav-link"
-                                  to="#"
-                                  onClick={HandleLogout}>
-                              Logout
-                            </Link>
-                          </li>
-                        </>
-                      ) : (
-                          <>
-                              <li className="nav-item">
-                                  <Link className="nav-link" to="/login">Login</Link>
-                              </li>
-                              <li className="nav-item">
-                                  <Link className="nav-link" to="/register">Register</Link>
-                              </li>
-                          </>
-                      )}
-                  </ul>
-              </div>
-          </div>
-      </nav>
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation">
+          <span className="navbar-toggler-icon"></span>
+        </button>
+
+        <div className="collapse navbar-collapse" id="navbarNav">
+          <ul className="navbar-nav ms-auto">
+            <li className="nav-item">
+              <Link className="nav-link" to="/">Home</Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/compete">Compete</Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/leaderboard">Leaderboard</Link>
+            </li>
+
+            {authenticated ? (
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/profile">Profile</Link>
+                </li>
+                <li className="nav-item">
+                  <button
+                    className="nav-link btn btn-link"
+                    style={{ textDecoration: "none" }}
+                    onClick={HandleLogout}>
+                    Logout
+                  </button>
+                </li>
+              </>
+            ) : (
+              <li className="nav-item">
+                <Link className="nav-link" to="/login">Login</Link>
+              </li>
+            )}
+          </ul>
+        </div>
+      </div>
+    </nav>
   );
 }
 export default Navbar;
-
-export { VerifySession, LogoutUser };

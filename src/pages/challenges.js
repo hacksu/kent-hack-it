@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import '../App.css';
-import Navbar, { VerifySession, LogoutUser } from '../components/navbar.js';
+import Navbar, { VerifyAuth } from '../components/navbar.js';
 
 export function Challenges() {
   const [challenges, setChallenges] = useState([]);
@@ -124,9 +124,10 @@ export function Challenges() {
 
   useEffect(() => {
     async function Verify() {
-      const authenticated = await VerifySession();
+      const navigate = useNavigate();
+      const authenticated = await VerifyAuth();
       if (authenticated === false) {
-        LogoutUser();
+        navigate("/");
       }
     }
     Verify();

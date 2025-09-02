@@ -3,7 +3,6 @@ import { Login } from './pages/login.js' // custom js that returns HTML
 import { Home } from './pages/home.js'
 import { Admin } from './pages/admin.js'
 import { Profile } from './pages/profile.js'
-import { Register } from './pages/register.js'
 import { Challenges } from './pages/challenges.js'
 import { AdminPanel } from './pages/admin_panel.js'
 import { Leaderboard } from './pages/leaderboard.js'
@@ -20,7 +19,6 @@ function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/compete" element={<Challenges />} />
           <Route path="/admin/panel" element={<AdminPanel />} />
           <Route path="/leaderboard" element={<Leaderboard />} />

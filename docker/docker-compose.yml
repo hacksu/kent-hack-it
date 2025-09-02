@@ -6,7 +6,7 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${DB_USER}
       - MONGO_INITDB_ROOT_PASSWORD=${DB_PASS}
-      - MONGO_INITDB_DATABASE=khi2025
+      - MONGO_INITDB_DATABASE=${DB_NAME}
     volumes:
       - db_data:/data/db
       - ./init_mongo.sh:/docker-entrypoint-initdb.d/init.sh:ro
@@ -26,7 +26,7 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
     environment:
-      - DATABASE_URL=mongodb://${DB_USER}:${DB_PASS}@khi_db:27017/khi2025?authSource=admin
+      - DATABASE_URL=mongodb://${DB_USER}:${DB_PASS}@khi_db:27017/${DB_NAME}?authSource=admin
       - ORIGIN=http://0.0.0.0:80
     labels:
       - "traefik.enable=true"

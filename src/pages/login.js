@@ -1,56 +1,55 @@
 import '../App.css';
-import { useState } from 'react'; // needed to allow for form interaction
 
 import Navbar from '../components/navbar.js'
 
 export function Login() {
-  const [username, SetUsername] = useState(""); // variable pair to modify a variable based on a funct-name
-  const [password, SetPassword] = useState("");
 
-  // internal lambda
-  const HandleLogin = async (event) => {
-      event.preventDefault();
-      let msgArea = document.getElementById('msg_popup');
-      
-      try {
-        const response = await fetch(`/api/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(
-            {
-              "username": username,
-              "password": password
-            }
-          ),
-          credentials: 'include'  // ensures cookies are sent
-        });
+  const HandleLogin = async (providerName) => {
+    const width = 500;
+    const height = 600;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    
+    const oauthUrl = `/api/auth/${providerName}`;
 
-        // get the response output from the above fetch call
-        const data = await response.json();
-        
-        if (data.message === "Login Successful!") {
-          if (msgArea) {
-            msgArea.innerHTML = "<p style='color: green;'>Login Successful!</p>";
-            
-            // auto redirect to challenge page after Set-Cookie executes
-            setTimeout(() => {
-              window.location.href = "/compete";
-            }, 200);  // 100 ms delay gives the browser time to store the cookie
-          }
-        } else {
-          if (msgArea) {
-            msgArea.innerHTML = "<p style='color: red;'>Login Failed!</p>";
-          }
-        }
-      } catch (error) {
-        console.error("Error sending request:", error);
-        if (msgArea) {
-          msgArea.innerHTML = "<p style='color: red;'>Login Failed!</p>";
-        }
+    const oauthWindow = window.open(
+      oauthUrl,
+      "OAuth Login",
+      `width=${width},height=${height},top=${top},left=${left}`
+    );
+
+    const handleMessage = (event) => {
+      if (event.origin !== `${process.env.REACT_APP_HOMEPAGE_URL}`) {
+        console.log(`event.origin is different: ${event.origin}`);
+        return; // check backend origin
       }
-  }
+
+      if (event.data?.type === "OAUTH_SUCCESS") {
+        window.location.href = "/compete";
+      } else if (event.data?.type === "OAUTH_ERROR") {
+        document.getElementById("msg_popup").innerText = event.data.message;
+      }
+
+      window.removeEventListener("message", handleMessage);
+    };
+
+    window.addEventListener("message", handleMessage);
+  };
+
+  // neater way to store a lot of in-line CSS to an element
+  const buttonStyle = (bgColor, color = "white") => ({
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "10px",
+    width: "100%",
+    border: "none",
+    borderRadius: "8px",
+    backgroundColor: bgColor,
+    color: color,
+    fontSize: "16px",
+    cursor: "pointer",
+  });
 
   return (
     <div className="App">
@@ -64,35 +63,42 @@ export function Login() {
                   <h3 className="card-title text-center mb-4">Login</h3>
                   <div id='msg_popup'>
                   </div>
-                  <form onSubmit={HandleLogin}>
-                    <div className="mb-3">
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="username"
-                        placeholder="Enter username"
-                        value={username}
-                        onChange={(e) => SetUsername(e.target.value)}
+                  
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
+                      maxWidth: "250px",
+                      margin: "0 auto",        // centers the div horizontally
+                      alignItems: "center",    // centers content inside div
+                    }}
+                  >
+                    {/* Discord */}
+                    <button onClick={() => HandleLogin("discord")} style={buttonStyle("#5865F2")}>
+                      <img
+                        src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/discord.svg"
+                        alt="Discord"
+                        width="20"
+                        height="20"
+                        style={{ filter: "invert(1)" }}
                       />
-                    </div>
-  
-                    <div className="mb-3">
-                      <input
-                        type="password"
-                        className="form-control"
-                        id="password"
-                        placeholder="Enter password"
-                        value={password}
-                        onChange={(e) => SetPassword(e.target.value)}
+                      Login with Discord
+                    </button>
+
+                    {/* GitHub */}
+                    <button onClick={() => HandleLogin("github")} style={buttonStyle("#24292e")}>
+                      <img
+                        src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/github.svg"
+                        alt="GitHub"
+                        width="20"
+                        height="20"
+                        style={{ filter: "invert(1)" }}
                       />
-                    </div>
-  
-                    <div className="d-grid">
-                      <button type="submit" className="btn btn-primary">
-                        Login
-                      </button>
-                    </div>
-                  </form>
+                      Login with GitHub
+                    </button>
+                  </div>
+
                 </div>
               </div>
             </div>
