@@ -44,6 +44,8 @@ router.post("/submit-flag", async (req, res) => {
     try {
         console.log("[*] Attempting to check flag value. . .");
 
+        if (!req.isAuthenticated()) return res.json(null);
+
         const user_id = req.user._id;
         if (!user_id) {
             console.log("[-] Bad Flag Submission no user_id!");
@@ -53,7 +55,8 @@ router.post("/submit-flag", async (req, res) => {
         const checkFlag = await ValidateFlag(challenge_id, flag_value, user_id);
         // null | { message }
         return res.json(checkFlag);
-    } catch {
+    } catch (err) {
+        console.error(err)
         console.log("[-] Bad Flag Submission Request!");
         return res.json(null);
     }

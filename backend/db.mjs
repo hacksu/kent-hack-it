@@ -11,7 +11,7 @@ docker run -d --name khi_db -e MONGO_INITDB_ROOT_USERNAME=mongo -e MONGO_INITDB_
 */
 
 // returns a string concatination of the URL
-function MongoURI() {
+export function MongoURI() {
     const db_user = process.env.DB_USER;
     const db_pass = process.env.DB_PASS;
     const db_name = process.env.DB_NAME;

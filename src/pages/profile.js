@@ -1,6 +1,6 @@
 import '../App.css';
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Team from './team.js'
 import Navbar, { VerifyAuth } from '../components/navbar.js'
 
@@ -13,33 +13,32 @@ export function Profile() {
     window.location.href = "/profile?mode=1";
   };
 
-  async function GetInfo() {
-    try {
-      const response = await fetch(`/api/user/info`, {
-        method: "GET",
-        credentials: 'include'  // ensures cookies are sent
-      });
-  
-      const data = await response.json();
-      if (data) {
-        SetUsername(data.username);
-        SetProfileImage(data.avatarUrl);
-      }
-    } catch (error) {
-      console.error("Error sending request:", error);
-    }
-  }
-
   useEffect(() => {
     async function Verify() {
-      const navigate = useNavigate();
       const authenticated = await VerifyAuth();
       if (authenticated === false) {
-        navigate("/login");
+        window.location.href = "/login";
       }
     }
     Verify();
     
+    async function GetInfo() {
+      try {
+        const response = await fetch(`/api/user/info`, {
+          method: "GET",
+          credentials: 'include'  // ensures cookies are sent
+        });
+    
+        const data = await response.json();
+        if (data) {
+          console.log(data);
+          SetUsername(data.username);
+          SetProfileImage(data.avatarUrl);
+        }
+      } catch (error) {
+        console.error("Error sending request:", error);
+      }
+    }
     GetInfo();
   }, []); // run once on page-load
 

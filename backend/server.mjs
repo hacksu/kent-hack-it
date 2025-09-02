@@ -10,7 +10,9 @@ import ctfRoutes from "./routes/ctf.mjs";
 import userRoutes from "./routes/user.mjs";
 import adminRoutes from "./routes/admin.mjs";
 import teamRoutes from "./routes/team.mjs";
-import { UserCollection, UserIsAdmin } from "./db.mjs";
+
+import { MongoURI, UserCollection, UserIsAdmin } from "./db.mjs";
+import MongoStore from "connect-mongo";
 
 import cookieParser from 'cookie-parser';
 
@@ -57,11 +59,22 @@ app.use((err, req, res, next) => {
 // attempting to cover up digital foot-print
 app.disable('x-powered-by');
 
+// Persistent Session middleware
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "wheredidweputhteenvfileguys???",
-    resave: false,
-    saveUninitialized: true,
+    resave: false, // don’t save session if unmodified
+    saveUninitialized: false, // don’t create session until something stored
+    store: MongoStore.create({
+      mongoUrl: MongoURI(),
+      collectionName: "sessions", // collection to store sessions
+      ttl: 24 * 60 * 60, // session lifetime in seconds (1 day)
+    }),
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+      httpOnly: true, // cannot access cookie from JS
+      secure: process.env.NODE_ENV === "production", // only HTTPS in prod
+    },
   })
 );
 

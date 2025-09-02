@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import '../App.css';
 import Navbar, { VerifyAuth } from '../components/navbar.js';
 
@@ -124,10 +124,9 @@ export function Challenges() {
 
   useEffect(() => {
     async function Verify() {
-      const navigate = useNavigate();
       const authenticated = await VerifyAuth();
       if (authenticated === false) {
-        navigate("/");
+        window.location.href = "/";
       }
     }
     Verify();

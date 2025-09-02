@@ -1,5 +1,5 @@
 import { UserCollection, TeamCollection } from '../db.mjs';
-import { SanitizeAlphaNumeric, SanitizeString, Hash_SHA256 } from '../utils.mjs';
+import { SanitizeString, SanitizeAlphaNumeric } from '../utils.mjs';
 
 import { Router } from "express";
 const router = Router();
@@ -7,18 +7,26 @@ const router = Router();
 // expands end-point root '/user'
 router.get("/info", async (req, res) => {
     try {
+        if (!req.isAuthenticated()) 
+            return res.json({ authenticated: false });
+        
         const userData = await GetUserProfile(req.user._id);
         
         if (userData === null) {
             return res.json(null);
         }
 
+        console.error(`userData -> ${userData}`);
         return res.json(userData);
-    } catch {
+    } catch (err) {
+        console.error("/user/info exception");
+        console.error(err);
         return res.json({ authenticated: false });
     }
 });
 async function GetUserProfile(user_id) {
+    user_id = SanitizeString(user_id);
+
     if (user_id === null) {
         return null;
     }
