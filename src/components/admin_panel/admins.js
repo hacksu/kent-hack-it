@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 function AdminView() {
     const [admins, setAdmins] = useState([]);
-    async function getAdmins() {
+    async function GetAdmins() {
         try {
             const response = await fetch(`/api/admin/fetch_admins`, {
                 method: "GET",
@@ -18,6 +18,9 @@ function AdminView() {
             console.error("Error sending request:", error);
         }
     };
+    useEffect(() => {
+        GetAdmins();
+    }, []);
 
     async function removeAdmin(username) {
         let msgArea = document.getElementById('msg_popup');
@@ -42,7 +45,7 @@ function AdminView() {
                 if (msgArea) {
                     msgArea.setHTMLUnsafe("<p style='color: green;'>" + data.message + "</p>");
                 }
-                getAdmins()
+                GetAdmins()
             } else {
                 if (msgArea) {
                     msgArea.setHTMLUnsafe("<p style='color: red;'>" + data.message + "</p>");
@@ -58,28 +61,41 @@ function AdminView() {
 
     return (
         <>
-        <div className="container mt-4 d-flex justify-content-center align-items-center">
-            <div className="row w-100 justify-content-center">
-                <h4>Current Admins</h4>
-                <ul className="list-group w-auto">
-                {admins.map((admin, index) => (
-                    <li
-                    key={index}
-                    className="list-group-item d-flex justify-content-between align-items-center px-3 py-2"
-                    style={{ fontSize: '0.9rem', minWidth: '250px', maxWidth: '400px' }}
-                    >
-                    <span className="text-muted">{admin.username}</span>
-                    <button
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => removeAdmin(admin.username)}
-                    >
-                        <i className="bi bi-trash"></i> Delete
-                    </button>
-                    </li>
-                ))}
-                </ul>
+            <div className="container mt-4 d-flex justify-content-center align-items-center">
+                <div className="row w-100 justify-content-center">
+                    <h4>Current Admins</h4>
+                    <ul className="list-group w-auto">
+
+                        {admins.map((admin, index) => (
+                            <li
+                                key={index}
+                                className="list-group-item d-flex align-items-center px-3 py-2"
+                                style={{ fontSize: "1rem", minWidth: "250px", maxWidth: "400px" }}
+                            >
+                                {/* Avatar + Username */}
+                                <div className="d-flex align-items-center flex-grow-1">
+                                    <img
+                                        src={admin.avatarUrl}
+                                        alt={`${admin.username}'s avatar`}
+                                        className="rounded-circle me-3"
+                                        style={{ width: "40px", height: "40px", objectFit: "cover" }}
+                                    />
+                                    <span className="fw-semibold text-dark">{admin.username}</span>
+                                </div>
+
+                                {/* Delete Button */}
+                                <button
+                                    className="btn btn-sm btn-outline-danger ms-3"
+                                    onClick={() => removeAdmin(admin.username)}
+                                >
+                                    <i className="bi bi-trash"></i> Delete
+                                </button>
+                            </li>
+                        ))}
+                        
+                    </ul>
+                </div>
             </div>
-        </div>
         </>
     );
 }

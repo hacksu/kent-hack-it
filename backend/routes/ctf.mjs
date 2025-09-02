@@ -17,9 +17,9 @@ async function GetChallenges() {
 }
 
 router.post("/challenge", async (req, res) => {
-    const [challenge_id] = req.body;
+    const data = req.body;
     // fetches details from given challenge id
-    const challenge_details = await GetChallengeInfo(challenge_id);
+    const challenge_details = await GetChallengeInfo(data.challenge_id);
     res.json(challenge_details);
 });
 async function GetChallengeInfo(challenge_id) {
@@ -39,20 +39,22 @@ async function GetChallengeInfo(challenge_id) {
 }
 
 router.post("/submit-flag", async (req, res) => {
-    const [challenge_id, flag_value] = req.body;
+    const data = req.body;
 
     try {
         console.log("[*] Attempting to check flag value. . .");
 
         if (!req.isAuthenticated()) return res.json(null);
 
-        const user_id = req.user._id;
+        const user_id = req.user._id.toString();
         if (!user_id) {
             console.log("[-] Bad Flag Submission no user_id!");
             return res.json(null);
         }
 
-        const checkFlag = await ValidateFlag(challenge_id, flag_value, user_id);
+        const checkFlag = await ValidateFlag(
+            data.challenge_id, data.flag_value, user_id
+        );
         // null | { message }
         return res.json(checkFlag);
     } catch (err) {

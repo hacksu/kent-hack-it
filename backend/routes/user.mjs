@@ -10,7 +10,7 @@ router.get("/info", async (req, res) => {
         if (!req.isAuthenticated()) 
             return res.json({ authenticated: false });
         
-        const userData = await GetUserProfile(req.user._id);
+        const userData = await GetUserProfile(req.user._id.toString());
         
         if (userData === null) {
             return res.json(null);

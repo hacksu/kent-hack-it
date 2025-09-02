@@ -10,9 +10,9 @@ router.get("/info", async (req, res) => {
         if (!req.isAuthenticated()) return res.json(null);
 
         console.log(`[*] Getting Info for the Team: ${req.user.username} is in.`);
-        const teamData = await GetTeamInfo(req.user._id);
+        const teamData = await GetTeamInfo(req.user._id.toString());
         // null | { ... }
-        // console.log(`Team Info --> "${JSON.stringify(teamData)}"`);
+        console.log(`Team Info --> "${JSON.stringify(teamData)}"`);
         return res.json(teamData);
     } catch (err) {
         console.error(err)
@@ -48,7 +48,7 @@ async function GetTeamInfo(user_id) {
                 // see if anyone has sent a request to join the team
                 // return an array of: [ { _id, checksum } ] so we
                 // can generate accept buttons on the team info page
-                const requests = await TeamRequestCollection.find({ team_id: teamRecord._id })
+                const requests = await TeamRequestCollection.find({ team_id: teamRecord._id.toString() })
                 .select('_id sender_id checksum')
                 .lean();
 
@@ -94,12 +94,26 @@ async function GetTeamInfo(user_id) {
     }
     return null;
 }
+async function FetchMemberNames(member_list) {
+    // Find all users whose _id is in the member_list array
+    // via Query
+    const profiles = await UserCollection.find(
+        { _id: { $in: member_list } }, 
+        { username: 1 }  // only fetch the username field
+    ).lean();
 
-router.post('/team/request', async (req, res) => {
+    // Map query results to an array of usernames (Strings)
+    const member_names = profiles.map(user => user.username);
+    return member_names;
+}
+
+router.post('/request', async (req, res) => {
+    const data = req.body;
     try {
         if (!req.isAuthenticated()) return res.json(null);
-
+        console.log("[*] Attempting to send Team Request")
         const teamRequest = await SendTeamRequest(req.user.username, data.team_name);
+        console.log(JSON.stringify(teamRequest))
         return res.json(teamRequest);
     } catch (err) {
         console.error(err)
@@ -125,12 +139,14 @@ async function SendTeamRequest(sender, team_name) {
         const userRecord = await UserCollection.findOne({ username: sender });
         if (userRecord) {
             if (userRecord.team_id === teamRecord._id.toString()) {
+                console.log("Team record id matching error!")
                 return {
                     "message": "Could not send request, try again!"
                 };
             }
         } else {
             // user not found
+            console.log("Cant find user record of sender!")
             return {
                 "message": "Could not send request, try again!"
             };
@@ -148,7 +164,7 @@ async function SendTeamRequest(sender, team_name) {
         // team_name points to the ID in the db incase the
         // team leader changes the name (ensures data connection)
         const requestObject = await TeamRequestCollection.findOne({
-            team_id: teamRecord._id
+            team_id: teamRecord._id.toString()
         });
 
         // if this request is new attempt inserting
@@ -179,33 +195,38 @@ async function SendTeamRequest(sender, team_name) {
                             "message": "Request Sent Successfully!"
                         };
                     } else {
+                        console.log("Failed to add team join request!")
                         return {
                             "message": "Could not send request, try again!"
                         };
                     }
                 } else {
+                    console.log("Already sent a request to this team!")
                     return {
                         "message": "You have already sent a request to this team."
                     };
                 }
             } else {
+                console.log("No user record found!")
                 return {
                     "message": "Could not send request, try again!"
                 };
             }
         } else {
+            console.log("Already send a request to this team!")
             return {
                 "message": "You have already sent a request to this team."
             };
         }
+    } else {
+        console.log("Cannot locate team record!")
+        return {
+            "message": "Could not send request, try again!"
+        };
     }
-
-    return {
-        "message": "Could not send request, try again!"
-    };
 }
 
-router.post('/team/create', async (req, res) => {
+router.post('/create', async (req, res) => {
     const data = req.body;
 
     try {
@@ -247,7 +268,7 @@ async function CreateTeam(team_creator, team_name) {
             }
         }
 
-        const leader_id = leader_record._id;
+        const leader_id = leader_record._id.toString();
 
         // check if team_name is already taken
         const team_exists = await TeamCollection.findOne({ name: team_name })
@@ -295,8 +316,85 @@ async function CreateTeam(team_creator, team_name) {
         }
     }
 }
+async function UpdateTeamCompletions(team_id) {
+    if (team_id === "None" || !team_id) return;
+    console.log("[*] Attempting to Update Team Completions. . .");
+    let teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id) });
+    if (teamProfile) {
+        const mergedCompletions = [];  // Initialize as an array of objects
+        const teamMembers = teamProfile.members;
+        teamMembers.push(teamProfile.team_leader_id);
 
-router.post('/team/update', async (req, res) => {
+        console.log(`All Members of team ${teamProfile.name}`, teamMembers);
+
+        console.log("\nBEFORE: ", teamProfile.completions);
+
+        // remove entries within TeamCollections.completions that contain
+        // memberIds that are not contained in the teamMembers Array
+        await TeamCollection.updateOne(
+            { _id: SanitizeAlphaNumeric(team_id) },
+            {
+                $pull: {
+                    completions: {
+                        memberId: { $nin: teamMembers }
+                    }
+                }
+            }
+        );
+
+        // reference update after a modification
+        teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id) });
+        console.log("AFTER: ", teamProfile.completions);
+
+        for (const memberId of teamMembers) {
+            const memberProfile = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(memberId) });
+
+            if (!memberProfile || !memberProfile.completions) {
+                continue;
+            }
+
+            for (const data of Object.entries(memberProfile.completions)) {
+                // console.log(`Completions of ${memberProfile.username}`, memberProfile.completions)
+                const [index, { id, time }] = data; // break down the entry
+                // console.log("Completion Data -> ", { name, time });
+
+                const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(id) })
+                if (challengeProfile) {
+                    // Find if the challenge already exists in mergedCompletions
+                    const existingChallenge = mergedCompletions.find(completion => completion.id === id);
+    
+                    // If challenge doesn't exist or the current timestamp is older, add/update the challenge
+                    if (!existingChallenge || time < existingChallenge.timestamp) {
+                        const newCompletion = { id: id, memberId: memberId, points: challengeProfile.points, timestamp: time };
+    
+                        // Remove the existing challenge entry if it exists
+                        if (existingChallenge) {
+                            const index = mergedCompletions.indexOf(existingChallenge);
+                            mergedCompletions.splice(index, 1);
+                        }
+    
+                        // Add the new challenge with the oldest timestamp
+                        mergedCompletions.push(newCompletion);
+                    }
+                }
+            }
+        }
+
+        // console.log("Merged Completions:", mergedCompletions);
+
+        // Update the team completions as an array
+        await TeamCollection.updateOne(
+            { _id: SanitizeAlphaNumeric(team_id) },
+            { $set: { completions: mergedCompletions } }
+        );
+
+        console.log("[+] Team completions updated successfully!");
+    } else {
+        console.log(`[-] Cannot find Team Record for: ${team_id}`);
+    }
+}
+
+router.post('/update', async (req, res) => {
     const data = req.body;
 
     try {
@@ -373,11 +471,11 @@ async function UpdateTeam(team_creator, new_team_name) {
     }
 }
 
-router.post('/team/add-member', async (req, res) => {
-    const [request_id, checksum] = req.body;
+router.post('/add-member', async (req, res) => {
+    const data = req.body;
 
     try {
-        const addTeamMember = await AddMember(request_id, checksum);
+        const addTeamMember = await AddMember(data.request_id, data.checksum);
         // null | { message }
         return res.json(addTeamMember);    
     } catch (err) {
@@ -453,14 +551,14 @@ async function AddMember(request_id, checksum) {
     }
 }
 
-router.post('/team/remove-member', async (req, res) => {
-    const [member_username] = req.body;
+router.post('/remove-member', async (req, res) => {
+    const data = req.body;
 
     try {
         if (!req.isAuthenticated()) return res.json(null);
         
         const removeTeamMember = await RemoveMember(
-            member_username, req.user.username
+            data.member_username, req.user.username
         );
         // null | { message }
         return res.json(removeTeamMember);
@@ -525,7 +623,7 @@ async function RemoveMember(member_username, username) {
     // update the user profile of member_username and set their
     // team attribute to None
     const updateMemberProfile = await UserCollection.updateOne(
-        { _id: SanitizeAlphaNumeric(memberProfile._id) },
+        { _id: SanitizeAlphaNumeric(memberProfile._id.toString()) },
         { $set: { team_id: "None" } }
     );
 
@@ -541,7 +639,7 @@ async function RemoveMember(member_username, username) {
     }
 }
 
-router.post('/team/replace-leader', async (req, res) => {
+router.post('/replace-leader', async (req, res) => {
     const data = req.body;
 
     try {

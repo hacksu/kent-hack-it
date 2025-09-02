@@ -145,9 +145,11 @@ export function AdminPanel() {
               )}
             </>
 
-            {activeTab === "upload" && (
-              <AdminChallengeUploadTab />
-            )}
+            <>
+              {activeTab === "upload" && (
+                <AdminChallengeUploadTab />
+              )}
+            </>
           </div>
         </div>
 

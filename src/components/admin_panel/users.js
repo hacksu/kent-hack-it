@@ -79,40 +79,48 @@ function AdminUsersTab() {
 
             {/* User Cards */}
             <div className="row">
+                
                 {filteredUsers.map(user => (
                     <div className="col-md-4 mb-4" key={user._id}>
-                        <div className="card shadow-sm border-0 h-100">
+                        <div className="card shadow-sm border-0 h-100 rounded-3">
                             <div className="card-body d-flex flex-column justify-content-between">
-                                <div>
-                                    <h5
-                                        style={{ fontSize: "1.75rem", padding: "0.25rem 0.5rem" }}
-                                        className="card-title mb-2"
-                                    >
+                                {/* Top: Avatar + Username */}
+                                <div className="d-flex align-items-center mb-3">
+                                    <img
+                                        src={user.avatarUrl}
+                                        alt={`${user.username}'s avatar`}
+                                        className="rounded-circle me-3 shadow-sm"
+                                        style={{ width: "60px", height: "60px", objectFit: "cover" }}
+                                    />
+                                    <h5 className="card-title mb-0 fw-bold" style={{ fontSize: "1.4rem" }}>
                                         {user.username}
                                     </h5>
-                                    <p
-                                        style={{ fontSize: "1.25rem", padding: "0.25rem 0.5rem" }}
-                                        className="card-text text-muted mb-1"
-                                    >
+                                </div>
+
+                                {/* Details */}
+                                <div className="ms-1">
+                                    <p className="card-text text-muted mb-2" style={{ fontSize: "1rem" }}>
                                         <strong>Email:</strong> {user.email}
                                     </p>
-                                    <p
-                                        style={{ fontSize: "1.25rem", padding: "0.25rem 0.5rem" }}
-                                        className="card-text text-muted"
-                                    >
-                                        <strong>Team ID:</strong> {user.team_id}
+                                    <p className="card-text text-muted mb-0" style={{ fontSize: "1rem" }}>
+                                        <strong>Team ID:</strong> {user.team_id || "—"}
                                     </p>
                                 </div>
-                                <button
-                                    className="btn btn-outline-danger mt-3 align-self-start"
-                                    onClick={() => removeUser(user._id)}
-                                >
-                                    <i className="bi bi-trash me-2"></i> Remove User
-                                </button>
+
+                                {/* Action */}
+                                <div className="mt-3">
+                                    <button
+                                        className="btn btn-outline-danger w-100"
+                                        onClick={() => removeUser(user._id)}
+                                    >
+                                        <i className="bi bi-trash me-2"></i> Remove User
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 ))}
+
             </div>
         </div>
     );

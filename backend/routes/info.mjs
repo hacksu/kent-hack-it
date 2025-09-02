@@ -83,7 +83,8 @@ async function GetLeaderboardData() {
     // sort based on time of recent completion (time attribute (time | timestamp) on last completion)
     let leaderboardData = []
 
-    const soloUsers = await UserCollection.find({ team_id: "None" }, { username: 1, completions: 1 })
+    // admins are not recorded on leaderboard
+    const soloUsers = await UserCollection.find({ is_admin: false, team_id: "None" }, { username: 1, completions: 1 })
     const teams = await TeamCollection.find({}, { name: 1, completions: 1 })
 
     let readableSoloUsers = [];
