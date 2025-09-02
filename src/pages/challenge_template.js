@@ -13,7 +13,7 @@ export function ChallengeDetail() {
   useEffect(() => {
     async function FetchChallenge() {
       try {
-        const response = await fetch(`/api/challenges`);
+        const response = await fetch(`/api/ctf/challenges`);
         const data = await response.json();
         const chall = data.find(challenge => challenge._id === id);
         setChallenge(chall);
@@ -30,7 +30,7 @@ export function ChallengeDetail() {
     // send the flag over to the backend and validate if they
     // submitted the correct flag
     try {
-      const response = await fetch(`/api/submit-flag`, {
+      const response = await fetch(`/api/ctf/submit-flag`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

@@ -114,5 +114,6 @@ export async function UserIsAdmin(accessToken, guildId, roleId) {
     }
 
     const member = await res.json();
+    console.log(`[*] Checking for roleId: ${roleId}`)
     return member.roles.includes(roleId);
 }

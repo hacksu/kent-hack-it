@@ -37,7 +37,7 @@ export function RatingPage() {
 
   async function GetChallengeDetails(challengeID) {
     try {
-      const response = await fetch(`/api/challenge`, {
+      const response = await fetch(`/api/ctf/challenge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +78,7 @@ export function RatingPage() {
     let msgArea = document.getElementById('msg_popup');
 
     try {
-      const response = await fetch(`/api/rate-challenge`, {
+      const response = await fetch(`/api/ctf/rate-challenge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

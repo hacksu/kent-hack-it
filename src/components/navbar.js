@@ -13,9 +13,22 @@ export async function VerifyAuth() {
     return false;
   }
 }
+export async function VerifyAdmin() {
+  try {
+    // send a get-req to the backend to determine auth-status
+    const req = await fetch('/api/admin/authenticated', {
+      credentials: "include", // important so cookies are sent!
+    });
+    const isAuth = await req.json();
+    return isAuth.message === "Authorized";
+  } catch (err) {
+    return false;
+  }
+}
 
 function Navbar() {
   const [authenticated, SetAuthenticated] = useState(false);
+  const [isAdmin, SetIsAdmin] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -23,6 +36,13 @@ function Navbar() {
       SetAuthenticated(result);
     };
     checkAuth();
+
+    
+    const checkAdmin = async () => {
+      const result = await VerifyAdmin();
+      SetIsAdmin(result);
+    };
+    checkAdmin();
   }, []);
 
   const HandleLogout = async () => {
@@ -77,13 +97,21 @@ function Navbar() {
                 <li className="nav-item">
                   <Link className="nav-link" to="/profile">Profile</Link>
                 </li>
+                { isAdmin && (
+                  <>
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/admin/panel">Admin</Link>
+                  </li>
+                  </>
+                )}
                 <li className="nav-item">
-                  <button
-                    className="nav-link btn btn-link"
-                    style={{ textDecoration: "none" }}
-                    onClick={HandleLogout}>
+                  <Link
+                    className="nav-link"
+                    to="/login"
+                    onClick={HandleLogout}
+                    style={{ cursor: "pointer" }}>
                     Logout
-                  </button>
+                  </Link>
                 </li>
               </>
             ) : (

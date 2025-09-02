@@ -9,7 +9,7 @@ export function Leaderboard() {
 
   async function FetchLeaderboard() {
     try {
-      const response = await fetch(`/api/data/leaderboard`, {
+      const response = await fetch(`/api/info/leaderboard`, {
         method: "GET",
         credentials: 'include'
       });

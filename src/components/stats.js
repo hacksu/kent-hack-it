@@ -13,7 +13,7 @@ const Stats = ({ TEAM_DATA, PROFILE_DATA }) => {
   // Define the GatherData function inside the component
   async function GatherData() {
     try {
-      const response = await fetch(`/api/data/get-completions`, {
+      const response = await fetch(`/api/info/get-completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

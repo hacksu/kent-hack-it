@@ -1,5 +1,4 @@
 import '../App.css';
-import showPasswordPrompt from '../components/prompt.js';
 
 const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
                       SetNewTeamName, SetTeamUpdateMsg }) => {
@@ -63,7 +62,7 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
   };
 
   
-  const LeaderLeaving = async (passwd) => {
+  const LeaderLeaving = async () => {
     try {
       const response = await fetch(`/api/team/replace-leader`, {
         method: "POST",
@@ -71,7 +70,6 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          "password": passwd,
           "team_data": TEAM_DATA,
         }),
         credentials: 'include'  // ensures cookies are sent
@@ -129,11 +127,7 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
                 className="btn btn-secondary"
                 onClick={() => {
                   if (window.confirm(`Are you sure you want to leave your team?`)) {
-                    showPasswordPrompt((password) => {
-                      if (password !== null) {
-                        LeaderLeaving(password);
-                      }
-                    });
+                    LeaderLeaving();
                   }
                 }}
               >

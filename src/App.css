@@ -72,10 +72,15 @@
   color: white !important;
 }
 
+.nav-tabs .nav-link.active {
+  color: black !important;
+}
+
 .nav-link:hover {
   color: #000000 !important;
   background-color: rgba(255, 255, 255, 0.1) !important;
   border-radius: 4px;
+  text-decoration: none !important;
 }
 
 /* Override Bootstrap's navbar-light class */

@@ -143,4 +143,110 @@ async function ValidateFlag(challenge_id, flag_value, user_id) {
     }
 }
 
+router.post('/rate-challenge', async (req, res) => {
+    const data = req.body;
+
+    try {
+        const ratingChallenge = await UserRatingChallenge(data, username);
+        return res.json(ratingChallenge);
+    } catch (err) {
+        console.error(err)
+        return res.json(null);
+    }
+});
+async function UserRatingChallenge(ratingData, username) {
+    username = SanitizeString(username);
+
+    if (!ratingData || username === null) {
+        console.log("[-] Error rating username or email in JWT malformed!");
+        return null;
+    }
+
+    const userProfile = await UserCollection.findOne({ username: username })
+    if (!userProfile) {
+        console.log("[-] Profile could not be Found!");
+        return null;
+    }
+
+    // check if the userProfile completed the challenge theyre rating
+    let completedChallenge = false;
+
+    // check that numberRating is a valid number
+    const challengeID = SanitizeAlphaNumeric(ratingData.challenge_id);
+
+    // Check if numberRating is a valid number
+    if ( !ValidRatingNumber(ratingData.rating) ) {
+        console.log("[-] Error: rating must be a positive number, whole or ending in .5");
+        console.log(" |___ User Submitted: " + ratingData.rating);
+        return null;
+    }
+    
+    const numberRating = ratingData.rating;
+
+    console.log("Rating Challenge ID: " + challengeID);
+    console.log("|______" + numberRating);
+
+    // check if this user has already rated the challenge
+    // in ratingData
+    if (userProfile.ratings.includes(challengeID)) {
+        console.log("[*] " + userProfile.username + " has already submitted a rating for challenge_id: " + challengeID);
+        return null;
+    }
+
+    // iterate the users completions
+    for (const data of Object.entries(userProfile.completions)) {
+        const [index, { id, time }] = data; // break down the user completion entry
+        const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(id) })
+
+        if (challengeProfile) {
+            // check if the challengeID given in the request is contained in the users
+            // completion data in the database
+            if (challengeProfile._id.toString() === challengeID) {
+                console.log("[*] User has completed this challenge!")
+                console.log(challengeProfile)
+                completedChallenge = true;
+                break;
+            }
+        }
+    }
+
+    // they didnt complete the challenge
+    if (!completedChallenge) {
+        console.log("[-] User tried rating a challenge they have not completed!")
+        return null;
+    } else {
+        // they completed the challenge we can take their number rating
+        // and apply it to the challenge entry in the db
+        await ChallengeCollection.updateOne(
+            { _id: challengeID },
+            { $push: { user_rates: Number(numberRating) } } // user_rates are used to calulate rating attribute
+        );
+
+        // update the challenges rating attribute based on its user_rates
+        const updatedChallenge = await ChallengeCollection.findOne({ _id: challengeID });
+        if (updatedChallenge && updatedChallenge.user_rates.length > 0) {
+            const total = updatedChallenge.user_rates.reduce((sum, r) => sum + r, 0);
+            const avg = total / updatedChallenge.user_rates.length;
+
+            await ChallengeCollection.updateOne(
+                { _id: challengeID },
+                { $set: { rating: avg } }
+            );
+        }
+
+        // mark this action in the user profile so
+        // they cannot spam ratings for a challenge
+        await UserCollection.updateOne(
+            { _id: userProfile._id },
+            { $addToSet: { ratings: challengeID } }
+        );
+
+        console.log("[+] Rate Uploaded Successfully!")
+
+        return {
+            "message": "Rate Uploaded Successfully!"
+        }
+    }
+}
+
 export default router;

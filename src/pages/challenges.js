@@ -105,7 +105,7 @@ export function Challenges() {
   
   const FetchChallenges = useCallback(async () => {
     try {
-      const response = await fetch(`/api/challenges`);
+      const response = await fetch(`/api/ctf/challenges`);
       const data = await response.json();
   
       const teamFilteredData = await TeamFilterChallenges(data);
