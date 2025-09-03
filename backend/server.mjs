@@ -45,8 +45,6 @@ const allowedOrigins = [
 
 console.log(`Allowed Origins\n|____ ${allowedOrigins}\n`);
 
-// backend will handle setting JWT Cookies so the Frontend never
-// sees the tokens passed from a response
 app.use(cors({
     origin: allowedOrigins,  // React app origin
     credentials: true                // allow cookies

@@ -588,7 +588,6 @@ async function RemoveMember(member_username, username) {
     const member_id = memberProfile._id.toString();
     const team_id = memberProfile.team_id; // reference to the team this user is removed from
 
-    // fetch the user profile based off the JWT
     const userProfile = await UserCollection.findOne({
         username: username
     })

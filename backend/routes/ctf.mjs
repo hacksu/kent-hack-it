@@ -1,5 +1,5 @@
 import { UserCollection, ChallengeCollection } from '../db.mjs';
-import { SanitizeAlphaNumeric, SanitizeString, Hash_SHA256 } from '../utils.mjs';
+import { SanitizeAlphaNumeric, SanitizeString, Hash_SHA256, ValidRatingNumber } from '../utils.mjs';
 
 import { Router } from "express";
 const router = Router();
@@ -233,7 +233,7 @@ router.post('/rate-challenge', async (req, res) => {
     const data = req.body;
 
     try {
-        const ratingChallenge = await UserRatingChallenge(data, username);
+        const ratingChallenge = await UserRatingChallenge(data, req.user.username);
         return res.json(ratingChallenge);
     } catch (err) {
         console.error(err)
@@ -244,9 +244,11 @@ async function UserRatingChallenge(ratingData, username) {
     username = SanitizeString(username);
 
     if (!ratingData || username === null) {
-        console.log("[-] Error rating username or email in JWT malformed!");
+        console.log("[-] Error bad data!");
         return null;
     }
+
+    console.log(JSON.stringify(ratingData));
 
     const userProfile = await UserCollection.findOne({ username: username })
     if (!userProfile) {
