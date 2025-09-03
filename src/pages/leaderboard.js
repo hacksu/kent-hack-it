@@ -81,13 +81,20 @@ export function Leaderboard() {
                 </div>
 
                 <div className="container mt-2 d-flex justify-content-center gap-3">
-                    {/* THIS CARD ONLY SHOWS WHEN A USER IS AUTHENTICATED */}
-                    {(userData) && (
+                    {/*
+                        THIS CARD ONLY SHOWS WHEN A USER IS AUTHENTICATED
+                        ADMINS THAT PARTICIPATE WILL NOT SEE PLACEMENT
+                        STATUS ON LEADERBOARD
+                    */}
+                    {userData && (
                         <div
-                            className="card shadow-sm"
-                            style={{ minWidth: '200px', maxWidth: '300px', width: '100%' }}
+                            className="card shadow-sm border-0 rounded-3"
+                            style={{ minWidth: "220px", maxWidth: "320px", width: "100%" }}
                         >
-                            <div className="card-header bg-primary text-white text-center fw-bold">
+                            {/* Header */}
+                            <div className="card-header bg-gradient text-white text-center fw-bold rounded-top-3"
+                                style={{ background: "linear-gradient(90deg, #0d6efd, #0a58ca)" }}>
+                                <i className="bi bi-person-circle me-2"></i>
                                 {userData.username}
                             </div>
 
@@ -101,23 +108,32 @@ export function Leaderboard() {
                                 const userEntry = leaderboard[actualIndex];
                                 let badgeColor = "secondary";
                                 if (actualIndex === 0) badgeColor = "warning";
-                                else if (actualIndex === 1) badgeColor = "secondary";
+                                else if (actualIndex === 1) badgeColor = "info";
                                 else if (actualIndex === 2) badgeColor = "danger";
 
                                 return (
                                     <div className="card-body">
-                                        <div className="d-flex justify-content-between align-items-center mb-2">
-                                            <h6 className="mb-0">Your Placement</h6>
-                                            <span className={`badge bg-${badgeColor} ms-2`}>
+                                        {/* Placement row */}
+                                        <div className="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 className="mb-0 text-muted">Your Placement</h6>
+                                            <span
+                                                className={`badge bg-${badgeColor} rounded-pill px-3 py-2`}
+                                                style={{ fontSize: "1rem" }}
+                                            >
                                                 #{actualIndex + 1}
                                             </span>
                                         </div>
 
+                                        {/* User entry row */}
                                         <div
-                                            className="d-flex align-items-center d-flex justify-content-between px-4 py-2"
-                                            style={{ fontSize: "1.25rem" }}>
-                                            <span className="fw-semibold">{userEntry.name}</span>
-                                            <span className="text-muted fw-bold">{userEntry.points} pts</span>
+                                            className="d-flex justify-content-between align-items-center bg-light rounded-3 px-3 py-2 shadow-sm"
+                                            style={{ fontSize: "1.1rem" }}
+                                        >
+                                            <span className="fw-semibold">
+                                                <i className="bi bi-trophy me-2 text-warning"></i>
+                                                {userEntry.name}
+                                            </span>
+                                            <span className="fw-bold text-primary">{userEntry.points} pts</span>
                                         </div>
                                     </div>
                                 );
@@ -152,7 +168,7 @@ export function Leaderboard() {
                                     >
                                         <span>
                                             <span className={`badge bg-${badgeColor} me-2`}>
-                                                {actualIndex + 1}
+                                                #{actualIndex + 1}
                                             </span>
                                             {item.name}
                                         </span>

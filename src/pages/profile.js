@@ -33,7 +33,7 @@ export function Profile() {
 
                 const data = await response.json();
                 if (data) {
-                    console.log(data);
+                    // console.log(data);
                     SetUsername(data.username);
                     SetProfileImage(data.avatarUrl);
                 }

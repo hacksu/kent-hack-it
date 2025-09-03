@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import Navbar, { VerifyAuth } from '../components/navbar.js';
+import DOMPurify from "dompurify";
 
 export function ChallengeDetail() {
     const { search } = useLocation();
@@ -79,6 +80,13 @@ export function ChallengeDetail() {
         );
     }
 
+    function SanitizeDescription(description) {
+        const cleanDescription = DOMPurify.sanitize(description, {
+            USE_PROFILES: { html: true } // allows safe HTML (basic formatting, links, etc.)
+        });
+        return cleanDescription;
+    }
+
     return (
         <>
             {isAuth === true ? (
@@ -94,7 +102,10 @@ export function ChallengeDetail() {
                                             <h6 className="card-subtitle mb-2 text-muted">
                                                 {challenge.category} | Difficulty: {challenge.difficulty}
                                             </h6>
-                                            <p className="card-text">{challenge.description}</p>
+                                            <p
+                                                className="card-text"
+                                                dangerouslySetInnerHTML={{ __html: SanitizeDescription(challenge.description) }}
+                                            />
                                             <p className="card-text">
                                                 ⭐ Rating: {challenge.rating.toFixed(1)} / 5
                                             </p>

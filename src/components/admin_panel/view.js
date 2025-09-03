@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import AdminChallengeEditTab from './edit.js';
+import DOMPurify from "dompurify";
 
 function AdminChallengeViewTab() {
     const [activeTab, setActiveTab] = useState("");
@@ -64,6 +65,13 @@ function AdminChallengeViewTab() {
         }
     }
 
+    function SanitizeDescription(description) {
+        const cleanDescription = DOMPurify.sanitize(description, {
+            USE_PROFILES: { html: true } // allows safe HTML (basic formatting, links, etc.)
+        });
+        return cleanDescription;
+    }
+
     return (
         <>
             {activeTab === "edit" ? (
@@ -99,9 +107,8 @@ function AdminChallengeViewTab() {
                                                     paddingRight: "8px"
                                                 }}
                                                 className="card-text small mt-2"
-                                            >
-                                                {challenge.description}
-                                            </p>
+                                                dangerouslySetInnerHTML={{ __html: SanitizeDescription(challenge.description) }}
+                                            />
 
                                             <p
                                                 style={{ fontSize: "1.25rem" }}

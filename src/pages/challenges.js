@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
 import Navbar, { VerifyAuth } from '../components/navbar.js';
+import DOMPurify from "dompurify";
 
 export function Challenges() {
     const [challenges, setChallenges] = useState([]);
@@ -112,9 +113,17 @@ export function Challenges() {
             const selfFilteredData = await SelfFilterChallenges(data);
 
             if (!teamData || showSelfCompleted) {
-                setChallenges(selfFilteredData);
+                if (selfFilteredData) {
+                    setChallenges(selfFilteredData);
+                } else {
+                    setChallenges([]);
+                }
             } else {
-                setChallenges(teamFilteredData);
+                if (teamFilteredData) {
+                    setChallenges(teamFilteredData);
+                } else {
+                    setChallenges([]);
+                }
             }
         } catch (err) {
             console.error('Failed to fetch challenges:', err);
@@ -136,7 +145,12 @@ export function Challenges() {
 
     const indexOfLast = currentPage * challengesPerPage;
     const indexOfFirst = indexOfLast - challengesPerPage;
-    const currentChallenges = challenges.slice(indexOfFirst, indexOfLast);
+    const currentChallenges = () => {
+        if (!challenges || challenges.length === 0) {
+            return [];
+        }
+        return challenges.slice(indexOfFirst, indexOfLast);
+    };
 
     const nextPage = () => {
         if (indexOfLast < challenges.length) {
@@ -158,6 +172,13 @@ export function Challenges() {
     useEffect(() => {
         FetchChallenges()
     }, [profileData, FetchChallenges]);
+
+    function SanitizeDescription(description) {
+        const cleanDescription = DOMPurify.sanitize(description, {
+            USE_PROFILES: { html: true } // allows safe HTML (basic formatting, links, etc.)
+        });
+        return cleanDescription;
+    }
 
     return (
         <>
@@ -200,7 +221,7 @@ export function Challenges() {
                             </div>
 
                             <div className="row justify-content-center">
-                                {currentChallenges.map((challenge, idx) => (
+                                {currentChallenges().map((challenge, idx) => (
                                     <div
                                         className="col-12 col-sm-6 col-md-3 col-lg-3 mb-3"
                                         key={idx}
@@ -216,7 +237,10 @@ export function Challenges() {
                                                     <small className="text-muted">
                                                         {challenge.category} | Difficulty: {challenge.difficulty}
                                                     </small>
-                                                    <p className="card-text small mt-2">{challenge.description}</p>
+                                                    <p
+                                                        className="card-text small mt-2"
+                                                        dangerouslySetInnerHTML={{ __html: SanitizeDescription(challenge.description) }}
+                                                    />
                                                     <p className="card-text small mb-1">
                                                         ⭐ {challenge.rating.toFixed(1)} / 5
                                                     </p>

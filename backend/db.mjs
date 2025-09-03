@@ -96,6 +96,33 @@ export const ChallengeCollection = mongoose.model(
     'challenges'
 );
 
+const SiteSchema = new mongoose.Schema({
+    interacted_by: { type: String, default: "" },
+    site_active: { type: Boolean, default: false },
+});
+export const SiteSettings = mongoose.model(
+    'SiteSettings',
+    SiteSchema,
+    'sitesettings'
+);
+
+mongoose.connection.once("open", async () => {
+    try {
+        const existing = await SiteSettings.findOne({});
+        if (!existing) {
+            await SiteSettings.create({
+                interacted_by: "system",
+                site_active: false
+            });
+            console.log("[*] Default SiteSettings entry created.");
+        } else {
+            console.log("[*] SiteSettings already exists.");
+        }
+    } catch (err) {
+        console.error("Error ensuring SiteSettings exists:", err);
+    }
+});
+
 //==================================================================================================
 
 export async function UserIsAdmin(accessToken, guildId, roleId) {

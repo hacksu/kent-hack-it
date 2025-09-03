@@ -15,6 +15,7 @@ export function AdminPanel() {
     const [activeTab, setActiveTab] = useState("users");
     const [msgContent, setMsgContent] = useState("");
     const [isAuth, SetAuth] = useState(false);
+    const [siteActive, SetSiteActive] = useState(false);
 
     useEffect(() => {
         async function Verify() {
@@ -25,11 +26,50 @@ export function AdminPanel() {
             }
         }
         Verify();
+        
+        async function CheckSite() {
+            try {
+                const response = await fetch(`/api/admin/get_site_info`, {
+                    method: "GET",
+                    credentials: 'include'  // ensures cookies are sent
+                });
+
+                const data = await response.json();
+                if (data) {
+                    SetSiteActive(data.activated);
+                } else {
+                    SetSiteActive(false);
+                }
+            } catch (err) {
+                console.error(err)
+            }
+        }
+        CheckSite();
     }, []); // run once on page-load
 
     async function ChangeTab(tab_name) {
         setMsgContent("")
         setActiveTab(tab_name);
+    }
+
+    async function ModifySiteSettings(newValue) {
+        try {
+            const response = await fetch(`/api/admin/update_site_info`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ activated: newValue }),
+                credentials: "include",
+            });
+
+            const data = await response.json();
+            if (data) {
+                if (data.acknowledge) {
+                    SetSiteActive(newValue);
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     return (
@@ -52,6 +92,16 @@ export function AdminPanel() {
                                 id='msg_popup'
                                 style={{ padding: '5px' }}
                                 dangerouslySetInnerHTML={{ __html: msgContent }}>
+                            </div>
+
+                            <div>
+                                <button
+                                    className={`btn ${siteActive ? "btn-success" : "btn-danger"}`}
+                                    style={{ fontSize: "1.5rem", padding: "0.5rem 1rem" }}
+                                    onClick={() => ModifySiteSettings(!siteActive)}
+                                >
+                                    {siteActive ? "Site Active" : "Site Inactive"}
+                                </button>
                             </div>
 
                             <div className="container">

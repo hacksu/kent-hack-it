@@ -1,5 +1,5 @@
 import { UserCollection, TeamCollection, TeamRequestCollection } from "../db.mjs";
-import { SanitizeAlphaNumeric, IsAdmin } from "../utils.mjs";
+import { IsSiteActive, UpdateSiteInfo, SanitizeAlphaNumeric, IsAdmin } from "../utils.mjs";
 
 import { Router } from "express";
 const router = Router();
@@ -18,6 +18,40 @@ router.get("/authenticated", (req, res) => {
 
     console.log("Authorized!");
     res.json({ message: "Authorized", user: req.user });
+});
+
+router.get('/get_site_info', async (req, res) => {
+    if (!IsAdmin(req)) {
+        console.log("Not an Admin!");
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // use the real value to reflect it across the button on
+    // admin panel
+    const siteOnline = await IsSiteActive(req, true);
+    console.log(`router get_site_info -> ${siteOnline}`)
+
+    return res.json({ activated : siteOnline });
+});
+
+router.post('/update_site_info', async (req, res) => {
+    if (!IsAdmin(req)) {
+        console.log("Not an Admin!");
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const data = req.body;
+    if (data && data.activated !== null) {
+        const updatedInfo = await UpdateSiteInfo(req, data.activated)
+        
+        console.log(`[*] Updated Info -> ${JSON.stringify(updatedInfo)}`)
+        
+        return res.json({
+            acknowledge : updatedInfo
+        })
+    } else {
+        return res.json(null)
+    }
 });
 
 router.get('/get_users', async (req, res) => {
@@ -48,7 +82,7 @@ async function GetAllUsers() {
             }
         }
     }
-    console.log(readableUsers);
+    // console.log(readableUsers);
 
     return readableUsers;
 }
@@ -231,8 +265,8 @@ async function GetAdmins() {
     // check if profile is protected from deletion
     const admins = await UserCollection.find({ is_admin: true },
         { username: 1, avatarUrl: 1 });
-    console.log("ADMIN LIST")
-    console.log(admins)
+    // console.log("ADMIN LIST")
+    // console.log(admins)
     return admins;
 }
 

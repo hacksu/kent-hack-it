@@ -104,7 +104,7 @@ passport.use(
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
-                console.log("GitHub profile:", profile);
+                // console.log("GitHub profile:", profile);
                 let user = await UserCollection.findOne({
                     provider: "github",
                     providerId: profile.id,
@@ -142,7 +142,7 @@ passport.use(
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
-                console.log("Discord profile:", profile);
+                // console.log("Discord profile:", profile);
 
                 const guildId = "632634799303032852"; // HacKSU
                 const adminRoleId = `${process.env.KHI_ADMIN_ID}`;

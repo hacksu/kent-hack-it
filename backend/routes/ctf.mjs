@@ -1,5 +1,7 @@
 import { UserCollection, ChallengeCollection } from '../db.mjs';
-import { SanitizeAlphaNumeric, SanitizeString, Hash_SHA256, ValidRatingNumber } from '../utils.mjs';
+import { SanitizeAlphaNumeric, SanitizeString,
+        Hash_SHA256, ValidRatingNumber,
+        IsSiteActive } from '../utils.mjs';
 
 import { Router } from "express";
 const router = Router();
@@ -8,8 +10,12 @@ const router = Router();
 router.get("/challenges", async (req, res) => {
     if (!req.isAuthenticated()) return res.json(null);
 
-    const challenges = await GetChallenges();
-    res.send(challenges);
+    if (await IsSiteActive(req, false)) {
+        const challenges = await GetChallenges();
+        res.send(challenges);
+    } else {
+        return res.json(null);
+    }
 });
 async function GetChallenges() {
     const challenges = await ChallengeCollection.find({}, {
@@ -21,10 +27,14 @@ async function GetChallenges() {
 router.post("/challenge", async (req, res) => {
     if (!req.isAuthenticated()) return res.json(null);
 
-    const data = req.body;
-    // fetches details from given challenge id
-    const challenge_details = await GetChallengeInfo(data.challenge_id);
-    res.json(challenge_details);
+    if (await IsSiteActive(req, false)) {
+        const data = req.body;
+        // fetches details from given challenge id
+        const challenge_details = await GetChallengeInfo(data.challenge_id);
+        res.json(challenge_details);
+    } else {
+        res.json(null)
+    }
 });
 async function GetChallengeInfo(challenge_id) {
     challenge_id = SanitizeAlphaNumeric(challenge_id)
@@ -51,17 +61,21 @@ router.post("/submit-flag", async (req, res) => {
 
         if (!req.isAuthenticated()) return res.json(null);
 
-        const user_id = req.user._id.toString();
-        if (!user_id) {
-            console.log("[-] Bad Flag Submission no user_id!");
+        if (await IsSiteActive(req, false)) {
+            const user_id = req.user._id.toString();
+            if (!user_id) {
+                console.log("[-] Bad Flag Submission no user_id!");
+                return res.json(null);
+            }
+
+            const checkFlag = await ValidateFlag(
+                data.challenge_id, data.flag, user_id
+            );
+            // null | { message }
+            return res.json(checkFlag);
+        } else {
             return res.json(null);
         }
-
-        const checkFlag = await ValidateFlag(
-            data.challenge_id, data.flag, user_id
-        );
-        // null | { message }
-        return res.json(checkFlag);
     } catch (err) {
         console.error(err)
         console.log("[-] Bad Flag Submission Request!");
@@ -233,8 +247,12 @@ router.post('/rate-challenge', async (req, res) => {
     const data = req.body;
 
     try {
-        const ratingChallenge = await UserRatingChallenge(data, req.user.username);
-        return res.json(ratingChallenge);
+        if (await IsSiteActive(req, false)) {
+            const ratingChallenge = await UserRatingChallenge(data, req.user.username);
+            return res.json(ratingChallenge);
+        } else {
+            return res.json(null)
+        }
     } catch (err) {
         console.error(err)
         return res.json(null);
@@ -344,6 +362,10 @@ import sanitize from 'sanitize-filename';
 
 router.get('/download/:filename', (req, res, next) => {
     if (!req.isAuthenticated()) return res.send('Unauthorized!');
+
+    if (!IsSiteActive(req, false)) {
+        return res.send('Unauthorized!');
+    }
     
     try {
         const uploadsDir = process.env.CHALLENGE_UPLOAD_DIR;

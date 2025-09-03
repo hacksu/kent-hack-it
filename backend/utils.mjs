@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { SiteSettings } from './db.mjs';
 
 // Function designed to attempt to sanitize strings
 export function SanitizeString(input) {
@@ -44,6 +45,65 @@ export function IsAdmin(req) {
     if (!req.user) return false;
     console.log(JSON.stringify(req.user));
     return req.user.is_admin === true
+}
+
+export async function IsSiteActive(req, reflectButton) {
+    // admins can always see everything
+    if (IsAdmin(req) && !reflectButton) {
+        return true;
+    }
+
+    try {
+        // for non-admins check if the site is active
+        const siteSettings = await SiteSettings.findOne({}).lean();
+        
+        console.log(`siteSettings -> ${JSON.stringify(siteSettings)}`)
+
+        if (siteSettings) {
+            console.log(`[*] Is Site Active? ${siteSettings.site_active === true}`)
+            return siteSettings.site_active === true;
+        } else {
+            return false;
+        }
+    } catch (err) {
+        console.error(err)
+        return false;
+    }
+}
+
+export async function UpdateSiteInfo(req, value) {
+    if (!IsAdmin(req) || value === null) {
+        console.log("Not Allowed to Update Site!")
+        return false;
+    }
+
+    try {
+        // update the one and only site settings entry
+        const updated = await SiteSettings.findOneAndUpdate(
+            {},
+            { 
+                site_active: value,
+                interacted_by: req.user?.username || "unknown"
+            },
+            { new: true }
+        ).lean();
+
+        if (updated) {
+            console.log("Updated Site Data!")
+
+            return {
+                acknowledge: true,
+                site_active: updated.site_active,
+                interacted_by: updated.interacted_by
+            };
+        } else {
+            console.log("Failed to Update Site Data")
+            return { acknowledge: false };
+        }
+    } catch (err) {
+        console.error("Error updating site info:", err);
+        return false;
+    }
 }
 
 //###############################################
