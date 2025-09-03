@@ -9,6 +9,7 @@ import oauthRoutes from "./routes/oauth.mjs";
 import ctfRoutes from "./routes/ctf.mjs";
 import userRoutes from "./routes/user.mjs";
 import adminRoutes from "./routes/admin.mjs";
+import adminCtfRoutes from "./routes/adminCtf.mjs";
 import teamRoutes from "./routes/team.mjs";
 import infoRoutes from "./routes/info.mjs";
 
@@ -101,6 +102,7 @@ passport.use(
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
       callbackURL: process.env.GITHUB_CALLBACK_URL,
+      scope: ["user:email"],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -126,6 +128,10 @@ passport.use(
     }
   )
 );
+// engage the github strategy
+app.get("/auth/github", passport.authenticate("github", {
+  scope: ["user:email"]
+}));
 
 // --- Discord OAuth ---
 passport.use(
@@ -177,11 +183,10 @@ passport.use(
     }
   )
 );
-
-// engage the github strategy
-app.get("/auth/github", passport.authenticate("github", { scope: ["user:email"] }));
 // engage the discord strategy
-app.get("/auth/discord", passport.authenticate("discord", { scope: ["identify", "email", "guilds", "guilds.members.read"] }));
+app.get("/auth/discord", passport.authenticate("discord", {
+  scope: ["identify", "email", "guilds", "guilds.members.read"]
+}));
 
 // ---
 
@@ -189,6 +194,7 @@ app.get("/auth/discord", passport.authenticate("discord", { scope: ["identify", 
 app.use("/auth", oauthRoutes);  // OAuth
 app.use("/ctf", ctfRoutes);     // CTF Challenge interaction
 app.use("/admin", adminRoutes); // admin actions
+app.use("/admin/ctf", adminCtfRoutes); // admin actions against challenges
 app.use("/user", userRoutes);   // user actions
 app.use("/team", teamRoutes);   // team actions
 app.use("/info", infoRoutes);   // team actions

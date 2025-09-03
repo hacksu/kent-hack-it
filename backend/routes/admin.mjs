@@ -1,14 +1,8 @@
 import { UserCollection, TeamCollection } from "../db.mjs";
-import { SanitizeAlphaNumeric } from "../utils.mjs";
+import { SanitizeAlphaNumeric, IsAdmin } from "../utils.mjs";
 
 import { Router } from "express";
 const router = Router();
-
-function IsAdmin(req) {
-  if (!req.user) return false;
-  console.log(JSON.stringify(req.user));
-  return req.user.is_admin === true
-}
 
 // expands end-point root '/admin'
 router.get("/authenticated", (req, res) => {

@@ -39,3 +39,9 @@ export function Generate_Checksum() {
 export function SanitizeAlphaNumeric(input) {
     return input.replace(/[^a-zA-Z0-9]/g, '');
 }
+
+export function IsAdmin(req) {
+  if (!req.user) return false;
+  console.log(JSON.stringify(req.user));
+  return req.user.is_admin === true
+}

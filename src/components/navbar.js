@@ -52,7 +52,7 @@ function Navbar() {
         credentials: "include", // include cookies
       });
       
-      window.location.href = "/";
+      window.location.href = "/login";
     } catch (err) {
       console.error("Logout failed:", err);
     }

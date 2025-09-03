@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import '../App.css';
-import Navbar from '../components/navbar.js';
+import Navbar, { VerifyAuth } from '../components/navbar.js';
 
 export function RatingPage() {
   const [profileData, SetProfileData] = useState(null);
   const [unratedChallenges, setUnratedChallenges] = useState({});
   const [challengeDetails, setChallengeDetails] = useState({});
   const [ratings, setRatings] = useState({});  // Store ratings per challenge
+  const [isAuth, SetAuth] = useState(false);
+
+  useEffect(() => {
+    async function Verify() {
+      const authenticated = await VerifyAuth();
+      SetAuth(authenticated);
+      if (authenticated === false) {
+        window.location.href = "/login";
+      }
+    }
+    Verify();
+  }, []); // run on-load
 
   async function GetProfileDetails() {
     try {
@@ -110,80 +122,90 @@ export function RatingPage() {
   };
 
   return (
-    <div className="App page-background">
-      <Navbar />
-      <div className="container mt-4">
-        <div id='msg_popup' style={{ fontSize: "2rem", fontWeight: 'bold' }}>
-        </div>
-        <h2 className="mb-3">Rating Page</h2>
-        <div className="row justify-content-center">
-          {(profileData && unratedChallenges.length > 0) ? (
-            <>
-              {unratedChallenges.map((challenge, idx) => (
-                <div
-                  className="col-12 col-sm-6 col-md-3 col-lg-3 mb-3"
-                  key={idx}
-                  style={{ maxWidth: '250px' }}
-                >
-                  <div className="card h-100 shadow-sm p-2">
-                    <div className="card-body p-2">
-                      {/* Fetch challenge details if not already loaded */}
-                      {challengeDetails[challenge.id] ? (
-                        <>
-                        <h6 className="card-title mb-1" style={{ color: '#2e5c87' }}>{challengeDetails[challenge.id].name}</h6>
-                          <small className="text-muted">
-                            {challengeDetails[challenge.id].category} | Difficulty: {challengeDetails[challenge.id].difficulty}
-                          </small>
-                          <p className="card-text small mt-2" style={{ color: '#333' }}>{challengeDetails[challenge.id].description}</p>
-                          <p className="card-text small mb-1" style={{ color: '#333' }}>
-                            ⭐ {challengeDetails[challenge.id].rating} / 5
-                          </p>
+    <>
+      {isAuth === true ? (
+        <>
+          <div className="App page-background">
+            <Navbar />
+            <div className="container mt-4">
+              <div id='msg_popup' style={{ fontSize: "2rem", fontWeight: 'bold' }}>
+              </div>
+              <h2 className="mb-3">Rating Page</h2>
+              <div className="row justify-content-center">
+                {(profileData && unratedChallenges.length > 0) ? (
+                  <>
+                    {unratedChallenges.map((challenge, idx) => (
+                      <div
+                        className="col-12 col-sm-6 col-md-3 col-lg-3 mb-3"
+                        key={idx}
+                        style={{ maxWidth: '250px' }}
+                      >
+                        <div className="card h-100 shadow-sm p-2">
+                          <div className="card-body p-2">
+                            {/* Fetch challenge details if not already loaded */}
+                            {challengeDetails[challenge.id] ? (
+                              <>
+                                <h6 className="card-title mb-1" style={{ color: '#2e5c87' }}>{challengeDetails[challenge.id].name}</h6>
+                                <small className="text-muted">
+                                  {challengeDetails[challenge.id].category} | Difficulty: {challengeDetails[challenge.id].difficulty}
+                                </small>
+                                <p className="card-text small mt-2" style={{ color: '#333' }}>{challengeDetails[challenge.id].description}</p>
+                                <p className="card-text small mb-1" style={{ color: '#333' }}>
+                                  ⭐ {challengeDetails[challenge.id].rating} / 5
+                                </p>
 
-                          <form onSubmit={(event) => handleSubmit(event, challenge.id)}>
-                            <div>
-                              <label htmlFor={`rating-${challenge.id}`} style={{ color: '#2e5c87', fontWeight: '500' }}>Rating (1-5): </label>
-                              <select
-                                id={`rating-${challenge.id}`}
-                                className="form-control form-control-sm mt-1"
-                                value={ratings[challenge.id] || "select rating"} // default rating if not set
-                                onChange={(e) => handleRatingChange(challenge.id, e.target.value)}
-                              >
-                                {["select rating", 1, 2, 3, 4, 5].map((value) => (
-                                  <option key={value} value={value}>
-                                    {value}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
+                                <form onSubmit={(event) => handleSubmit(event, challenge.id)}>
+                                  <div>
+                                    <label htmlFor={`rating-${challenge.id}`} style={{ color: '#2e5c87', fontWeight: '500' }}>Rating (1-5): </label>
+                                    <select
+                                      id={`rating-${challenge.id}`}
+                                      className="form-control form-control-sm mt-1"
+                                      value={ratings[challenge.id] || "select rating"} // default rating if not set
+                                      onChange={(e) => handleRatingChange(challenge.id, e.target.value)}
+                                    >
+                                      {["select rating", 1, 2, 3, 4, 5].map((value) => (
+                                        <option key={value} value={value}>
+                                          {value}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
 
-                            <button
-                              className="btn btn-sm btn-primary mt-2"
-                              type="submit"
-                            >
-                              Submit Rating
-                            </button>
-                          </form>
-                        </>
-                      ) : (
-                        <>
-                          <p>Loading Challenge Info. . .</p>
-                          {fetchChallengeData(challenge.id)} {/* Fetch the data on load */}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          ) : (
-            <p>
-              As you complete challenges, you can come here
-              to optionally leave a rating for the challenges
-              you've completed!
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
+                                  <button
+                                    className="btn btn-sm btn-primary mt-2"
+                                    type="submit"
+                                  >
+                                    Submit Rating
+                                  </button>
+                                </form>
+                              </>
+                            ) : (
+                              <>
+                                <p>Loading Challenge Info. . .</p>
+                                {fetchChallengeData(challenge.id)} {/* Fetch the data on load */}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <p>
+                    As you complete challenges, you can come here
+                    to optionally leave a rating for the challenges
+                    you've completed!
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <h1>Page Loading. . .</h1>
+        </>
+      )}
+    </>
   );
 }

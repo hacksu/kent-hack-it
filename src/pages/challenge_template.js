@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import Navbar from '../components/navbar.js';
+import Navbar, { VerifyAuth } from '../components/navbar.js';
 
 export function ChallengeDetail() {
   const { search } = useLocation();
@@ -9,6 +9,18 @@ export function ChallengeDetail() {
   const [challenge, setChallenge] = useState(null);
   const [answer, setAnswer] = useState('');
   const [message, setMessage] = useState('');
+  const [isAuth, SetAuth] = useState(false);
+
+  useEffect(() => {
+    async function Verify() {
+      const authenticated = await VerifyAuth();
+      SetAuth(authenticated);
+      if (authenticated === false) {
+        window.location.href = "/login";
+      }
+    }
+    Verify();
+  }, []); // run on-load
 
   useEffect(() => {
     async function FetchChallenge() {
@@ -33,7 +45,7 @@ export function ChallengeDetail() {
       const response = await fetch(`/api/ctf/submit-flag`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           "flag": answer,
@@ -68,30 +80,33 @@ export function ChallengeDetail() {
   }
 
   return (
-    <div className="App">
-      <Navbar />
-        <div className="container mt-4">
-        <div className="row justify-content-center">
-            <div className="col-12 col-md-8 col-lg-6">
-            <div className="card shadow-sm">
-                <div className="card-body">
-                <h4 className="card-title">{challenge.name}</h4>
-                <h6 className="card-subtitle mb-2 text-muted">
-                    {challenge.category} | Difficulty: {challenge.difficulty}
-                </h6>
-                <p className="card-text">{challenge.description}</p>
-                <p className="card-text">
-                    ⭐ Rating: {challenge.rating.toFixed(1)} / 5
-                </p>
-                <p className="card-text">
-                    Points: {challenge.points}
-                </p>
+    <>
+      {isAuth === true ? (
+        <>
+          <div className="App">
+            <Navbar />
+            <div className="container mt-4">
+              <div className="row justify-content-center">
+                <div className="col-12 col-md-8 col-lg-6">
+                  <div className="card shadow-sm">
+                    <div className="card-body">
+                      <h4 className="card-title">{challenge.name}</h4>
+                      <h6 className="card-subtitle mb-2 text-muted">
+                        {challenge.category} | Difficulty: {challenge.difficulty}
+                      </h6>
+                      <p className="card-text">{challenge.description}</p>
+                      <p className="card-text">
+                        ⭐ Rating: {challenge.rating.toFixed(1)} / 5
+                      </p>
+                      <p className="card-text">
+                        Points: {challenge.points}
+                      </p>
 
-                <hr />
+                      <hr />
 
-                <form onSubmit={handleSubmit}>
+                      <form onSubmit={handleSubmit}>
                         <div className="mb-3">
-                            <input
+                          <input
                             type="text"
                             className="form-control"
                             id="answerInput"
@@ -99,31 +114,38 @@ export function ChallengeDetail() {
                             value={answer}
                             onChange={(e) => setAnswer(e.target.value)}
                             required
-                            />
+                          />
                         </div>
                         <div className="d-flex gap-2">
-                            <button type="submit" className="btn btn-primary">
+                          <button type="submit" className="btn btn-primary">
                             Submit Flag
-                            </button>
-                            <Link to="/compete" className="btn btn-secondary">
+                          </button>
+                          <Link to="/compete" className="btn btn-secondary">
                             Back
-                            </Link>
+                          </Link>
                         </div>
-                </form>
+                      </form>
 
-                {message && (
-                    <div
-                        className={`alert mt-3 ${message === 'Correct Flag!' ? 'alert-info' : 'alert-danger'}`}
-                        role="alert"
-                    >
-                        {message}
+                      {message && (
+                        <div
+                          className={`alert mt-3 ${message === 'Correct Flag!' ? 'alert-info' : 'alert-danger'}`}
+                          role="alert"
+                        >
+                          {message}
+                        </div>
+                      )}
                     </div>
-                )}
+                  </div>
                 </div>
+              </div>
             </div>
-            </div>
-        </div>
-        </div>
-    </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <h1>Page Loading. . .</h1>
+        </>
+      )}
+    </>
   );
 }
