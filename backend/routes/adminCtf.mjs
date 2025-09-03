@@ -153,6 +153,11 @@ async function DeleteChallenge(data, adminUsername) {
 router.post('/update_challenge', async (req, res) => {
     const data = req.body;
 
+    if (!IsAdmin(req)) {
+        console.log("Not an Admin!");
+        return res.status(401).json(null);
+    }
+
     try {
         console.log("Admin Attmepting to Update Challenge: " + data.challenge_id)
         const action = await UpdateChallenge(data);

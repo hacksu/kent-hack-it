@@ -56,6 +56,11 @@ async function GetAllUsers() {
 router.post('/remove_user', async (req, res) => {
     const data = req.body;
 
+    if (!IsAdmin(req)) {
+        console.log("Not an Admin!");
+        return res.status(401).json(null);
+    }
+
     try {
         // prevent self-deletion
         if (req.user._id.toString() === data.user_id) {
@@ -154,6 +159,11 @@ async function GetAllTeams() {
 
 router.post('/remove_team', async (req, res) => {
     const data = req.body;
+
+    if (!IsAdmin(req)) {
+        console.log("Not an Admin!");
+        return res.status(401).json(null);
+    }
 
     try {
         console.log("Admin Attmepting to Remove Team: " + data.team_id)

@@ -6,6 +6,8 @@ const router = Router();
 
 // expands end-point root '/ctf'
 router.get("/challenges", async (req, res) => {
+    if (!req.isAuthenticated()) return res.json(null);
+
     const challenges = await GetChallenges();
     res.send(challenges);
 });
@@ -17,6 +19,8 @@ async function GetChallenges() {
 }
 
 router.post("/challenge", async (req, res) => {
+    if (!req.isAuthenticated()) return res.json(null);
+
     const data = req.body;
     // fetches details from given challenge id
     const challenge_details = await GetChallengeInfo(data.challenge_id);
@@ -224,6 +228,8 @@ async function UpdateTeamCompletions(team_id) {
 }
 
 router.post('/rate-challenge', async (req, res) => {
+    if (!req.isAuthenticated()) return res.json(null);
+    
     const data = req.body;
 
     try {

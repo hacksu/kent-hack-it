@@ -6,6 +6,8 @@ const router = Router();
 
 // expands end-point root '/info'
 router.post('/get-completions', async (req, res) => {
+    if (!req.isAuthenticated()) return res.json(null);
+    
     const data = req.body;
 
     try {

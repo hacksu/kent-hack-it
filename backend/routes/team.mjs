@@ -111,6 +111,7 @@ router.post('/request', async (req, res) => {
     const data = req.body;
     try {
         if (!req.isAuthenticated()) return res.json(null);
+
         console.log("[*] Attempting to send Team Request")
         const teamRequest = await SendTeamRequest(req.user.username, data.team_name);
         console.log(JSON.stringify(teamRequest))
@@ -472,6 +473,8 @@ async function UpdateTeam(team_creator, new_team_name) {
 }
 
 router.post('/add-member', async (req, res) => {
+    if (!req.isAuthenticated()) return res.json(null);
+    
     const data = req.body;
 
     try {
@@ -640,6 +643,8 @@ async function RemoveMember(member_username, username) {
 }
 
 router.post('/replace-leader', async (req, res) => {
+    if (!req.isAuthenticated()) return res.json(null);
+    
     const data = req.body;
 
     try {
