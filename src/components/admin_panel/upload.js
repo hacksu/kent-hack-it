@@ -166,7 +166,7 @@ function AdminChallengeUploadTab() {
                                 style={{ fontSize: '0.9rem', minWidth: '300px', maxWidth: '600px' }}
                             >
                                 <a
-                                    href={`/api/download/${file}`}
+                                    href={`/api/ctf/download/${file}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-decoration-none text-muted flex-grow-1 custom-hover-dark"

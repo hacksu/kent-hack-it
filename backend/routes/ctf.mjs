@@ -337,4 +337,64 @@ async function UserRatingChallenge(ratingData, username) {
     }
 }
 
+import path from 'path';
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import sanitize from 'sanitize-filename';
+
+router.get('/download/:filename', (req, res, next) => {
+    if (!req.isAuthenticated()) return res.send('Unauthorized!');
+    
+    try {
+        const uploadsDir = process.env.CHALLENGE_UPLOAD_DIR;
+
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+
+        const allowedExtensions = ['.zip'];
+
+        const rawFilename = req.params.filename;
+        const safeFilename = sanitize(rawFilename);
+        const ext = path.extname(safeFilename).toLowerCase();
+
+        // attempt to check file types
+        if (!allowedExtensions.includes(ext)) {
+            console.log("Invalid file type!")
+            return res.status(400).send('Invalid file type.');
+        }
+
+        // attempt to sanitize file path to prevent LFI
+        const filePath = path.join(uploadsDir, safeFilename);
+
+        if (!filePath.startsWith(uploadsDir)) {
+            console.log("Invalid file path!")
+            return res.status(400).send('Invalid file path.');
+        }
+
+        if (!existsSync(filePath)) {
+            console.log("File not found!")
+            return res.status(404).send('File not found.');
+        }
+
+        // if something gets around it at least we log it!
+        // cause then we will dox them and cheer >w<
+        console.log(`[*] ${req.ip} downloading --> ${filePath}`);
+
+        res.download(filePath, (err) => {
+            if (err) {
+                if (err.code === 'ECONNABORTED') {
+                    console.warn(`[*] ${req.ip} aborted download. . .`);
+                } else {
+                    console.error('Download error:', err);
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Err: ", error);
+        if (!res.headersSent) {
+            res.status(500).send('Internal Server Error');
+        }
+    }
+});
+
 export default router;
