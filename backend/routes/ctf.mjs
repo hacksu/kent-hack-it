@@ -40,6 +40,7 @@ async function GetChallengeInfo(challenge_id) {
 
 router.post("/submit-flag", async (req, res) => {
     const data = req.body;
+    console.log(`flag submission -> ${JSON.stringify(data)}`)
 
     try {
         console.log("[*] Attempting to check flag value. . .");
@@ -53,7 +54,7 @@ router.post("/submit-flag", async (req, res) => {
         }
 
         const checkFlag = await ValidateFlag(
-            data.challenge_id, data.flag_value, user_id
+            data.challenge_id, data.flag, user_id
         );
         // null | { message }
         return res.json(checkFlag);
@@ -142,6 +143,83 @@ async function ValidateFlag(challenge_id, flag_value, user_id) {
     } else {
         console.log("[-] Challenge ID could not be located!");
         return null;
+    }
+}
+async function UpdateTeamCompletions(team_id) {
+    if (team_id === "None" || !team_id) return;
+    console.log("[*] Attempting to Update Team Completions. . .");
+    let teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id) });
+    if (teamProfile) {
+        const mergedCompletions = [];  // Initialize as an array of objects
+        const teamMembers = teamProfile.members;
+        teamMembers.push(teamProfile.team_leader_id);
+
+        console.log(`All Members of team ${teamProfile.name}`, teamMembers);
+
+        console.log("\nBEFORE: ", teamProfile.completions);
+
+        // remove entries within TeamCollections.completions that contain
+        // memberIds that are not contained in the teamMembers Array
+        await TeamCollection.updateOne(
+            { _id: SanitizeAlphaNumeric(team_id) },
+            {
+                $pull: {
+                    completions: {
+                        memberId: { $nin: teamMembers }
+                    }
+                }
+            }
+        );
+
+        // reference update after a modification
+        teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id) });
+        console.log("AFTER: ", teamProfile.completions);
+
+        for (const memberId of teamMembers) {
+            const memberProfile = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(memberId) });
+
+            if (!memberProfile || !memberProfile.completions) {
+                continue;
+            }
+
+            for (const data of Object.entries(memberProfile.completions)) {
+                // console.log(`Completions of ${memberProfile.username}`, memberProfile.completions)
+                const [index, { id, time }] = data; // break down the entry
+                // console.log("Completion Data -> ", { name, time });
+
+                const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(id) })
+                if (challengeProfile) {
+                    // Find if the challenge already exists in mergedCompletions
+                    const existingChallenge = mergedCompletions.find(completion => completion.id === id);
+    
+                    // If challenge doesn't exist or the current timestamp is older, add/update the challenge
+                    if (!existingChallenge || time < existingChallenge.timestamp) {
+                        const newCompletion = { id: id, memberId: memberId, points: challengeProfile.points, timestamp: time };
+    
+                        // Remove the existing challenge entry if it exists
+                        if (existingChallenge) {
+                            const index = mergedCompletions.indexOf(existingChallenge);
+                            mergedCompletions.splice(index, 1);
+                        }
+    
+                        // Add the new challenge with the oldest timestamp
+                        mergedCompletions.push(newCompletion);
+                    }
+                }
+            }
+        }
+
+        // console.log("Merged Completions:", mergedCompletions);
+
+        // Update the team completions as an array
+        await TeamCollection.updateOne(
+            { _id: SanitizeAlphaNumeric(team_id) },
+            { $set: { completions: mergedCompletions } }
+        );
+
+        console.log("[+] Team completions updated successfully!");
+    } else {
+        console.log(`[-] Cannot find Team Record for: ${team_id}`);
     }
 }
 

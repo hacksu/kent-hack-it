@@ -1,4 +1,4 @@
-import { UserCollection, TeamCollection, TeamRequestCollection } from '../db.mjs';
+import { UserCollection, TeamCollection, TeamRequestCollection, ChallengeCollection } from '../db.mjs';
 import { SanitizeString, SanitizeAlphaNumeric, Generate_Checksum, Hash_SHA256 } from '../utils.mjs';
 
 import { Router } from "express";
