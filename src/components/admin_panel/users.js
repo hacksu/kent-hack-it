@@ -81,39 +81,39 @@ function AdminUsersTab() {
             <div className="row">
 
                 {filteredUsers.map(user => (
-                    <div className="col-md-4 mb-4" key={user._id}>
-                        <div className="card shadow-sm border-0 h-100 rounded-3">
-                            <div className="card-body d-flex flex-column justify-content-between">
+                    <div className="col-md-3 mb-3" key={user._id}>  {/* 4 cards per row */}
+                        <div className="card shadow-sm border-0 h-100 rounded-3" style={{ fontSize: "0.9rem" }}>
+                            <div className="card-body d-flex flex-column justify-content-between p-3">
                                 {/* Top: Avatar + Username */}
-                                <div className="d-flex align-items-center mb-3">
+                                <div className="d-flex align-items-center mb-2">
                                     <img
                                         src={user.avatarUrl}
                                         alt={`${user.username}'s avatar`}
-                                        className="rounded-circle me-3 shadow-sm"
-                                        style={{ width: "60px", height: "60px", objectFit: "cover" }}
+                                        className="rounded-circle me-2 shadow-sm"
+                                        style={{ width: "45px", height: "45px", objectFit: "cover" }}
                                     />
-                                    <h5 className="card-title mb-0 fw-bold" style={{ fontSize: "1.4rem" }}>
+                                    <h6 className="card-title mb-0 fw-bold" style={{ fontSize: "1rem" }}>
                                         {user.username}
-                                    </h5>
+                                    </h6>
                                 </div>
 
                                 {/* Details */}
                                 <div className="ms-1">
-                                    <p className="card-text text-muted mb-2" style={{ fontSize: "1rem" }}>
+                                    <p className="card-text text-muted mb-1">
                                         <strong>Email:</strong> {user.email}
                                     </p>
-                                    <p className="card-text text-muted mb-0" style={{ fontSize: "1rem" }}>
+                                    <p className="card-text text-muted mb-0">
                                         <strong>Team ID:</strong> {user.team_id || "—"}
                                     </p>
                                 </div>
 
                                 {/* Action */}
-                                <div className="mt-3">
+                                <div className="mt-2">
                                     <button
-                                        className="btn btn-outline-danger w-100"
+                                        className="btn btn-sm btn-outline-danger w-100"
                                         onClick={() => removeUser(user._id)}
                                     >
-                                        <i className="bi bi-trash me-2"></i> Remove User
+                                        <i className="bi bi-trash me-1"></i> Remove
                                     </button>
                                 </div>
                             </div>

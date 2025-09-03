@@ -349,7 +349,6 @@ router.get('/download/:filename', (req, res, next) => {
         const uploadsDir = process.env.CHALLENGE_UPLOAD_DIR;
 
         const __filename = fileURLToPath(import.meta.url);
-        const __dirname = path.dirname(__filename);
 
         const allowedExtensions = ['.zip'];
 
