@@ -1,5 +1,5 @@
 import { UserCollection, TeamCollection, ChallengeCollection } from "../db.mjs";
-import { SanitizeAlphaNumeric, IsAdmin } from "../utils.mjs";
+import { SanitizeAlphaNumeric, IsAdmin, upload, SanitizeFileName } from "../utils.mjs";
 
 import { Router } from "express";
 const router = Router();
@@ -203,5 +203,110 @@ async function UpdateChallenge(data) {
         return { acknowledge: false, "message": "Error Updating Challenge!" }
     }
 }
+
+//###############################################
+//              FILE UPLOADING
+//###############################################
+
+// expands end-point root '/admin/ctf'
+
+import path from 'path';
+import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadsDir = process.env.CHALLENGE_UPLOAD_DIR;
+
+async function GetUploads() {
+    try {
+      const files = await fs.readdir(uploadsDir);
+      return files; // returns an array of file names
+    } catch (err) {
+      console.error('Error reading uploads directory:', err);
+      return [];
+    }
+}
+
+router.post('/upload', upload.single('file'), async (req, res) => {
+    if (!IsAdmin(req)) {
+        console.log("Not an Admin!");
+        return res.status(401).json(null);
+    }
+
+    try {
+        console.log("Validating Uploaded File")
+
+        // Check Content-Type of the entire request
+        const contentType = req.headers['content-type'];
+        console.log("Request Content-Type:", contentType);
+
+        // Multer puts file info on req.file
+        const file = req.file;
+        if (!file) return res.json({ "acknowledge":false, "message": 'No file uploaded' });
+
+        console.log("Uploaded file MIME type:", file.mimetype);
+        console.log("Original filename:", file.originalname);
+
+        // different browsers may change the mimetype
+        const allowedMimeTypes = ['application/zip', 'application/x-zip-compressed', 'multipart/x-zip'];
+        if (!allowedMimeTypes.includes(file.mimetype) || !file.originalname.endsWith('.zip')) {
+            fs.unlink(file.path, () => {}); // Cleanup
+            return res.json({ acknowledge: false, message: 'Only .zip files are allowed' });
+        }
+
+        console.log("Admin uploading challenge ZIP file")
+        return res.json({ "acknowledge":true, "message": 'File Uploaded Successfully!' });
+    } catch (err) {
+        console.error(err);
+        return res.json(null);
+    }
+});
+
+router.get('/get_uploads', async (req, res) => {
+    if (!IsAdmin(req)) {
+        console.log("Not an Admin!");
+        return res.status(401).json(null);
+    }
+
+    try {
+        console.log("Fetching listed Uploads")
+        const files = await GetUploads();
+    
+        console.log(files)
+        return res.json(files);
+    } catch (err) {
+        console.error(err)
+        return res.json(null);
+    }
+});
+
+router.post('/delete_file', async (req, res) => {
+    const data = req.body;
+    
+    if (!IsAdmin(req)) {
+        console.log("Not an Admin!");
+        return res.status(401).json(null);
+    }
+
+    try {
+        const filename = SanitizeFileName(data.filename)
+        console.log("Admin Attmepting to Delete File: " + filename)
+
+        const filePath = path.join(uploadsDir, filename);
+
+        try {
+            console.log(`Attempting to Delete: ${filePath}`)
+            await fs.unlink(filePath);
+            return res.json({ "acknowledge":true, "message": 'File Deleted Successfully!' });
+        } catch (err) {
+            console.log(`Error Deleting: ${filePath}`)
+            return res.json({ "acknowledge":false, "message": 'Error Deleting File!' });
+        }
+    } catch (err) {
+        console.error(err)
+        return res.json(null);
+    }
+});
 
 export default router;

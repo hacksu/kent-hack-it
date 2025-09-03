@@ -48,18 +48,18 @@ function AdminUsersTab() {
 
             if (data && data.acknowledge) {
                 if (msgArea) {
-                    msgArea.setHTMLUnsafe("<p style='color: green;'>" + data.message + "</p>");
+                    msgArea.setHTMLUnsafe = "<p style='color: green;'>" + data.message + "</p>";
                 }
                 GetUsers()
             } else {
                 if (msgArea) {
-                    msgArea.setHTMLUnsafe("<p style='color: red;'>" + data.message + "</p>");
+                    msgArea.setHTMLUnsafe = "<p style='color: red;'>" + data.message + "</p>";
                 }
             }
         } catch (error) {
             console.error("Error sending request:", error);
             if (msgArea) {
-                msgArea.setHTMLUnsafe("<p style='color: red;'> Error Occured! </p>");
+                msgArea.setHTMLUnsafe = "<p style='color: red;'> Error Occured! </p>";
             }
         }
     };
