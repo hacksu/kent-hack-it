@@ -151,17 +151,17 @@ function AdminChallengeCreateTab() {
 
                             {/* Points */}
                             <div className="mb-4 text-center">
-                            <label className="form-label fw-semibold d-block">Points</label>
-                            <input
-                                type="number"
-                                className="form-control mx-auto"
-                                name="points"
-                                value={newFormData.points}
-                                onChange={handleNewChange}
-                                required
-                                style={{ maxWidth: '150px' }}
-                                placeholder="100"
-                            />
+                                <label className="form-label fw-semibold d-block">Points</label>
+                                <input
+                                    type="number"
+                                    className="form-control mx-auto"
+                                    name="points"
+                                    value={newFormData.points}
+                                    onChange={handleNewChange}
+                                    required
+                                    style={{ maxWidth: '150px' }}
+                                    placeholder="100"
+                                />
                             </div>
 
                             {/* Submit */}

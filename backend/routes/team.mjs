@@ -32,7 +32,7 @@ async function GetTeamInfo(user_id) {
     }
 
     const teamRecord = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(userProfile.team_id) });
-    
+
     // null | { ... }
     if (teamRecord) {
         const leader_record = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(teamRecord.team_leader_id) });
@@ -40,7 +40,7 @@ async function GetTeamInfo(user_id) {
 
         if (leader_record) {
             console.log(`[*] ${leader_record.username} Leads --> ${teamRecord.name}`);
-            
+
             // only leaders will be given data about join requests
             if (userProfile._id.toString() === leader_record._id.toString()) {
                 console.log("[*] Giving Join Request Data to the Leader!");
@@ -49,8 +49,8 @@ async function GetTeamInfo(user_id) {
                 // return an array of: [ { _id, checksum } ] so we
                 // can generate accept buttons on the team info page
                 const requests = await TeamRequestCollection.find({ team_id: teamRecord._id.toString() })
-                .select('_id sender_id checksum')
-                .lean();
+                    .select('_id sender_id checksum')
+                    .lean();
 
                 // need to ensure this Array population finishes before returning
                 const join_requests = await Promise.all(
@@ -98,7 +98,7 @@ async function FetchMemberNames(member_list) {
     // Find all users whose _id is in the member_list array
     // via Query
     const profiles = await UserCollection.find(
-        { _id: { $in: member_list } }, 
+        { _id: { $in: member_list } },
         { username: 1 }  // only fetch the username field
     ).lean();
 
@@ -283,7 +283,7 @@ async function CreateTeam(team_creator, team_name) {
 
             if (addNewTeam) {
                 console.log(`[+] ${team_name} created successfully!`);
-                
+
                 // update leader_record to show theyre on a team
                 const leaderUpdate = await UserCollection.updateOne(
                     { _id: SanitizeAlphaNumeric(leader_id) },
@@ -362,17 +362,17 @@ async function UpdateTeamCompletions(team_id) {
                 if (challengeProfile) {
                     // Find if the challenge already exists in mergedCompletions
                     const existingChallenge = mergedCompletions.find(completion => completion.id === id);
-    
+
                     // If challenge doesn't exist or the current timestamp is older, add/update the challenge
                     if (!existingChallenge || time < existingChallenge.timestamp) {
                         const newCompletion = { id: id, memberId: memberId, points: challengeProfile.points, timestamp: time };
-    
+
                         // Remove the existing challenge entry if it exists
                         if (existingChallenge) {
                             const index = mergedCompletions.indexOf(existingChallenge);
                             mergedCompletions.splice(index, 1);
                         }
-    
+
                         // Add the new challenge with the oldest timestamp
                         mergedCompletions.push(newCompletion);
                     }
@@ -477,7 +477,7 @@ router.post('/add-member', async (req, res) => {
     try {
         const addTeamMember = await AddMember(data.request_id, data.checksum);
         // null | { message }
-        return res.json(addTeamMember);    
+        return res.json(addTeamMember);
     } catch (err) {
         console.error(err)
         return res.json(null);
@@ -510,7 +510,7 @@ async function AddMember(request_id, checksum) {
             console.log("[-] Error locating Team Profile!");
             return null;
         }
-        
+
         // add the sender_id into the team object where _id matches team_id
         const insertNewMember = await TeamCollection.updateOne(
             { _id: SanitizeAlphaNumeric(joinRequest.team_id) },
@@ -556,7 +556,7 @@ router.post('/remove-member', async (req, res) => {
 
     try {
         if (!req.isAuthenticated()) return res.json(null);
-        
+
         const removeTeamMember = await RemoveMember(
             data.member_username, req.user.username
         );
@@ -564,7 +564,7 @@ router.post('/remove-member', async (req, res) => {
         return res.json(removeTeamMember);
     } catch (err) {
         console.error(err)
-        return res.json(null);   
+        return res.json(null);
     }
 });
 async function RemoveMember(member_username, username) {
@@ -584,7 +584,7 @@ async function RemoveMember(member_username, username) {
     }
     const member_id = memberProfile._id.toString();
     const team_id = memberProfile.team_id; // reference to the team this user is removed from
-    
+
     // fetch the user profile based off the JWT
     const userProfile = await UserCollection.findOne({
         username: username
@@ -594,7 +594,7 @@ async function RemoveMember(member_username, username) {
         return null;
     }
 
-    const teamProfile = await TeamCollection.findOne({  _id: team_id });
+    const teamProfile = await TeamCollection.findOne({ _id: team_id });
     if (!teamProfile) {
         console.log("[-] Cannot find Team Profile!")
         return null;
@@ -619,7 +619,7 @@ async function RemoveMember(member_username, username) {
         console.log("[-] Error Removing Member from this Team Object!");
         return null;
     }
-    
+
     // update the user profile of member_username and set their
     // team attribute to None
     const updateMemberProfile = await UserCollection.updateOne(
@@ -702,7 +702,7 @@ async function SetNewLeader(teamProfile) {
 }
 async function ReplaceLeader(leader_username, data) {
     const team_name = data.team_data.name;
-    
+
     // find the team object based on team_name
     const teamProfile = await TeamCollection.findOne({ name: team_name })
     if (teamProfile) {
@@ -734,7 +734,7 @@ async function ReplaceLeader(leader_username, data) {
                         return null;
                     } else {
                         console.log(`[*] Team ${teamProfile.name} has been deleted!`);
-                        
+
                         // if the team is deleted remove all join requests towards this team
                         const requestObject = await TeamRequestCollection.deleteMany({
                             team_id: teamProfile._id.toString()

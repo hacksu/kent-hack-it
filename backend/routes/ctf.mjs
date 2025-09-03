@@ -191,17 +191,17 @@ async function UpdateTeamCompletions(team_id) {
                 if (challengeProfile) {
                     // Find if the challenge already exists in mergedCompletions
                     const existingChallenge = mergedCompletions.find(completion => completion.id === id);
-    
+
                     // If challenge doesn't exist or the current timestamp is older, add/update the challenge
                     if (!existingChallenge || time < existingChallenge.timestamp) {
                         const newCompletion = { id: id, memberId: memberId, points: challengeProfile.points, timestamp: time };
-    
+
                         // Remove the existing challenge entry if it exists
                         if (existingChallenge) {
                             const index = mergedCompletions.indexOf(existingChallenge);
                             mergedCompletions.splice(index, 1);
                         }
-    
+
                         // Add the new challenge with the oldest timestamp
                         mergedCompletions.push(newCompletion);
                     }
@@ -255,12 +255,12 @@ async function UserRatingChallenge(ratingData, username) {
     const challengeID = SanitizeAlphaNumeric(ratingData.challenge_id);
 
     // Check if numberRating is a valid number
-    if ( !ValidRatingNumber(ratingData.rating) ) {
+    if (!ValidRatingNumber(ratingData.rating)) {
         console.log("[-] Error: rating must be a positive number, whole or ending in .5");
         console.log(" |___ User Submitted: " + ratingData.rating);
         return null;
     }
-    
+
     const numberRating = ratingData.rating;
 
     console.log("Rating Challenge ID: " + challengeID);

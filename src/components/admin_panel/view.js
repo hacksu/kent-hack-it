@@ -66,80 +66,80 @@ function AdminChallengeViewTab() {
 
     return (
         <>
-        {activeTab === "edit" ? (
-            <>
-                <AdminChallengeEditTab target_challenge_id={editId} />
-            </>
-        ) : (
-            <>
-                <div>
-                    <h5>Current Challenges</h5>
-                    <ul className="row">
-                        {challenges.map((challenge, idx) => (
-                            <div
-                                className="col-12 col-sm-6 col-md-3 col-lg-3 mb-3"
-                                key={idx}
-                                style={{ maxWidth: '400px' }}
-                            >
-                                <div className="card h-100 shadow-sm p-2">
-                                    <div className="card-body p-2">
-                                        <h6 className="card-title mb-1">{challenge.name}</h6>
+            {activeTab === "edit" ? (
+                <>
+                    <AdminChallengeEditTab target_challenge_id={editId} />
+                </>
+            ) : (
+                <>
+                    <div>
+                        <h5>Current Challenges</h5>
+                        <ul className="row">
+                            {challenges.map((challenge, idx) => (
+                                <div
+                                    className="col-12 col-sm-6 col-md-3 col-lg-3 mb-3"
+                                    key={idx}
+                                    style={{ maxWidth: '400px' }}
+                                >
+                                    <div className="card h-100 shadow-sm p-2">
+                                        <div className="card-body p-2">
+                                            <h6 className="card-title mb-1">{challenge.name}</h6>
 
-                                        <small
-                                            style={{ fontSize: "1.25rem" }}
-                                            className="text-muted">
-                                            {challenge.category} | Difficulty: {challenge.difficulty}
-                                        </small>
+                                            <small
+                                                style={{ fontSize: "1.25rem" }}
+                                                className="text-muted">
+                                                {challenge.category} | Difficulty: {challenge.difficulty}
+                                            </small>
 
-                                        <p
-                                            style={{
-                                                fontSize: "1.25rem",
-                                                maxHeight: "150px",
-                                                overflowY: "auto",
-                                                paddingRight: "8px"
-                                            }}
-                                            className="card-text small mt-2"
-                                        >
-                                            {challenge.description}
-                                        </p>
-
-                                        <p
-                                            style={{ fontSize: "1.25rem" }}
-                                            className="card-text small mb-1">
-                                            ⭐ {challenge.rating.toFixed(1)} / 5
-                                        </p>
-
-                                        <p
-                                            style={{ fontSize: "1.25rem" }}
-                                            className="card-text small">
-                                            Points: {challenge.points}
-                                        </p>
-                                    </div>
-
-                                    <div className='container'>
-                                        <div className="d-flex justify-content-between pt-2">
-                                            <button
-                                                className="btn btn-outline-info"
-                                                onClick={() => EditChallenge(challenge._id)}
+                                            <p
+                                                style={{
+                                                    fontSize: "1.25rem",
+                                                    maxHeight: "150px",
+                                                    overflowY: "auto",
+                                                    paddingRight: "8px"
+                                                }}
+                                                className="card-text small mt-2"
                                             >
-                                                <i className="bi bi-pencil me-2"></i> Edit
-                                            </button>
+                                                {challenge.description}
+                                            </p>
 
-                                            <button
-                                                className="btn btn-outline-danger"
-                                                onClick={() => DeleteChallenge(challenge._id)}
-                                            >
-                                                <i className="bi bi-trash me-2"></i> Delete
-                                            </button>
+                                            <p
+                                                style={{ fontSize: "1.25rem" }}
+                                                className="card-text small mb-1">
+                                                ⭐ {challenge.rating.toFixed(1)} / 5
+                                            </p>
+
+                                            <p
+                                                style={{ fontSize: "1.25rem" }}
+                                                className="card-text small">
+                                                Points: {challenge.points}
+                                            </p>
+                                        </div>
+
+                                        <div className='container'>
+                                            <div className="d-flex justify-content-between pt-2">
+                                                <button
+                                                    className="btn btn-outline-info"
+                                                    onClick={() => EditChallenge(challenge._id)}
+                                                >
+                                                    <i className="bi bi-pencil me-2"></i> Edit
+                                                </button>
+
+                                                <button
+                                                    className="btn btn-outline-danger"
+                                                    onClick={() => DeleteChallenge(challenge._id)}
+                                                >
+                                                    <i className="bi bi-trash me-2"></i> Delete
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </ul>
-                </div>
-            </>
-        )}
+                            ))}
+                        </ul>
+                    </div>
+                </>
+            )}
         </>
     );
 }

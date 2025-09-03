@@ -16,13 +16,14 @@ router.post('/get-completions', async (req, res) => {
         // null | { ... }
         // console.log("[*] CONVERSION-RESULTS: ", readableCompletions);
         return res.json(readableCompletions);
-    } catch {
+    } catch (err) {
+        console.error(err)
         return res.json(null);
     }
 });
 async function ConvertCompletions(userCompletions, teamCompletions) {
     console.log("[*] Attempting Conversions. . .")
-    
+
     if (userCompletions && userCompletions.length > 0) {
         // create new attribute name based on id attribute
         let readableUserCompletions = userCompletions;
@@ -93,39 +94,39 @@ async function GetLeaderboardData() {
     // for each user we need to calculate accumulated points
     for (let userDoc of soloUsers) {
         const user = userDoc.toObject(); // Make it modifiable
-    
+
         user.points = 0;
         user.name = user.username;
-    
+
         for (const completion of user.completions) {
             const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(completion.id) });
             if (challengeProfile) {
                 user.points += challengeProfile.points;
             }
         }
-    
+
         user.recent = user.completions.at(-1)?.time ?? 0;
         delete user.completions;
         delete user.username;
         delete user._id;
-    
+
         readableSoloUsers.push(user); // Save modified copy
     }
 
     // for each tean we need to calculate accumulated points
     for (let teamDoc of teams) {
         const team = teamDoc.toObject(); // Convert Mongoose document to plain object
-    
+
         team.points = 0;
-        
+
         for (const completion of team.completions) {
             team.points += completion.points;
         }
-        
+
         team.recent = team.completions.at(-1)?.timestamp ?? 0;
         delete team.completions;
         delete team._id;
-    
+
         readableTeams.push(team); // Store modified team object
     }
 

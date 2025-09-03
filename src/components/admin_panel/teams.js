@@ -46,7 +46,13 @@ function AdminTeamsTab() {
 
             const data = await response.json();
 
-            if (data && data.acknowledge) {
+            if (!data) {
+                if (msgArea) {
+                    msgArea.setHTMLUnsafe("<p style='color: red;'> Error Occured! </p>");
+                }
+            }
+
+            if (data.acknowledge) {
                 if (msgArea) {
                     msgArea.setHTMLUnsafe("<p style='color: green;'>" + data.message + "</p>");
                 }
@@ -81,40 +87,42 @@ function AdminTeamsTab() {
             <div className="row">
                 {filteredTeams.map(team => (
                     <div className="col-md-4 mb-4" key={team._id}>
-                        <div className="card shadow-sm border-0 h-100">
-                            <div className="card-body d-flex flex-column justify-content-between">
-                                <div>
-                                    <h5
-                                        style={{ fontSize: "1.75rem", padding: "0.25rem 0.5rem" }}
-                                        className="card-title mb-2"
-                                    >
-                                        {team.name}
-                                    </h5>
-                                    <h5
-                                        style={{ fontSize: "1.75rem", padding: "0.25rem 0.5rem" }}
-                                        className="card-title mb-2"
-                                    >
-                                        Members:
-                                    </h5>
+                        <div className="card shadow-sm border-0 h-100 rounded-3">
+                            <div className="card-body d-flex flex-column">
+                                {/* Team Name */}
+                                <h4 className="card-title text-primary fw-bold mb-3">
+                                    {team.name}
+                                </h4>
 
-                                    <ul
-                                        style={{ fontSize: "1.5rem", padding: "0.25rem 0.5rem" }} className="ps-4 mb-0">
-                                        {team.members.map((member, index) => (
-                                            <li key={index}>{member}</li>
-                                        ))}
-                                    </ul>
+                                {/* Members */}
+                                <h6 className="text-muted fw-semibold mb-2">Members</h6>
+                                <ul className="list-group list-group-flush mb-3">
+                                    {team.members.map((member, index) => (
+                                        <li
+                                            key={index}
+                                            className="list-group-item px-0 py-2 border-0 d-flex align-items-center"
+                                        >
+                                            <i className="bi bi-person-circle me-2 text-secondary"></i>
+                                            <span>{member}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                {/* Remove Button */}
+                                <div className="mt-auto text-end">
+                                    <button
+                                        className="btn btn-sm btn-outline-danger"
+                                        onClick={() => removeTeam(team._id)}
+                                    >
+                                        <i className="bi bi-trash me-1"></i> Remove Team
+                                    </button>
                                 </div>
-                                <button
-                                    className="btn btn-outline-danger mt-3 align-self-start"
-                                    onClick={() => removeTeam(team._id)}
-                                >
-                                    <i className="bi bi-trash me-2"></i> Remove Team
-                                </button>
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
+
         </div>
     );
 }

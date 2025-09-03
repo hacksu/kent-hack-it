@@ -10,22 +10,22 @@ import { ChallengeDetail } from './pages/challenge_template.js'
 
 // index.html handles the html format of the page layout to a certain point
 function App() {
-  return (
-    // HTML content is loaded based on the route loaded
-    <Router>
-      <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/compete" element={<Challenges />} />
-          <Route path="/admin/panel" element={<AdminPanel />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/challenge" element={<ChallengeDetail />} />
-          <Route path="/rate-challenge" element={<RatingPage />} />
-          {/* Redirection route */}
-          <Route path="/admin" element={<Navigate to="/admin/panel" replace />} />
-      </Routes>
-    </Router>
-  );
+    return (
+        // HTML content is loaded based on the route loaded
+        <Router>
+            <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/compete" element={<Challenges />} />
+                <Route path="/admin/panel" element={<AdminPanel />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/challenge" element={<ChallengeDetail />} />
+                <Route path="/rate-challenge" element={<RatingPage />} />
+                {/* Redirection route */}
+                <Route path="/admin" element={<Navigate to="/admin/panel" replace />} />
+            </Routes>
+        </Router>
+    );
 }
 export default App;

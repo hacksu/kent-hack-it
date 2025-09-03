@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-function AdminChallengeEditTab({target_challenge_id}) {
+function AdminChallengeEditTab({ target_challenge_id }) {
     const [updateFormData, setUpdateFormData] = useState({
         name: '',
         description: '',

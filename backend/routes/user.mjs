@@ -7,11 +7,11 @@ const router = Router();
 // expands end-point root '/user'
 router.get("/info", async (req, res) => {
     try {
-        if (!req.isAuthenticated()) 
+        if (!req.isAuthenticated())
             return res.json({ authenticated: false });
-        
+
         const userData = await GetUserProfile(req.user._id.toString());
-        
+
         if (userData === null) {
             return res.json(null);
         }
@@ -40,7 +40,7 @@ async function GetUserProfile(user_id) {
 
     if (userRecord.team_id !== "None") {
         const teamRecord = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(userRecord.team_id) });
-        
+
         // check if the connection matches
         if (teamRecord) {
             const team_name = teamRecord.name;

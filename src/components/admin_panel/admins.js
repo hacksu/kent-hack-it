@@ -92,7 +92,7 @@ function AdminView() {
                                 </button>
                             </li>
                         ))}
-                        
+
                     </ul>
                 </div>
             </div>
