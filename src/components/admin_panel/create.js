@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SanitizeDescription } from '../../components/purification.js';
 
 function AdminChallengeCreateTab() {
     const [newFormData, setNewFormData] = useState({
@@ -44,17 +45,17 @@ function AdminChallengeCreateTab() {
 
             if (data && data.acknowledge) {
                 if (msgArea) {
-                    msgArea.innerHTML = "<p style='color: green;'>" + data.message + "</p>";
+                    msgArea.innerHTML = SanitizeDescription("<p style='color: green;'>" + data.message + "</p>");
                 }
             } else {
                 if (msgArea) {
-                    msgArea.innerHTML = "<p style='color: red;'>" + data.message + "</p>";
+                    msgArea.innerHTML = SanitizeDescription("<p style='color: red;'>" + data.message + "</p>");
                 }
             }
         } catch (error) {
             console.error("Error sending request:", error);
             if (msgArea) {
-                msgArea.innerHTML = "<p style='color: red;'> Error Occured! </p>";
+                msgArea.innerHTML = SanitizeDescription("<p style='color: red;'> Error Occured! </p>");
             }
         }
     }

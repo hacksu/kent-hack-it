@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import Navbar, { VerifyAuth } from '../components/navbar.js';
-import DOMPurify from "dompurify";
+import { SanitizeDescription } from '../components/purification.js';
 
 export function ChallengeDetail() {
     const { search } = useLocation();
@@ -78,13 +78,6 @@ export function ChallengeDetail() {
                 <p>Loading or challenge not found...</p>
             </div>
         );
-    }
-
-    function SanitizeDescription(description) {
-        const cleanDescription = DOMPurify.sanitize(description, {
-            USE_PROFILES: { html: true } // allows safe HTML (basic formatting, links, etc.)
-        });
-        return cleanDescription;
     }
 
     return (

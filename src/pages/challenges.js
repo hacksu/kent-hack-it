@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
 import Navbar, { VerifyAuth } from '../components/navbar.js';
-import DOMPurify from "dompurify";
+import { SanitizeDescription } from '../components/purification.js';
 
 export function Challenges() {
     const [challenges, setChallenges] = useState([]);
@@ -172,13 +172,6 @@ export function Challenges() {
     useEffect(() => {
         FetchChallenges()
     }, [profileData, FetchChallenges]);
-
-    function SanitizeDescription(description) {
-        const cleanDescription = DOMPurify.sanitize(description, {
-            USE_PROFILES: { html: true } // allows safe HTML (basic formatting, links, etc.)
-        });
-        return cleanDescription;
-    }
 
     return (
         <>

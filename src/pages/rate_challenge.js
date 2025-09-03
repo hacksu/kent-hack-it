@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../App.css';
 import Navbar, { VerifyAuth } from '../components/navbar.js';
+import { SanitizeDescription } from '../components/purification.js';
 
 export function RatingPage() {
     const [profileData, SetProfileData] = useState(null);
@@ -105,18 +106,18 @@ export function RatingPage() {
             const data = await response.json();
             if (data) {
                 if (msgArea) {
-                    msgArea.innerHTML = "<p style='color: green;'>" + data.message + "</p>";
+                    msgArea.innerHTML = SanitizeDescription("<p style='color: green;'>" + data.message + "</p>");
                     GetProfileDetails();
                 }
             } else {
                 if (msgArea) {
-                    msgArea.innerHTML = "<p style='color: red;'>Error Rating Challenge!</p>";
+                    msgArea.innerHTML = SanitizeDescription("<p style='color: red;'>Error Rating Challenge!</p>");
                 }
             }
         } catch (error) {
             console.error("Error sending request:", error);
             if (msgArea) {
-                msgArea.innerHTML = "<p style='color: red;'>Error Rating Challenge!</p>";
+                msgArea.innerHTML = SanitizeDescription("<p style='color: red;'>Error Rating Challenge!</p>");
             }
         }
     };

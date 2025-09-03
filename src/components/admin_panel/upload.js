@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { SanitizeDescription } from '../../components/purification.js';
 
 function AdminChallengeUploadTab() {
     const [file, setFile] = useState(null);
@@ -56,7 +57,7 @@ function AdminChallengeUploadTab() {
 
             if (data && data.acknowledge) {
                 if (msgArea) {
-                    msgArea.innerHTML = "<p style='color: green;'>" + data.message + "</p>";
+                    msgArea.innerHTML = SanitizeDescription("<p style='color: green;'>" + data.message + "</p>");
                 }
 
                 await fetchUploads();
@@ -68,13 +69,13 @@ function AdminChallengeUploadTab() {
                 }
             } else {
                 if (msgArea) {
-                    msgArea.innerHTML = "<p style='color: red;'>" + data.message + "</p>";
+                    msgArea.innerHTML = SanitizeDescription("<p style='color: red;'>" + data.message + "</p>");
                 }
             }
         } catch (error) {
             console.error("Error sending request:", error);
             if (msgArea) {
-                msgArea.innerHTML = "<p style='color: red;'> Error Occured! </p>";
+                msgArea.innerHTML = SanitizeDescription("<p style='color: red;'> Error Occured! </p>");
             }
         }
     };
@@ -94,18 +95,18 @@ function AdminChallengeUploadTab() {
 
                 if (data && data.acknowledge) {
                     if (msgArea) {
-                        msgArea.innerHTML = "<p style='color: green;'>" + data.message + "</p>";
+                        msgArea.innerHTML = SanitizeDescription("<p style='color: green;'>" + data.message + "</p>");
                     }
                     await fetchUploads();
                 } else {
                     if (msgArea) {
-                        msgArea.innerHTML = "<p style='color: red;'>" + data.message + "</p>";
+                        msgArea.innerHTML = SanitizeDescription("<p style='color: red;'>" + data.message + "</p>");
                     }
                 }
             } catch (error) {
                 console.error("Error sending request:", error);
                 if (msgArea) {
-                    msgArea.innerHTML = "<p style='color: red;'> Error Occured! </p>";
+                    msgArea.innerHTML = SanitizeDescription("<p style='color: red;'> Error Occured! </p>");
                 }
             }
         }

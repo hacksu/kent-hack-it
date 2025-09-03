@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import AdminChallengeEditTab from './edit.js';
-import DOMPurify from "dompurify";
+import { SanitizeDescription } from '../../components/purification.js';
 
 function AdminChallengeViewTab() {
     const [activeTab, setActiveTab] = useState("");
@@ -48,28 +48,21 @@ function AdminChallengeViewTab() {
 
                 if (data && data.acknowledge) {
                     if (msgArea) {
-                        msgArea.innerHTML = "<p style='color: green;'>" + data.message + "</p>";
+                        msgArea.innerHTML = SanitizeDescription("<p style='color: green;'>" + data.message + "</p>");
                     }
                     FetchChallenges()
                 } else {
                     if (msgArea) {
-                        msgArea.innerHTML = "<p style='color: red;'>" + data.message + "</p>";
+                        msgArea.innerHTML = SanitizeDescription("<p style='color: red;'>" + data.message + "</p>");
                     }
                 }
             } catch (error) {
                 console.error("Error sending request:", error);
                 if (msgArea) {
-                    msgArea.innerHTML = "<p style='color: red;'> Error Occured! </p>";
+                    msgArea.innerHTML = SanitizeDescription("<p style='color: red;'> Error Occured! </p>");
                 }
             }
         }
-    }
-
-    function SanitizeDescription(description) {
-        const cleanDescription = DOMPurify.sanitize(description, {
-            USE_PROFILES: { html: true } // allows safe HTML (basic formatting, links, etc.)
-        });
-        return cleanDescription;
     }
 
     return (
