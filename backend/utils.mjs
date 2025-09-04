@@ -72,6 +72,7 @@ export async function IsSiteActive(req, reflectButton) {
 }
 
 export async function UpdateSiteInfo(req, value) {
+    value = SanitizeString(value)
     if (!IsAdmin(req) || value === null) {
         console.log("Not Allowed to Update Site!")
         return false;

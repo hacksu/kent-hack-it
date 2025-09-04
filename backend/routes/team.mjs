@@ -705,7 +705,7 @@ async function SetNewLeader(teamProfile) {
     }
 }
 async function ReplaceLeader(leader_username, data) {
-    const team_name = data.team_data.name;
+    const team_name = SanitizeString(data.team_data.name);
 
     // find the team object based on team_name
     const teamProfile = await TeamCollection.findOne({ name: team_name })

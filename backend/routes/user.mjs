@@ -16,7 +16,6 @@ router.get("/info", async (req, res) => {
             return res.json(null);
         }
 
-        console.error(`userData -> ${userData}`);
         return res.json(userData);
     } catch (err) {
         console.error("/user/info exception");

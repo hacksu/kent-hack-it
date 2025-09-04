@@ -70,7 +70,9 @@ const LeaderView = ({ TEAM_DATA, UpdateTeamName, newTeamName,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    "team_data": TEAM_DATA,
+                    "team_data": {
+                        "name" : TEAM_DATA.name
+                    },
                 }),
                 credentials: 'include'  // ensures cookies are sent
             });

@@ -1,5 +1,5 @@
 import { UserCollection, TeamCollection, TeamRequestCollection } from "../db.mjs";
-import { IsSiteActive, UpdateSiteInfo, SanitizeAlphaNumeric, IsAdmin } from "../utils.mjs";
+import { IsSiteActive, UpdateSiteInfo, SanitizeAlphaNumeric, IsAdmin, SanitizeString } from "../utils.mjs";
 
 import { Router } from "express";
 const router = Router();
@@ -17,7 +17,7 @@ router.get("/authenticated", (req, res) => {
     }
 
     console.log("Authorized!");
-    res.json({ message: "Authorized", user: req.user });
+    res.json({ message: "Authorized" });
 });
 
 router.get('/get_site_info', async (req, res) => {
@@ -60,9 +60,6 @@ router.get('/get_users', async (req, res) => {
         return res.status(401).json({ message: "Unauthorized" });
     }
 
-    console.log("---- Admin Requesting Users!");
-
-    console.log("---- Admin Pulling all Users!")
     const users = await GetAllUsers();
     return res.json(users);
 });
@@ -297,6 +294,7 @@ router.post('/remove_admin', async (req, res) => {
     }
 });
 async function RemoveAdmin(adminUsername) {
+    adminUsername = SanitizeString(adminUsername);
     // check if profile is protected from deletion
     const adminProfile = await UserCollection.findOne({ username: adminUsername, is_admin: true });
 

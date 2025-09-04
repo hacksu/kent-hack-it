@@ -204,7 +204,7 @@ app.get("/authenticated", (req, res) => {
         return res.status(401).json({ message: "Unauthorized" });
     }
     console.log("Authorized!");
-    res.json({ message: "Authorized", user: req.user });
+    res.json({ message: "Authorized" });
 });
 
 app.get('/', (req, res) => {
