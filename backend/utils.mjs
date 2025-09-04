@@ -43,7 +43,6 @@ export function SanitizeAlphaNumeric(input) {
 
 export function IsAdmin(req) {
     if (!req.user) return false;
-    console.log(JSON.stringify(req.user));
     return req.user.is_admin === true
 }
 
