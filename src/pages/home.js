@@ -21,7 +21,7 @@ export function Home() {
               {/* About Section */}
               <div className="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
                 <div className="card-body">
-                  <h3 className="text-center mb-3 mb-md-4" style={{ color: '#007bff' }}>About Kent Hack Enough</h3>
+                  <h3 className="text-center mb-3 mb-md-4" style={{ color: '#007bff' }}>About Kent Hack It</h3>
 
                   <p className="text-center mb-3 mb-md-4" style={{ fontSize: 'clamp(1rem, 2.5vw, 1.2rem)', lineHeight: '1.6' }}>
                     KHI is a <a href="https://hacksu.com/" className="link-primary">HacKSU</a> sponsored 
