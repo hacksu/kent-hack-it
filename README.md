@@ -26,6 +26,11 @@ nodejs backend/server.mjs
 
 ## :chart_with_upwards_trend: Production
 This project uses Docker :whale: for production set-up
+
+**docker-compose became deprecated within latest versions of Ubuntu and some python packages have became deprecated**
+
+[> Jump to Latest Docker Compose](#how-to-use-docker-compose-on-latest-ubuntu-installs)
+
 ```bash
 sudo apt update && sudo apt install docker.io docker-compose
 ```
@@ -35,8 +40,16 @@ You will need to move the `.env` into the project root folder before running the
 docker network create traefik
 docker-compose --env-file .env -p khi -f docker/docker-compose.yml up --build
 ```
-The following commands will build ONLY the khi website docker image that you later start via `docker run -d ...`.
+
+### How to use docker compose on latest Ubuntu installs:
+- Follow install instructions from [Install Documentation](https://docs.docker.com/engine/install/ubuntu/)
+
+If the command `docker compose version` does not work go to the [releases page](https://github.com/docker/compose/releases) and find correct version
 ```bash
-docker build -f docker/Dockerfile -t image_name .
-docker run -d -p 8080:80 --name docker_name image_name
+curl -SL https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
+chmod +x ~/.docker/cli-plugins/docker-compose
+```
+Prepare and run Docker container
+```bash
+docker compose --env-file .env -p khi -f docker/docker-compose.yml up --build
 ```
