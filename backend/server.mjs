@@ -1,61 +1,22 @@
-import GetChallenges, { LoginUser, LoginAdmin, RegisterUser,
-    GetUserProfile, UpdateUserProfile, GetTeamInfo, Hash_SHA256,
-    SendTeamRequest, CreateTeam, UpdateTeam, DoesExist, DoesAdminExist,
-    AddMember, RemoveMember, ValidateFlag, ConvertCompletions,
-    ReplaceLeader, UserRatingChallenge, GetChallengeInfo,
-    GetAllUsers, GetAllTeams, RemoveTeam, RemoveUser,
-    UpdateChallenge, AdminGetChallenges, CreateChallenge,
-    DeleteChallenge, RegisterAdmin, RemoveAdmin, GetAdmins,
-    ValidateAdmin, GetLeaderboardData } from './db.mjs';
-import rateLimit from 'express-rate-limit';
+import express from "express";
+import session from "express-session";
+import passport from "passport";
+import { Strategy as GitHubStrategy } from "passport-github2";
+import { Strategy as DiscordStrategy } from "passport-discord";
+import cors from "cors";
+
+import oauthRoutes from "./routes/oauth.mjs";
+import ctfRoutes from "./routes/ctf.mjs";
+import userRoutes from "./routes/user.mjs";
+import adminRoutes from "./routes/admin.mjs";
+import adminCtfRoutes from "./routes/adminCtf.mjs";
+import teamRoutes from "./routes/team.mjs";
+import infoRoutes from "./routes/info.mjs";
+
+import { MongoURI, UserCollection, UserIsAdmin } from "./db.mjs";
+import MongoStore from "connect-mongo";
+
 import cookieParser from 'cookie-parser';
-import sanitize from 'sanitize-filename';
-import { fileURLToPath } from 'url';
-import jwt from 'jsonwebtoken';
-import express from 'express';
-import path from 'path';
-import cors from 'cors';
-import { existsSync } from 'fs';
-
-//==================================================================================================
-async function DecodeJWT(res, token) {
-    if (!token) {
-        console.log("No User Token Found!");
-        ClearCookie(res);
-        return null;
-    }
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log(`Token for ${decoded.username} is valid!`);
-        // { username, email }
-        return decoded;
-    } catch (err) {
-        console.error('Invalid token:', err);
-        ClearCookie(res);
-        return null;
-    }
-}
-
-async function DecodeAdminJWT(res, token) {
-    if (!token) {
-        console.log("No Admin Token Found!");
-        ClearAdminCookie(res);
-        return null;
-    }
-
-    try {
-        const decoded = jwt.verify(token, process.env.ADM_JWT_SECRET);
-        console.log(`Admin Token for ${decoded.username} is valid!`);
-        // { username, is_admin }
-        return decoded;
-    } catch (err) {
-        console.error('Invalid Admin token:', err);
-        ClearAdminCookie(res);
-        return null;
-    }
-}
-//==================================================================================================
 
 const app = express();
 /*
@@ -69,6 +30,8 @@ const app = express();
 const host = "0.0.0.0"
 const port = 4000;
 
+// --- Middleware
+
 // Allows data to be sent from post requests
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // middleware to handle JSON
@@ -77,13 +40,11 @@ app.use(cookieParser()); // Access cookies
 const allowedOrigins = [
     `http://localhost:80`,                  // local dev
     `http://localhost:8080`,
-    // 'https://khi.io'                     // production site
+    // 'https://ctf.hacksu.com'                     // production site
 ];
 
 console.log(`Allowed Origins\n|____ ${allowedOrigins}\n`);
 
-// backend will handle setting JWT Cookies so the Frontend never
-// sees the tokens passed from a response
 app.use(cors({
     origin: allowedOrigins,  // React app origin
     credentials: true                // allow cookies
@@ -98,872 +59,159 @@ app.use((err, req, res, next) => {
 // attempting to cover up digital foot-print
 app.disable('x-powered-by');
 
-/*
-######################################################
-        Needs revisiting at some point (limiter)
-######################################################
-*/
+// Persistent Session middleware
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET || "wheredidweputhteenvfileguys???",
+        resave: false, // don’t save session if unmodified
+        saveUninitialized: false, // don’t create session until something stored
+        store: MongoStore.create({
+            mongoUrl: MongoURI(),
+            collectionName: "sessions", // collection to store sessions
+            ttl: 24 * 60 * 60, // session lifetime in seconds (1 day)
+        }),
+        cookie: {
+            maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+            httpOnly: true, // cannot access cookie from JS
+            secure: process.env.NODE_ENV === "production", // only HTTPS in prod
+        },
+    })
+);
 
-/*
-// Apply rate limiting to all requests (help prevent malicious brute-forcing)
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100,                 // limit each IP to 100 requests per windowMs
-    standardHeaders: true,    // return rate limit info in `RateLimit-*` headers
-    legacyHeaders: false,     // disable `X-RateLimit-*` headers
-    message: 'Too many requests from this IP, please try again later.'
+// --- OAuth Components
+app.use(passport.initialize());
+app.use(passport.session());
+
+// --- Passport serialize/deserialize ---
+passport.serializeUser((user, done) => done(null, user._id)); // store Mongo _id
+passport.deserializeUser(async (id, done) => {
+    try {
+        const user = await UserCollection.findById(id);
+        done(null, user);
+    } catch (err) {
+        done(err, null);
+    }
 });
 
-// Apply to all routes
-app.use(limiter);
+// --- GitHub OAuth ---
+passport.use(
+    new GitHubStrategy(
+        {
+            clientID: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            callbackURL: process.env.GITHUB_CALLBACK_URL,
+            scope: ["user:email"],
+        },
+        async (accessToken, refreshToken, profile, done) => {
+            try {
+                // console.log("GitHub profile:", profile);
+                let user = await UserCollection.findOne({
+                    provider: "github",
+                    providerId: profile.id,
+                });
+                if (!user) {
+                    user = await UserCollection.create({
+                        provider: "github",
+                        providerId: profile.id,
+                        username: profile.username,
+                        avatarUrl: profile.photos[0]?.value,
+                        email: profile.emails?.[0]?.value,
+                    });
+                }
+                return done(null, user);
+            } catch (err) {
+                console.error("GitHub strategy error:", err);
+                done(err, null);
+            }
+        }
+    )
+);
+// engage the github strategy
+app.get("/auth/github", passport.authenticate("github", {
+    scope: ["user:email"]
+}));
 
-// Apply to specific route
-// app.use('/login', limiter);
-*/
+// --- Discord OAuth ---
+passport.use(
+    new DiscordStrategy(
+        {
+            clientID: process.env.DISCORD_CLIENT_ID,
+            clientSecret: process.env.DISCORD_CLIENT_SECRET,
+            callbackURL: process.env.DISCORD_CALLBACK_URL,
+            scope: ["identify", "email", "guilds", "guilds.members.read"],
+        },
+        async (accessToken, refreshToken, profile, done) => {
+            try {
+                // console.log("Discord profile:", profile);
+
+                const guildId = "632634799303032852"; // HacKSU
+                const adminRoleId = `${process.env.KHI_ADMIN_ID}`;
+                const hasAdminRole = await UserIsAdmin(accessToken, guildId, adminRoleId);
+
+                console.log(`[*] ${profile.username} is admin? ${hasAdminRole}`)
+
+                // Construct avatar URL
+                let avatarUrl = null;
+                if (profile.avatar) {
+                    const format = profile.avatar.startsWith("a_") ? "gif" : "png"; // animated if starts with 'a_'
+                    avatarUrl = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}?size=512`;
+                }
+
+                let user = await UserCollection.findOne({
+                    provider: "discord",
+                    providerId: profile.id,
+                });
+
+                if (!user) {
+                    user = await UserCollection.create({
+                        provider: "discord",
+                        providerId: profile.id,
+                        username: profile.username,
+                        avatarUrl,
+                        email: profile.email,  // passport-discord puts verified email in profile.email
+                        is_admin: hasAdminRole // mark user as admin when needed
+                    });
+                }
+
+                return done(null, user);
+            } catch (err) {
+                console.error("Discord strategy error:", err);
+                done(err, null);
+            }
+        }
+    )
+);
+// engage the discord strategy
+app.get("/auth/discord", passport.authenticate("discord", {
+    scope: ["identify", "email", "guilds", "guilds.members.read"]
+}));
+
+// ---
+
+// Mount routes under a given path
+app.use("/auth", oauthRoutes);  // OAuth
+app.use("/ctf", ctfRoutes);     // CTF Challenge interaction
+app.use("/admin", adminRoutes); // admin actions
+app.use("/admin/ctf", adminCtfRoutes); // admin actions against challenges
+app.use("/user", userRoutes);   // user actions
+app.use("/team", teamRoutes);   // team actions
+app.use("/info", infoRoutes);   // team actions
+
+// verify a user is authenticated
+app.get("/authenticated", (req, res) => {
+    if (!req.isAuthenticated()) {
+        console.log("Unauthorized!");
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+    console.log("Authorized!");
+    res.json({ message: "Authorized" });
+});
 
 app.get('/', (req, res) => {
     res.send("You've Reached the Back-End!\n");
 });
 
-app.get('/challenges', async (req, res) => {
-    const challenges = await GetChallenges();
-    res.send(challenges);
-});
-
-app.post('/challenge', async (req, res) => {
-    const data = req.body;
-    // fetches details from given challenge id
-    const challenge_details = await GetChallengeInfo(data);
-    res.json(challenge_details);
-});
-
-app.post('/register', async (req, res) => {
-    try {
-        console.log(`req.body -> ${JSON.stringify(req.body)}`); // convert json object into string for debugging
-        const userData = req.body;
-        console.log(`Recv: ${userData}`);
-
-        const regUser = await RegisterUser(userData.username, userData.password, userData.email);
-        res.send(regUser);
-    } catch (error) {
-        console.error("Error sending request:", error);
-    }
-});
-
-app.post('/login', async (req, res) => {
-    try {
-        console.log(`req.body -> ${JSON.stringify(req.body)}`); // convert json object into string for debugging
-        const userData = req.body;
-        console.log(`Recv: ${userData}`);
-
-        const loginResp = await LoginUser(userData.username, userData.password);
-        
-        console.log(`loginResp --> ${loginResp}`);
-
-        if (loginResp.token) {
-            console.log(`[*] LoginResp.token => ${loginResp.token}`);
-            console.log(`[*] LoginResp.message => ${loginResp.message}`);
-
-            res.cookie('khi_token', loginResp.token, {
-                httpOnly: true,
-                secure: false,           // set to true if using HTTPS
-                sameSite: 'lax',         // or 'none' if cross-site and using HTTPS
-                path: '/',
-                maxAge: 24000 * 60 * 60  // 24 hours
-            });
-
-            // send response back to frontend
-            res.json({
-                "message": loginResp.message
-            });
-        } else {
-            // send response back to frontend
-            console.log("No Token Generated. . .");
-            res.json({
-                "message": loginResp.message
-            });
-        }
-    } catch (error) {
-        console.error("Error sending request:", error);
-    }
-});
-
-app.post('/admin/login', async (req, res) => {
-    try {
-        console.log(`Admin req.body -> ${JSON.stringify(req.body)}`);
-        const userData = req.body;
-        console.log(`Admin Recv: ${userData}`);
-
-        const loginResp = await LoginAdmin(userData.username, userData.password);
-        
-        console.log(`Admin loginResp --> ${loginResp}`);
-
-        if (loginResp.token) {
-            console.log(`[*] Admin LoginResp.token => ${loginResp.token}`);
-            console.log(`[*] Admin LoginResp.message => ${loginResp.message}`);
-
-            res.cookie('khi_adm_token', loginResp.token, {
-                httpOnly: true,
-                secure: false,           // set to true if using HTTPS
-                sameSite: 'lax',         // or 'none' if cross-site and using HTTPS
-                path: '/',
-                maxAge: 24000 * 60 * 60  // 24 hours
-            });
-
-            // send response back to frontend
-            res.json({
-                "message": loginResp.message
-            });
-        } else {
-            // send response back to frontend
-            console.log("No Admin Token Generated. . .");
-            res.json({
-                "message": loginResp.message
-            });
-        }
-    } catch (error) {
-        console.error("Error sending request:", error);
-    }
-});
-
-function ClearCookie(res) {
-    res.clearCookie('khi_token', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax'
-    });
-}
-function ClearAdminCookie(res) {
-    res.clearCookie('khi_adm_token', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax'
-    });
-}
-
-app.post('/logout', (req, res) => {
-    ClearCookie(res);
-    res.json({ message: 'Logged out!' });
-});
-app.post('/admin/logout', (req, res) => {
-    ClearAdminCookie(res);
-    res.json({ message: 'Logged out!' });
-});
-
-// backend end point to use the Cookie JWT to verify the user
-// is properly authenticated
-app.get('/user/verify', async (req, res) => {
-    const token = req.cookies.khi_token;
-    // make sure the JWT is valid
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            // pull username and email from JWT
-            // and check if it exists in the DB
-            const username = validJWT.username;
-            const email = validJWT.email;
-
-            const userExists = await DoesExist(username, email);
-            if (userExists) {
-                return res.json({
-                    authenticated: true,
-                    username: validJWT.username
-                });
-            } else {
-                return res.json({ authenticated: false });
-            }
-        } catch {
-            return res.json({ authenticated: false });
-        }
-    } else {
-        return res.json({ authenticated: false });
-    }
-});
-app.get('/admin/verify', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    // make sure the JWT is valid
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        try {
-            // pull username from JWT
-            // and check if it exists in the DB
-            const username = validJWT.username;
-
-            console.log("Admin Token Valid")
-            console.log("Checking username in Token")
-
-            const adminExists = await DoesAdminExist(username);
-            if (adminExists) {
-                console.log("Fully Verified Admin Token!")
-                return res.json({
-                    authenticated: true,
-                    username: validJWT.username
-                });
-            } else {
-                return res.json({ authenticated: false });
-            }
-        } catch {
-            return res.json({ authenticated: false });
-        }
-    } else {
-        return res.json({ authenticated: false });
-    }
-});
-
-app.get('/user/info', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            const userData = await GetUserProfile(validJWT.username);
-            
-            if (userData === null) {
-                return res.json(null);
-            }
-    
-            // { username, email, team, completions, is_leader, user_rates }
-            // console.log(`User Info --> ${JSON.stringify(userData)}`);
-            return res.json(userData);
-        } catch {
-            return res.json({ authenticated: false });
-        }
-    } else {
-        return res.json({ authenticated: false });
-    }
-});
-
-app.post('/user/update', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const data = req.body;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            // null | { message, token }
-            const profileUpdate = await UpdateUserProfile(data, validJWT);
-    
-            // when profiles are updated a new JWT is generated
-            // incase username or email values have been altered
-            if (profileUpdate) {
-                res.cookie('khi_token', profileUpdate.token, {
-                    httpOnly: true,
-                    secure: false,           // set to true if using HTTPS
-                    sameSite: 'lax',         // or 'none' if cross-site and using HTTPS
-                    path: '/',
-                    maxAge: 24000 * 60 * 60  // 24 hours
-                });
-                console.log(`[+] Successfully Updated Profile: ${validJWT.username}`);
-                return res.json(profileUpdate);
-            } else {
-                return res.json(null);
-            }
-        } catch {
-            return res.json({ authenticated: false });
-        }
-    } else {
-        return res.json({ authenticated: false });
-    }
-});
-
-// Displays information about the inputted team
-app.get('/team/info', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log(`[*] Getting Info for the Team: ${validJWT.username} is in.`);
-            const teamData = await GetTeamInfo(validJWT.username);
-            // null | { ... }
-            // console.log(`Team Info --> "${JSON.stringify(teamData)}"`);
-            return res.json(teamData);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/team/request', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const data = req.body;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            const teamRequest = await SendTeamRequest(validJWT.username, data.team_name);
-            return res.json(teamRequest);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/team/create', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const data = req.body;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            const team_name = data.team_name;
-            const team_creator = validJWT.username;
-    
-            console.log(`[*] team create post-data --> ${data}`);
-            console.log(`[*] Attempting to create Team: ${team_name}`);
-            const teamCreate = await CreateTeam(team_creator, team_name);
-            // { message }
-            return res.json(teamCreate);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/team/update', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const data = req.body;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            const new_team_name = data.team_name;
-            const team_creator = validJWT.username;
-    
-            console.log("[*] Attempting to update Team");
-            const teamUpdate = await UpdateTeam(team_creator, new_team_name);
-            // { message }
-            console.log(JSON.stringify(teamUpdate));
-            return res.json(teamUpdate);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/team/add-member', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const data = req.body;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            const addTeamMember = await AddMember(data.request_id, data.checksum);
-            // null | { message }
-            return res.json(addTeamMember);    
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-app.post('/team/remove-member', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const data = req.body;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            const removeTeamMember = await RemoveMember(data.member_username, validJWT);
-            // null | { message }
-            return res.json(removeTeamMember);
-        } catch {
-            return res.json(null);   
-        }
-    } else {
-        return res.json(null);
-    }
-});
-app.post('/team/replace-leader', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const data = req.body;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            const leaderLeaveTeam = await ReplaceLeader(validJWT.username, data);
-            // null | { message }
-            console.log(leaderLeaveTeam);
-            return res.json(leaderLeaveTeam);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/submit-flag', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const data = req.body;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log("[*] Attempting to check flag value. . .");
-            const checkFlag = await ValidateFlag(data.challenge_id, data.flag, validJWT);
-            // null | { message }
-            console.log(checkFlag);
-            return res.json(checkFlag);
-        } catch {
-            console.log("[-] Bad Flag Submission Request!");
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/data/get-completions', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const data = req.body;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log("[*] Attempting to create readable completions. . .");
-            const readableCompletions = await ConvertCompletions(data.userCompletions, data.teamCompletions);
-            // null | { ... }
-            // console.log("[*] CONVERSION-RESULTS: ", readableCompletions);
-            return res.json(readableCompletions);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-// leaderboard is publically accessible
-app.get('/data/leaderboard', async (req, res) => {
-    const data = await GetLeaderboardData();
-    console.log(data);
-    return res.json(data)
-});
-
-app.post('/rate-challenge', async (req, res) => {
-    const token = req.cookies.khi_token;
-    const data = req.body;
-    const validJWT = await DecodeJWT(res, token);
-
-    if (validJWT) {
-        try {
-            const ratingChallenge = await UserRatingChallenge(data, validJWT);
-            return res.json(ratingChallenge);
-        } catch (err) {
-            console.error(err)
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-// this path is for downloading challenge archives to solve
-// (used for reverse engineering | forensics challenges)
-// |___ http://HOST:4000/download/test_archive.zip
-app.get('/download/:filename', (req, res, next) => {
-    try {
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = path.dirname(__filename);
-
-        const uploadsDir = path.join(__dirname, 'challenge_archives');
-        const allowedExtensions = ['.zip'];
-
-        const rawFilename = req.params.filename;
-        const safeFilename = sanitize(rawFilename);
-        const ext = path.extname(safeFilename).toLowerCase();
-
-        // attempt to check file types
-        if (!allowedExtensions.includes(ext)) {
-            return res.status(400).send('Invalid file type.');
-        }
-
-        // attempt to sanitize file path to prevent LFI
-        const filePath = path.join(uploadsDir, safeFilename);
-
-        if (!filePath.startsWith(uploadsDir)) {
-            return res.status(400).send('Invalid file path.');
-        }
-
-        if (!existsSync(filePath)) {
-            return res.status(404).send('File not found.');
-        }
-
-        // if something gets around it at least we log it!
-        // cause then we will dox them and cheer >w<
-        console.log(`[*] ${req.ip} downloading --> ${filePath}`);
-
-        res.download(filePath, (err) => {
-            if (err) {
-                if (err.code === 'ECONNABORTED') {
-                    console.warn(`[*] ${req.ip} aborted download. . .`);
-                } else {
-                    console.error('Download error:', err);
-                }
-            }
-        });
-    } catch (error) {
-        console.error("Err: ", error);
-        if (!res.headersSent) {
-            res.status(500).send('Internal Server Error');
-        }
-    }
-});
-
-/*
-######################################################
-            Admin Dashboard End-Points
-######################################################
-*/
-app.get('/admin/get_users', async (req, res) => {
-    console.log("---- Admin Requesting Users!");
-
-    const token = req.cookies.khi_adm_token;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        console.log("---- Admin Pulling all Users!")
-        const users = await GetAllUsers();
-        return res.json(users);
-    } else {
-        return res.json(null);
-    }
-});
-
-app.get('/admin/get_teams', async (req, res) => {
-    console.log("---- Admin Requesting Teams!");
-
-    const token = req.cookies.khi_adm_token;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        console.log("---- Admin Pulling all Teams!")
-        const teams = await GetAllTeams();
-        return res.json(teams);
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/admin/remove_user', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const data = req.body;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log("Admin Attmepting to Remove User: " + data.user_id)
-            const action = await RemoveUser(data.user_id);
-            return res.json(action);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/admin/remove_team', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const data = req.body;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log("Admin Attmepting to Remove Team: " + data.team_id)
-            const action = await RemoveTeam(data.team_id);
-            return res.json(action);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/admin/update_challenge', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const data = req.body;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log("Admin Attmepting to Update Challenge: " + data.challenge_id)
-            const action = await UpdateChallenge(data);
-    
-            // { acknowledge, message }
-            return res.json(action);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/admin/create_challenge', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const data = req.body;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log("Admin Attmepting to Create Challenge: " + data.name)
-            const action = await CreateChallenge(data);
-    
-            // { acknowledge, message }
-            return res.json(action);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/admin/delete_challenge', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const data = req.body;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log("Admin Attmepting to Delete Challenge: " + data.challenge_id)
-            const action = await DeleteChallenge(data, validJWT.username);
-    
-            // { acknowledge, message }
-            return res.json(action);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-// only admins hit this so the challenge flag is recieved in
-// the result
-app.get('/admin/fetch_challenges', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        const challenges = await AdminGetChallenges();
-        res.send(challenges);
-    } else {
-        return res.json(null);
-    }
-});
-
-app.get('/admin/fetch_admins', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const validJWT = await DecodeAdminJWT(res, token);
-    
-    if (validJWT) {
-        const admins = await GetAdmins();
-        res.send(admins);
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/admin/register', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        try {
-            const adminData = req.body;
-            const regAdmin = await RegisterAdmin(adminData.username, adminData.password);
-            res.send(regAdmin);
-        } catch {
-            res.send("Failed to add Admin!");
-        }
-    } else {
-        res.send("Failed to add Admin!");
-    }
-});
-
-app.post('/admin/remove_admin', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const data = req.body;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log("Admin Attmepting to Remove Admin: " + data.username)
-            const action = await RemoveAdmin(data.username);
-            return res.json(action);
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-import multer from 'multer'; // middle-ware for file checking
-import fs from 'fs/promises';
-
-// Set up storage to preserve original filename
-// on default multer uses checksum to name file
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'src/backend/challenge_archives'); // upload destination
-    },
-    filename: (req, file, cb) => {
-        cb(null, SanitizeFileName(file.originalname)); // replace spaces for underscores
-    }
-});
-const upload = multer({ storage: storage });
-
-// file name sanitizing while maintaining file endings (.zip, .txt, etc)
-function SanitizeFileName(filename) {
-    try {
-        // Find last dot position
-        const lastDotIndex = filename.lastIndexOf('.');
-        
-        let namePart = filename;
-        let extensionPart = '';
-        
-        if (lastDotIndex !== -1) {
-            namePart = filename.slice(0, lastDotIndex);
-            extensionPart = filename.slice(lastDotIndex + 1);
-        }
-        
-        // Replace whitespace with underscores, and remove invalid chars from name part
-        namePart = namePart
-            .replace(/\s+/g, '_')
-            .replace(/[^a-zA-Z0-9_]/g, '');
-        
-        // Sanitize extension: only letters and numbers
-        extensionPart = extensionPart.replace(/[^a-zA-Z0-9]/g, '');
-        
-        if (extensionPart.length > 0) {
-            return `${namePart}.${extensionPart}`;
-        } else {
-            return namePart; // no extension
-        }
-    } catch {
-        console.error("[-] Error occured Sanatizing Uploaded File Name!")
-        return Hash_SHA256(filename);
-    }
-}
-
-app.post('/admin/upload', upload.single('file'), async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log("Validating Uploaded File")
-    
-            // Check Content-Type of the entire request
-            const contentType = req.headers['content-type'];
-            console.log("Request Content-Type:", contentType);
-    
-            // Multer puts file info on req.file
-            const file = req.file;
-            if (!file) return res.json({ "acknowledge":false, "message": 'No file uploaded' });
-    
-            console.log("Uploaded file MIME type:", file.mimetype);
-            console.log("Original filename:", file.originalname);
-    
-            // different browsers may change the mimetype
-            const allowedMimeTypes = ['application/zip', 'application/x-zip-compressed', 'multipart/x-zip'];
-            if (!allowedMimeTypes.includes(file.mimetype) || !file.originalname.endsWith('.zip')) {
-                fs.unlink(file.path, () => {}); // Cleanup
-                return res.json({ acknowledge: false, message: 'Only .zip files are allowed' });
-            }
-    
-            console.log("Admin uploading challenge ZIP file")
-            return res.json({ "acknowledge":true, "message": 'File Uploaded Successfully!' });
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-async function GetUploads() {
-    const uploadsDir = path.join(__dirname, '/challenge_archives');
-  
-    try {
-      const files = await fs.readdir(uploadsDir);
-      return files; // returns an array of file names
-    } catch (err) {
-      console.error('Error reading uploads directory:', err);
-      return [];
-    }
-}
-
-app.get('/admin/get_uploads', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        console.log("Fetching listed Uploads")
-        const files = await GetUploads();
-
-        console.log(files)
-        return res.json(files);
-    } else {
-        return res.json(null);
-    }
-});
-
-app.post('/admin/delete_file', async (req, res) => {
-    const token = req.cookies.khi_adm_token;
-    const data = req.body;
-    const validJWT = await DecodeAdminJWT(res, token);
-
-    if (validJWT) {
-        try {
-            console.log("Verifying Admin Auth")
-    
-            if (!(await ValidateAdmin(validJWT.username, data.password))) {
-                console.log("Bad Admin Auth!")
-                return res.json({ "acknowledge":false, "message": 'Error Deleting File!' });
-            }
-            console.log("Valid Admin Auth")
-    
-            const filename = SanitizeFileName(data.filename)
-            console.log("Admin Attmepting to Delete File: " + filename)
-    
-            const uploadsDir = path.join(__dirname, 'challenge_archives');
-            const filePath = path.join(uploadsDir, filename);
-    
-            try {
-                console.log(`Attempting to Delete: ${filePath}`)
-                await fs.unlink(filePath);
-                return res.json({ "acknowledge":true, "message": 'File Deleted Successfully!' });
-            } catch (err) {
-                console.log(`Error Deleting: ${filePath}`)
-                return res.json({ "acknowledge":false, "message": 'Error Deleting File!' });
-            }
-        } catch {
-            return res.json(null);
-        }
-    } else {
-        return res.json(null);
-    }
-});
-
 app.listen(port, host, () => {
     console.log(`Backend Server is Active!\n|____ http://${host}:${port}\n`);
 });
+export { passport };

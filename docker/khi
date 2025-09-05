@@ -5,6 +5,16 @@ server {
     root /var/www/khi;
     index index.html;
 
+    # block access to all hidden files
+    location ~ /\. {
+        return 404;
+    }
+
+    # block access to react package json files
+    location ~ ^/package(\.lock)?\.json$ {
+        return 404;
+    }
+
     location / {
         try_files $uri /index.html;
     }
