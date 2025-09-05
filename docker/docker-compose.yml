@@ -38,12 +38,9 @@ services:
       - ./resumes:/app/resumes
     networks:
       - app_internal
-      - traefik
 
 networks:
   app_internal:
-  traefik:
-    external: true
 
 volumes:
   db_data:

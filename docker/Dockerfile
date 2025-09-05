@@ -18,7 +18,6 @@ RUN chown -R www-data:www-data /var/www
 # nginx conf file into the docker
 COPY public /var/www/project/public
 COPY src /var/www/project/src
-COPY .env /var/www/project/.env
 COPY package.json /var/www/project/package.json
 
 # create symlink to .env
