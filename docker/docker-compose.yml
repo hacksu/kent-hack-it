@@ -1,7 +1,7 @@
 services:
   db:
     image: mongo:latest
-    container_name: khi_db
+    container_name: ${DB_HOST}
     restart: always
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${DB_USER}
@@ -26,8 +26,34 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
     environment:
-      - DATABASE_URL=mongodb://${DB_USER}:${DB_PASS}@khi_db:27017/${DB_NAME}?authSource=admin
+      - DATABASE_URL=mongodb://${DB_USER}:${DB_PASS}@${DB_HOST}:27017/${DB_NAME}?authSource=admin
       - ORIGIN=http://0.0.0.0:80
+      # Mongo
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=${DB_HOST}
+
+      # Express
+      - SESSION_SECRET=${SESSION_SECRET}
+      - CHALLENGE_UPLOAD_DIR=${CHALLENGE_UPLOAD_DIR}
+
+      # Discord KHI Admin Role ID (currently is collab role)
+      - KHI_ADMIN_ID=${KHI_ADMIN_ID}
+
+      # Home page URL must match the OAuth apps homepage URL value
+      - HOMEPAGE_URL=${HOMEPAGE_URL}
+      - REACT_APP_HOMEPAGE_URL=${HOMEPAGE_URL}
+
+      # GitHub OAuth (has to match the OAuth app information)
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}
+
+      # Discord OAuth (has to match the OAuth app information)
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - DISCORD_CALLBACK_URL=${DISCORD_CALLBACK_URL}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.khi.rule=Host(`ctf.hacksu.com`)"

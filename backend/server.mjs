@@ -94,97 +94,105 @@ passport.deserializeUser(async (id, done) => {
 });
 
 // --- GitHub OAuth ---
-passport.use(
-    new GitHubStrategy(
-        {
-            clientID: process.env.GITHUB_CLIENT_ID,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET,
-            callbackURL: process.env.GITHUB_CALLBACK_URL,
-            scope: ["user:email"],
-        },
-        async (accessToken, refreshToken, profile, done) => {
-            try {
-                // console.log("GitHub profile:", profile);
-                let user = await UserCollection.findOne({
-                    provider: "github",
-                    providerId: profile.id,
-                });
-                if (!user) {
-                    user = await UserCollection.create({
+if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET && process.env.GITHUB_CALLBACK_URL) {
+    passport.use(
+        new GitHubStrategy(
+            {
+                clientID: process.env.GITHUB_CLIENT_ID,
+                clientSecret: process.env.GITHUB_CLIENT_SECRET,
+                callbackURL: process.env.GITHUB_CALLBACK_URL,
+                scope: ["user:email"],
+            },
+            async (accessToken, refreshToken, profile, done) => {
+                try {
+                    // console.log("GitHub profile:", profile);
+                    let user = await UserCollection.findOne({
                         provider: "github",
                         providerId: profile.id,
-                        username: profile.username,
-                        avatarUrl: profile.photos[0]?.value,
-                        email: profile.emails?.[0]?.value,
                     });
+                    if (!user) {
+                        user = await UserCollection.create({
+                            provider: "github",
+                            providerId: profile.id,
+                            username: profile.username,
+                            avatarUrl: profile.photos[0]?.value,
+                            email: profile.emails?.[0]?.value,
+                        });
+                    }
+                    return done(null, user);
+                } catch (err) {
+                    console.error("GitHub strategy error:", err);
+                    done(err, null);
                 }
-                return done(null, user);
-            } catch (err) {
-                console.error("GitHub strategy error:", err);
-                done(err, null);
             }
-        }
-    )
-);
-// engage the github strategy
-app.get("/auth/github", passport.authenticate("github", {
-    scope: ["user:email"]
-}));
+        )
+    );
+    // engage the github strategy
+    app.get("/auth/github", passport.authenticate("github", {
+        scope: ["user:email"]
+    }));
+} else {
+    console.warn("[!] GitHub OAuth disabled - missing env vars");
+}
 
-// --- Discord OAuth ---
-passport.use(
-    new DiscordStrategy(
-        {
-            clientID: process.env.DISCORD_CLIENT_ID,
-            clientSecret: process.env.DISCORD_CLIENT_SECRET,
-            callbackURL: process.env.DISCORD_CALLBACK_URL,
-            scope: ["identify", "email", "guilds", "guilds.members.read"],
-        },
-        async (accessToken, refreshToken, profile, done) => {
-            try {
-                // console.log("Discord profile:", profile);
-
-                const guildId = "632634799303032852"; // HacKSU
-                const adminRoleId = `${process.env.KHI_ADMIN_ID}`;
-                const hasAdminRole = await UserIsAdmin(accessToken, guildId, adminRoleId);
-
-                console.log(`[*] ${profile.username} is admin? ${hasAdminRole}`)
-
-                // Construct avatar URL
-                let avatarUrl = null;
-                if (profile.avatar) {
-                    const format = profile.avatar.startsWith("a_") ? "gif" : "png"; // animated if starts with 'a_'
-                    avatarUrl = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}?size=512`;
-                }
-
-                let user = await UserCollection.findOne({
-                    provider: "discord",
-                    providerId: profile.id,
-                });
-
-                if (!user) {
-                    user = await UserCollection.create({
+if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET && process.env.DISCORD_CALLBACK_URL) {
+    // --- Discord OAuth ---
+    passport.use(
+        new DiscordStrategy(
+            {
+                clientID: process.env.DISCORD_CLIENT_ID,
+                clientSecret: process.env.DISCORD_CLIENT_SECRET,
+                callbackURL: process.env.DISCORD_CALLBACK_URL,
+                scope: ["identify", "email", "guilds", "guilds.members.read"],
+            },
+            async (accessToken, refreshToken, profile, done) => {
+                try {
+                    // console.log("Discord profile:", profile);
+    
+                    const guildId = "632634799303032852"; // HacKSU
+                    const adminRoleId = `${process.env.KHI_ADMIN_ID}`;
+                    const hasAdminRole = await UserIsAdmin(accessToken, guildId, adminRoleId);
+    
+                    console.log(`[*] ${profile.username} is admin? ${hasAdminRole}`)
+    
+                    // Construct avatar URL
+                    let avatarUrl = null;
+                    if (profile.avatar) {
+                        const format = profile.avatar.startsWith("a_") ? "gif" : "png"; // animated if starts with 'a_'
+                        avatarUrl = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}?size=512`;
+                    }
+    
+                    let user = await UserCollection.findOne({
                         provider: "discord",
                         providerId: profile.id,
-                        username: profile.username,
-                        avatarUrl,
-                        email: profile.email,  // passport-discord puts verified email in profile.email
-                        is_admin: hasAdminRole // mark user as admin when needed
                     });
+    
+                    if (!user) {
+                        user = await UserCollection.create({
+                            provider: "discord",
+                            providerId: profile.id,
+                            username: profile.username,
+                            avatarUrl,
+                            email: profile.email,  // passport-discord puts verified email in profile.email
+                            is_admin: hasAdminRole // mark user as admin when needed
+                        });
+                    }
+    
+                    return done(null, user);
+                } catch (err) {
+                    console.error("Discord strategy error:", err);
+                    done(err, null);
                 }
-
-                return done(null, user);
-            } catch (err) {
-                console.error("Discord strategy error:", err);
-                done(err, null);
             }
-        }
-    )
-);
-// engage the discord strategy
-app.get("/auth/discord", passport.authenticate("discord", {
-    scope: ["identify", "email", "guilds", "guilds.members.read"]
-}));
+        )
+    );
+    // engage the discord strategy
+    app.get("/auth/discord", passport.authenticate("discord", {
+        scope: ["identify", "email", "guilds", "guilds.members.read"]
+    }));
+} else {
+    console.warn("[!] Discord OAuth disabled - missing env vars");
+}
 
 // ---
 
