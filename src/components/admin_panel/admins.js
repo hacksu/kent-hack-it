@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SanitizeDescription } from '../purification.js';
 
 function AdminView() {
     const [admins, setAdmins] = useState([]);
@@ -43,18 +44,18 @@ function AdminView() {
 
             if (data && data.acknowledge) {
                 if (msgArea) {
-                    msgArea.setHTMLUnsafe = "<p style='color: green;'>" + data.message + "</p>";
+                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
                 }
                 GetAdmins()
             } else {
                 if (msgArea) {
-                    msgArea.setHTMLUnsafe = "<p style='color: red;'>" + data.message + "</p>";
+                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
                 }
             }
         } catch (error) {
             console.error("Error sending request:", error);
             if (msgArea) {
-                msgArea.setHTMLUnsafe = "<p style='color: red;'> Error Occured! </p>";
+                msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'> Error Occured! </p>");
             }
         }
     };
