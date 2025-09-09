@@ -221,11 +221,18 @@ export function Challenges() {
                                         style={{ maxWidth: '250px' }}
                                     >
                                         <Link
-                                            to={`/challenge?id=${challenge._id}`}
+                                            to={challenge.is_active ? `/challenge?id=${challenge._id}` : ""}
                                             className="text-decoration-none text-dark"
                                         >
-                                            <div className="card h-100 shadow-sm p-2">
+                                            <div className={`card h-100 shadow-sm p-2 ${!challenge.is_active ? "opacity-50" : ""}`}>
                                                 <div className="card-body p-2">
+                                                    {!challenge.is_active && (
+                                                        <>
+                                                            <p>
+                                                                Challenge is currently Out-of-Order and will be back online soon!
+                                                            </p>
+                                                        </>
+                                                    )}
                                                     <h6 className="card-title mb-1">{challenge.name}</h6>
                                                     <small className="text-muted">
                                                         {challenge.category} | Difficulty: {challenge.difficulty}

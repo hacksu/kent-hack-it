@@ -204,6 +204,70 @@ async function UpdateChallenge(data) {
     }
 }
 
+router.post('/toggle_status', async (req, res) => {
+    const data = req.body;
+
+    if (!IsAdmin(req)) {
+        console.log("Not an Admin!");
+        return res.status(401).json(null);
+    }
+
+    try {
+        if (!req.isAuthenticated())
+            return res.json(null);
+
+        console.log("Admin Attmepting to Toggle Challenge: " + data.challenge_id)
+        const action = await ToggleChallenge(data, req.user.username);
+
+        // { acknowledge, message }
+        return res.json(action);
+    } catch (err) {
+        console.error(err)
+        return res.json(null);
+    }
+});
+async function ToggleChallenge(data, adminUsername) {
+    try {
+        const challengeEntity = await ChallengeCollection.findOne({
+            _id: SanitizeAlphaNumeric(data.challenge_id)
+        });
+
+        if (challengeEntity) {
+            console.log("Challenge Entity Found!")
+            const activeState = challengeEntity.is_active;
+            console.log(`|__ active? ${activeState}`);
+    
+            // invert status
+            const action = await ChallengeCollection.updateOne(
+            { _id: SanitizeAlphaNumeric(data.challenge_id) },
+            {
+                $set: {
+                    "is_active": !activeState
+                }
+            })
+            console.log(`action results | ${JSON.stringify(action)}`);
+    
+            if (action.matchedCount === 1) {
+                console.log("Challenge Modified");
+                if (!activeState === false) {
+                    return { acknowledge: true, "message": "Challenge Disabled!" }
+                } else {
+                    return { acknowledge: true, "message": "Challenge Enabled!" }
+                }
+            } else {
+                console.log("No entities modified!")
+                return { acknowledge: false, "message": "Error Toggling Challenge!" }
+            }
+        } else {
+            console.log("Bad initial search!")
+            return { acknowledge: false, "message": "Error Toggling Challenge!" }
+        }
+    } catch (error) {
+        console.log(error);
+        return { acknowledge: false, "message": "Error Toggling Challenge!" }
+    }
+}
+
 //###############################################
 //              FILE UPLOADING
 //###############################################
