@@ -106,18 +106,18 @@ export function RatingPage() {
             const data = await response.json();
             if (data) {
                 if (msgArea) {
-                    msgArea.innerHTML = SanitizeDescription("<p style='color: green;'>" + data.message + "</p>");
+                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
                     GetProfileDetails();
                 }
             } else {
                 if (msgArea) {
-                    msgArea.innerHTML = SanitizeDescription("<p style='color: red;'>Error Rating Challenge!</p>");
+                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>Error Rating Challenge!</p>");
                 }
             }
         } catch (error) {
             console.error("Error sending request:", error);
             if (msgArea) {
-                msgArea.innerHTML = SanitizeDescription("<p style='color: red;'>Error Rating Challenge!</p>");
+                msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>Error Rating Challenge!</p>");
             }
         }
     };
