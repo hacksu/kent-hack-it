@@ -89,6 +89,7 @@ const ChallengeSchema = new mongoose.Schema({
     rating: { type: Number, default: 0 },    // shows the avg of user_rates (maybe only show whole int or one-decimal place)
     points: Number,
     flag: String,      // KHI{...}
+    is_active: { type: Boolean, default: true }
 });
 export const ChallengeCollection = mongoose.model(
     'Challenges',

@@ -65,6 +65,40 @@ function AdminChallengeViewTab() {
         }
     }
 
+    async function ChangeStatus(challenge_id) {
+        let msgArea = document.getElementById('msg_popup');
+        try {
+            const response = await fetch(`/api/admin/ctf/toggle_status`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    "challenge_id": challenge_id
+                }),
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (data && data.acknowledge) {
+                if (msgArea) {
+                    msgArea.innerHTML = SanitizeDescription("<p style='color: green;'>" + data.message + "</p>");
+                }
+                FetchChallenges();
+            } else {
+                if (msgArea) {
+                    msgArea.innerHTML = SanitizeDescription("<p style='color: red;'>" + data.message + "</p>");
+                }
+            }
+        } catch (error) {
+            console.error("Error sending request:", error);
+            if (msgArea) {
+                msgArea.innerHTML = SanitizeDescription("<p style='color: red;'> Error Occured! </p>");
+            }
+        }
+    }
+
     return (
         <>
             {activeTab === "edit" ? (
@@ -83,6 +117,17 @@ function AdminChallengeViewTab() {
                                     style={{ maxWidth: '400px' }}
                                 >
                                     <div className="card h-100 shadow-sm p-2">
+                                        <div className="container">
+                                            <div className="d-flex justify-content-between pt-2">
+                                                <button
+                                                    className={`btn ${challenge.is_active ? "btn-outline-danger" : "btn-outline-success"}`}
+                                                    onClick={() => ChangeStatus(challenge._id)}
+                                                >
+                                                    {challenge.is_active ? "Disable" : "Enable"}
+                                                </button>
+                                            </div>
+                                        </div>
+
                                         <div className="card-body p-2">
                                             <h6 className="card-title mb-1">{challenge.name}</h6>
 
