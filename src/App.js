@@ -24,6 +24,8 @@ function App() {
                 <Route path="/rate-challenge" element={<RatingPage />} />
                 {/* Redirection route */}
                 <Route path="/admin" element={<Navigate to="/admin/panel" replace />} />
+                <Route path='/discord' element={() => {window.location.href = 'https://discord.gg/rJDdvnt'; return null; }} />
+                <Route path='/tools' element={() => {window.location.href = 'https://dcode.fr'; return null; }} />
             </Routes>
         </Router>
     );
