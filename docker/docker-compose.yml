@@ -42,7 +42,6 @@ services:
 
       # Home page URL must match the OAuth apps homepage URL value
       - HOMEPAGE_URL=${HOMEPAGE_URL}
-      - REACT_APP_HOMEPAGE_URL=${HOMEPAGE_URL}
 
       # GitHub OAuth (has to match the OAuth app information)
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
