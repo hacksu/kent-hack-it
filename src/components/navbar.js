@@ -91,6 +91,12 @@ function Navbar() {
                         <li className="nav-item">
                             <Link className="nav-link" to="/leaderboard">Leaderboard</Link>
                         </li>
+                        <li className="nav-item">
+                            <Link className="nav-link" to="/tools">Tools</Link>
+                        </li>
+                        <li className="nav-item">
+                            <Link className="nav-link" to="/discord">Discord</Link>
+                        </li>
 
                         {authenticated ? (
                             <>
