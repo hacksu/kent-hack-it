@@ -6,3 +6,5 @@ lib64
 pyvenv.cfg
 .last_reset_time
 *.db
+test*.sh
+.env
