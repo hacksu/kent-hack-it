@@ -42,11 +42,11 @@ async function GetAllTeams() {
 
         // Format teams for dropdown with member count info
         const formattedTeams = teams
-            .filter(team => team.members.length < 3) // Only show teams that aren't full
+            .filter(team => team.members.length < 4) // Only show teams that aren't full
             .map(team => ({
                 name: team.name,
                 memberCount: team.members.length,
-                spotsLeft: 3 - team.members.length
+                spotsLeft: 4 - team.members.length
             }));
 
         return formattedTeams;
@@ -189,9 +189,9 @@ async function SendTeamRequest(sender, team_name) {
             };
         }
 
-        // if the team already has 3 members we need to drop
+        // if the team already has 4 members we need to drop
         // this join-request due to the team being full
-        if (teamRecord.members.length === 3) {
+        if (teamRecord.members.length === 4) {
             console.log(`[-] Request Dropped: Team ${team_name} is Full!`);
             return {
                 "message": "Request Denied, this team is full!"
@@ -537,11 +537,11 @@ async function AddMember(request_id, checksum) {
     if (joinRequest) {
         console.log("[+] Found Request Object!");
 
-        // if there are already 3 members we need to drop this
+        // if there are already 4 members we need to drop this
         // addMember request
         const teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(joinRequest.team_id) })
         if (teamProfile) {
-            if (teamProfile.members.length === 3) {
+            if (teamProfile.members.length === 4) {
                 console.log("[-] This Team has reached Maximum number of Members!");
                 return null;
             }
