@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y supervisor sudo nodejs npm net-tools
 RUN mkdir /var/www
 RUN mkdir /var/www/khi
 RUN mkdir /var/www/project
+RUN mkdir -p /ctf/challenge_archives
 
 # give www-data ability to run commands and interact with web-root
 RUN chsh -s /bin/bash www-data
@@ -33,6 +34,7 @@ RUN rm /etc/nginx/conf.d/default.conf
 
 # after initial setup as root, give www-data full-access to /var/www
 RUN chown -R www-data:www-data /var/www
+RUN chown -R www-data:www-data /ctf/challenge_archives
 
 # build react app
 RUN su www-data -s /bin/sh -c "cd /var/www/project && npm install . && npm run build && cp -r build/* -t /var/www/khi"
