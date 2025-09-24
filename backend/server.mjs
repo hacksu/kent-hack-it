@@ -118,6 +118,21 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET && process.
                             avatarUrl: profile.photos[0]?.value,
                             email: profile.emails?.[0]?.value,
                         });
+                    } else {
+                        // update the avatarUrl if needed
+                        const pfpUrl = profile.photos[0]?.value;
+                        if (pfpUrl !== user.avatarUrl) {
+                            const updatePFP = await UserCollection.updateOne(
+                                {
+                                    provider: "github",
+                                    providerId: profile.id,
+                                },
+                                {
+                                    $set: {
+                                        avatarUrl: pfpUrl
+                                    }
+                                })
+                        }
                     }
                     return done(null, user);
                 } catch (err) {
@@ -176,6 +191,20 @@ if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET && proces
                             email: profile.email,  // passport-discord puts verified email in profile.email
                             is_admin: hasAdminRole // mark user as admin when needed
                         });
+                    } else {
+                        // update the avatarUrl if needed
+                        if (avatarUrl !== user.avatarUrl) {
+                            const updatePFP = await UserCollection.updateOne(
+                                {
+                                    provider: "discord",
+                                    providerId: profile.id,
+                                },
+                                {
+                                    $set: {
+                                        avatarUrl: avatarUrl
+                                    }
+                                })
+                        }
                     }
     
                     return done(null, user);
