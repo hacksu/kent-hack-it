@@ -275,7 +275,7 @@ const Team = () => {
                                                                         <option value="">Select a team to join...</option>
                                                                         {availableTeams.map((team, index) => (
                                                                             <option key={team.name} value={team.name}>
-                                                                                {team.name} ({team.memberCount}/3 members, {team.spotsLeft} spots left)
+                                                                                {team.name} ({team.memberCount}/4 members, {team.spotsLeft} spots left)
                                                                             </option>
                                                                         ))}
                                                                     </select>
