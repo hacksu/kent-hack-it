@@ -118,6 +118,7 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                     "difficulty": updateFormData.difficulty,
                     "flag": updateFormData.flag,
                     "points": updateFormData.points,
+                    "files": updateFormData.files,
                 }),
                 credentials: 'include'  // ensures cookies are sent
             });
