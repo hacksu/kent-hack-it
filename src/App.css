@@ -269,3 +269,8 @@ h6 {
     color: white;
     padding-top: 0;
 }
+
+.hover-highlight:hover {
+  background-color: #96ffb0; /* light gray */
+  cursor: pointer;
+}

@@ -145,7 +145,7 @@ function AdminChallengeViewTab() {
                                                     paddingRight: "8px"
                                                 }}
                                                 className="card-text small mt-2"
-                                                dangerouslySetInnerHTML={{ __html: SanitizeDescription(challenge.description) }}
+                                                dangerouslySetInnerHTML={{ __html: SanitizeDescription(null, challenge.description) }}
                                             />
 
                                             <p

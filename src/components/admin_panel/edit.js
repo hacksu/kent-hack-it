@@ -2,13 +2,48 @@ import { useEffect, useState } from 'react';
 import { SanitizeDescription } from '../../components/purification.js';
 
 function AdminChallengeEditTab({ target_challenge_id }) {
+    const [files, setFiles] = useState([]);
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+
+    async function fetchUploads() {
+        try {
+            const response = await fetch(`/api/admin/ctf/get_uploads`, {
+                method: "GET",
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+            if (data) setFiles(data);
+        } catch (error) {
+            console.error("Error sending request:", error);
+        }
+    }
+
+    useEffect(() => {
+        fetchUploads();
+    }, []);
+
+    function toggleFile(filename) {
+        setUpdateFormData(prev => {
+            const alreadySelected = prev.files.includes(filename);
+            return {
+                ...prev,
+                files: alreadySelected
+                    ? prev.files.filter(f => f !== filename) // remove
+                    : [...prev.files, filename]              // add
+            };
+        });
+    }
+
     const [updateFormData, setUpdateFormData] = useState({
         name: '',
         description: '',
         category: '',
         difficulty: '',
         flag: '',
-        points: ''
+        points: '',
+        files: []
     });
 
     const handleUpdateChange = e => {
@@ -49,6 +84,10 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                 setUpdateFormData(prev => ({
                     ...prev,
                     'points': challenge.points
+                }));
+                setUpdateFormData(prev => ({
+                    ...prev,
+                    'files': challenge.hlinks || [] // incase there are no hlinks we can default to empty array
                 }));
             }
         } catch (err) {
@@ -143,6 +182,45 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                             />
                         </div>
 
+                        {/* Challenge Links */}
+                        <div className="mb-3">
+                            <label className="form-label fw-semibold">Challenge Files</label>
+                            <hr/>
+
+                            {/* Toggle button */}
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-outline-primary mb-2"
+                                onClick={() => setIsOpen(!isOpen)}
+                            >
+                                {isOpen ? "Hide Files" : "Show Files"}
+                            </button>
+
+                            {/* Collapsible area */}
+                            {isOpen && (
+                                <div className="border rounded p-2 d-flex flex-wrap gap-2">
+                                    {files.length === 0 && <p className="text-muted mb-0">No files uploaded</p>}
+                                    {files.map(file => (
+                                    <label
+                                        key={file}
+                                        htmlFor={`file-${file}`}
+                                        className="d-flex align-items-center gap-1 small border rounded px-2 py-1 hover-highlight"
+                                    >
+                                        <input
+                                        type="checkbox"
+                                        id={`file-${file}`}
+                                        className="form-check-input m-0"
+                                        checked={updateFormData.files.includes(file)}
+                                        onChange={() => toggleFile(file)}
+                                        />
+                                        {file}
+                                    </label>
+                                    ))}
+                                </div>
+                                )}
+                            <hr/>
+                        </div>
+
                         {/* Category */}
                         <div className="mb-4">
                             <label className="form-label fw-semibold">Category</label>
@@ -160,6 +238,7 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                                 <option value="Cryptography">Cryptography</option>
                                 <option value="Reverse Engineering">Reverse Engineering</option>
                                 <option value="Forensics">Forensics</option>
+                                <option value="Steganography">Steganography</option>
                                 <option value="Binary Exploitation">Binary Exploitation</option>
                                 <option value="General">General</option>
                             </select>

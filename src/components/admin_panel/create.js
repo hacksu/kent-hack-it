@@ -2,13 +2,18 @@ import { useEffect, useState } from 'react';
 import { SanitizeDescription } from '../../components/purification.js';
 
 function AdminChallengeCreateTab() {
+    const [files, setFiles] = useState([]);
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+
     const [newFormData, setNewFormData] = useState({
         name: '',
         description: '',
         category: '',
         difficulty: '',
         flag: '',
-        points: ''
+        points: '',
+        files: []
     });
 
     const handleNewChange = e => {
@@ -18,6 +23,36 @@ function AdminChallengeCreateTab() {
             [name]: value
         }));
     };
+
+    async function fetchUploads() {
+        try {
+            const response = await fetch(`/api/admin/ctf/get_uploads`, {
+                method: "GET",
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+            if (data) setFiles(data);
+        } catch (error) {
+            console.error("Error sending request:", error);
+        }
+    }
+
+    useEffect(() => {
+        fetchUploads();
+    }, []);
+
+    function toggleFile(filename) {
+        setNewFormData(prev => {
+            const alreadySelected = prev.files.includes(filename);
+            return {
+                ...prev,
+                files: alreadySelected
+                    ? prev.files.filter(f => f !== filename) // remove
+                    : [...prev.files, filename]              // add
+            };
+        });
+    }
 
     const addChallenge = async (event) => {
         event.preventDefault();
@@ -36,6 +71,7 @@ function AdminChallengeCreateTab() {
                     "difficulty": newFormData.difficulty,
                     "flag": newFormData.flag,
                     "points": newFormData.points,
+                    "files": newFormData.files,
                 }),
                 credentials: 'include'  // ensures cookies are sent
             });
@@ -98,6 +134,45 @@ function AdminChallengeCreateTab() {
                                 />
                             </div>
 
+                            {/* Challenge Links */}
+                            <div className="mb-3">
+                                <label className="form-label fw-semibold">Challenge Files</label>
+                                <hr />
+
+                                {/* Toggle button */}
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-primary mb-2"
+                                    onClick={() => setIsOpen(!isOpen)}
+                                >
+                                    {isOpen ? "Hide Files" : "Show Files"}
+                                </button>
+
+                                {/* Collapsible area */}
+                                {isOpen && (
+                                <div className="border rounded p-2 d-flex flex-wrap gap-2">
+                                    {files.length === 0 && <p className="text-muted mb-0">No files uploaded</p>}
+                                    {files.map(file => (
+                                    <label
+                                        key={file}
+                                        htmlFor={`file-${file}`}
+                                        className="d-flex align-items-center gap-1 small border rounded px-2 py-1 hover-highlight"
+                                    >
+                                        <input
+                                        type="checkbox"
+                                        id={`file-${file}`}
+                                        className="form-check-input m-0"
+                                        checked={newFormData.files.includes(file)}
+                                        onChange={() => toggleFile(file)}
+                                        />
+                                        {file}
+                                    </label>
+                                    ))}
+                                </div>
+                                )}
+                                <hr />
+                            </div>
+
                             {/* Category & Difficulty side by side */}
                             <div className="row">
                                 <div className="col-md-6 mb-3">
@@ -114,6 +189,7 @@ function AdminChallengeCreateTab() {
                                         <option value="Cryptography">Cryptography</option>
                                         <option value="Reverse Engineering">Reverse Engineering</option>
                                         <option value="Forensics">Forensics</option>
+                                        <option value="Steganography">Steganography</option>
                                         <option value="Binary Exploitation">Binary Exploitation</option>
                                         <option value="General">General</option>
                                     </select>

@@ -28,7 +28,23 @@ export function ChallengeDetail() {
             try {
                 const response = await fetch(`/api/ctf/challenges`);
                 const data = await response.json();
-                const chall = data.find(challenge => challenge._id === id);
+                let chall = data.find(challenge => challenge._id === id);
+
+                // append anchor links to challenge description
+                if (chall) {
+                    if (Array.isArray(chall.hlinks) && chall.hlinks.length > 0) {
+                        // Build anchor tags, one per line
+                        const target = "https://ctf.hacksu.com/api/ctf/download/";
+
+                        const links = chall.hlinks
+                            .map(hlink => `<a href="${target + hlink}" target="_blank">${hlink}</a>`)
+                            .join("<br/>");
+
+                        // Append to description
+                        chall.description = chall.description + "<br/><br/>Download Challenge Files Below:<br/>" + links;
+                    }
+                }
+
                 setChallenge(chall);
             } catch (err) {
                 console.error('Failed to fetch challenges:', err);
@@ -97,7 +113,7 @@ export function ChallengeDetail() {
                                             </h6>
                                             <p
                                                 className="card-text"
-                                                dangerouslySetInnerHTML={{ __html: SanitizeDescription(challenge.description) }}
+                                                dangerouslySetInnerHTML={{ __html: SanitizeDescription(null, challenge.description) }}
                                             />
                                             <p className="card-text">
                                                 ⭐ Rating: {challenge.rating.toFixed(1)} / 5
