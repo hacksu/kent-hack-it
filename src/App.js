@@ -34,8 +34,8 @@ function App() {
                 <Route path="/rate-challenge" element={<RatingPage />} />
                 {/* Redirection route */}
                 <Route path="/admin" element={<Navigate to="/admin/panel" replace />} />
-                <Route path="/discord" element={<ExternalRedirect to="https://discord.gg/rJDdvnt" />} />
-                <Route path="/tools" element={<ExternalRedirect to="https://dcode.fr" />} />
+                <Route path="/discord" element={<ExternalRedirect to="https://discord.gg/rJDdvnt" newTab />} />
+                <Route path="/tools" element={<ExternalRedirect to="https://dcode.fr" newTab />} />
             </Routes>
         </Router>
     );
