@@ -105,8 +105,9 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET && process.
             },
             async (accessToken, refreshToken, profile, done) => {
                 try {
-                    const user = await HandleAccount("github", profile);
+                    const user = await HandleAccount("github", profile, accessToken);
                     if (user) {
+                        console.log(`Authenticated as ${user.username}`);
                         return done(null, user);
                     } else {
                         console.error("Bad Github OAuth");
@@ -139,8 +140,9 @@ if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET && proces
             },
             async (accessToken, refreshToken, profile, done) => {
                 try {
-                    const user = await HandleAccount("discord", profile);
+                    const user = await HandleAccount("discord", profile, accessToken);
                     if (user) {
+                        console.log(`Authenticated as ${user.username}`);
                         return done(null, user);
                     } else {
                         console.error("Bad Discord OAuth");

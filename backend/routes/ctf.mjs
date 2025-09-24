@@ -8,8 +8,6 @@ const router = Router();
 
 // expands end-point root '/ctf'
 router.get("/challenges", async (req, res) => {
-    if (!req.isAuthenticated()) return res.json(null);
-
     if (await IsSiteActive(req, false)) {
         const challenges = await GetChallenges();
         res.send(challenges);
@@ -25,8 +23,6 @@ async function GetChallenges() {
 }
 
 router.post("/challenge", async (req, res) => {
-    if (!req.isAuthenticated()) return res.json(null);
-
     if (await IsSiteActive(req, false)) {
         const data = req.body;
         // fetches details from given challenge id

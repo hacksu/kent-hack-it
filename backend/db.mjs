@@ -149,7 +149,7 @@ export async function UserIsAdmin(accessToken, guildId, roleId) {
 
 // check if a user has an alt account from different oauth and log them into it
 async function HasAlterateAccount(email) {
-    user = await UserCollection.findOne({
+    const user = await UserCollection.findOne({
         email: email,
     });
     return user;
@@ -157,9 +157,11 @@ async function HasAlterateAccount(email) {
 
 async function GetAvatarUrl(provider, profile) {
     if (provider === "discord") {
+        if (!profile.avatar) return "";
         const format = profile.avatar.startsWith("a_") ? "gif" : "png"; // animated if starts with 'a_'
         return `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}?size=512`;
     } else if (provider === "github") {
+        if (!profile.photos) return "";
         return profile.photos[0]?.value;
     }
 }
@@ -169,7 +171,7 @@ async function UpdateAvatar(provider, profile, user) {
     if (provider === "discord") {
         avatarUrl = await GetAvatarUrl("discord", profile);
 
-        if (avatarUrl !== user.avatarUrl) {
+        if (avatarUrl !== "" && avatarUrl !== user.avatarUrl) {
             const updatePFP = await UserCollection.updateOne(
                 {
                     provider: "discord",
@@ -184,7 +186,7 @@ async function UpdateAvatar(provider, profile, user) {
     } else if (provider === "github") {
         avatarUrl = await GetAvatarUrl("github", profile);
 
-        if (avatarUrl !== user.avatarUrl) {
+        if (avatarUrl !== "" && avatarUrl !== user.avatarUrl) {
             const updatePFP = await UserCollection.updateOne(
                 {
                     provider: "github",
@@ -202,7 +204,7 @@ async function UpdateAvatar(provider, profile, user) {
 }
 
 // given profile data and oauth provider handle account creation and redirection
-export async function HandleAccount(provider, profile) {
+export async function HandleAccount(provider, profile, accessToken) {
     let user = null;
 
     if (provider === "discord") {
