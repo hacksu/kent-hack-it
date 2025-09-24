@@ -19,6 +19,42 @@ router.get("/info", async (req, res) => {
         return res.json(null);
     }
 });
+
+router.get("/list", async (req, res) => {
+    try {
+        if (!req.isAuthenticated()) return res.json([]);
+
+        console.log(`[*] Getting list of all teams for dropdown`);
+        const teams = await GetAllTeams();
+        return res.json(teams);
+    } catch (err) {
+        console.error(err)
+        return res.json([]);
+    }
+});
+
+async function GetAllTeams() {
+    try {
+        // Get all teams with basic info and member count
+        const teams = await TeamCollection.find({})
+            .select('name members')
+            .lean();
+
+        // Format teams for dropdown with member count info
+        const formattedTeams = teams
+            .filter(team => team.members.length < 3) // Only show teams that aren't full
+            .map(team => ({
+                name: team.name,
+                memberCount: team.members.length,
+                spotsLeft: 3 - team.members.length
+            }));
+
+        return formattedTeams;
+    } catch (err) {
+        console.error("Error fetching teams:", err);
+        return [];
+    }
+}
 async function GetTeamInfo(user_id) {
     user_id = SanitizeString(user_id);
 

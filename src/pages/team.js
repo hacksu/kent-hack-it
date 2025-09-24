@@ -18,6 +18,7 @@ const Team = () => {
     const [isLeader, SetIsLeader] = useState(false);
 
     const [reqTeamName, SetReqTeamName] = useState("");
+    const [availableTeams, SetAvailableTeams] = useState([]);
 
     const [reqTeamMsg, SetReqTeamMsg] = useState("");
     const [teamUpdateMsg, SetTeamUpdateMsg] = useState("");
@@ -89,9 +90,29 @@ const Team = () => {
     }
 
     useEffect(() => {
-        if (joinedTeamName !== "None" && joinedTeamName !== "") GetTeamDetails();
+        if (joinedTeamName !== "None" && joinedTeamName !== "") {
+            GetTeamDetails();
+        } else if (joinedTeamName === "None") {
+            // If user doesn't have a team, fetch available teams for joining
+            GetAvailableTeams();
+        }
         // eslint-disable-next-line
     }, [joinedTeamName]); // executes when joinedTeamName changes state
+
+    const GetAvailableTeams = async () => {
+        try {
+            const response = await fetch(`/api/team/list`, {
+                method: "GET",
+                credentials: 'include'
+            });
+
+            const teams = await response.json();
+            SetAvailableTeams(teams);
+        } catch (error) {
+            console.error("Error fetching teams:", error);
+            SetAvailableTeams([]);
+        }
+    };
 
     const SendJoinRequest = async () => {
         try {
@@ -108,6 +129,8 @@ const Team = () => {
 
             const data = await response.json();
             SetReqTeamMsg(data.message);
+            // Refresh available teams after sending a request
+            GetAvailableTeams();
         } catch (error) {
             console.error("Error sending request:", error);
         }
@@ -243,20 +266,31 @@ const Team = () => {
 
                                                             <div>
                                                                 <div className="mb-3">
-                                                                    <input
-                                                                        type="text"
-                                                                        className="form-control"
+                                                                    <select
+                                                                        className="form-select"
                                                                         id="reqTeamName"
-                                                                        placeholder="Enter team name"
                                                                         value={reqTeamName}
                                                                         onChange={(e) => SetReqTeamName(e.target.value)}
-                                                                    />
+                                                                    >
+                                                                        <option value="">Select a team to join...</option>
+                                                                        {availableTeams.map((team, index) => (
+                                                                            <option key={index} value={team.name}>
+                                                                                {team.name} ({team.memberCount}/3 members, {team.spotsLeft} spots left)
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    {availableTeams.length === 0 && (
+                                                                        <small className="text-muted">
+                                                                            No teams available to join. Create a new team instead!
+                                                                        </small>
+                                                                    )}
                                                                 </div>
 
                                                                 <div className="d-grid">
                                                                     <button
                                                                         className="btn btn-primary"
                                                                         onClick={SendJoinRequest}
+                                                                        disabled={!reqTeamName}
                                                                     >
                                                                         Request Join Team
                                                                     </button>
