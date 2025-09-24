@@ -146,3 +146,132 @@ export async function UserIsAdmin(accessToken, guildId, roleId) {
     console.log(`[*] Checking for roleId: ${roleId}`)
     return member.roles.includes(roleId);
 }
+
+// check if a user has an alt account from different oauth and log them into it
+async function HasAlterateAccount(email) {
+    user = await UserCollection.findOne({
+        email: email,
+    });
+    return user;
+}
+
+async function GetAvatarUrl(provider, profile) {
+    if (provider === "discord") {
+        const format = profile.avatar.startsWith("a_") ? "gif" : "png"; // animated if starts with 'a_'
+        return `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}?size=512`;
+    } else if (provider === "github") {
+        return profile.photos[0]?.value;
+    }
+}
+
+async function UpdateAvatar(provider, profile, user) {
+    let avatarUrl = "";
+    if (provider === "discord") {
+        avatarUrl = await GetAvatarUrl("discord", profile);
+
+        if (avatarUrl !== user.avatarUrl) {
+            const updatePFP = await UserCollection.updateOne(
+                {
+                    provider: "discord",
+                    providerId: profile.id,
+                },
+                {
+                    $set: {
+                        avatarUrl: avatarUrl
+                    }
+                })
+        }
+    } else if (provider === "github") {
+        avatarUrl = await GetAvatarUrl("github", profile);
+
+        if (avatarUrl !== user.avatarUrl) {
+            const updatePFP = await UserCollection.updateOne(
+                {
+                    provider: "github",
+                    providerId: profile.id,
+                },
+                {
+                    $set: {
+                        avatarUrl: avatarUrl
+                    }
+                })
+        }
+    } else {
+        console.error("Invalid OAuth Provider!");
+    }
+}
+
+// given profile data and oauth provider handle account creation and redirection
+export async function HandleAccount(provider, profile) {
+    let user = null;
+
+    if (provider === "discord") {
+        const guildId = "632634799303032852"; // HacKSU
+        const adminRoleId = `${process.env.KHI_ADMIN_ID}`;
+        const hasAdminRole = await UserIsAdmin(accessToken, guildId, adminRoleId);
+
+        console.log(`[*] ${profile.username} is admin? ${hasAdminRole}`)
+
+        user = await UserCollection.findOne({
+            provider: "discord",
+            providerId: profile.id,
+        });
+
+        if (!user) {
+            const altAccount = await HasAlterateAccount(profile.email)
+            if (!altAccount) {
+                // Construct avatar URL
+                const avatarUrl = await GetAvatarUrl("discord", profile);
+
+                user = await UserCollection.create({
+                    provider: "discord",
+                    providerId: profile.id,
+                    username: profile.username,
+                    avatarUrl,
+                    email: profile.email,  // passport-discord puts verified email in profile.email
+                    is_admin: hasAdminRole // mark user as admin when needed
+                });
+            } else {
+                // use alt account, do not make another user
+                user = altAccount;
+                await UpdateAvatar("github", profile, user);
+            }
+        } else {
+            // update the avatarUrl if needed
+            await UpdateAvatar("discord", profile, user);
+        }
+    } else if (provider === "github") {
+        user = await UserCollection.findOne({
+            provider: "github",
+            providerId: profile.id,
+        });
+
+        if (!user) {
+            const altAccount = await HasAlterateAccount(profile.emails?.[0]?.value)
+            if (!altAccount) {
+                // Construct avatar URL
+                const avatarUrl = await GetAvatarUrl("github", profile);
+
+                user = await UserCollection.create({
+                    provider: "github",
+                    providerId: profile.id,
+                    username: profile.username,
+                    avatarUrl: avatarUrl,
+                    email: profile.emails?.[0]?.value,
+                });
+            } else {
+                // use alt account, do not make another user
+                user = altAccount;
+                await UpdateAvatar("discord", profile, user);
+            }
+        } else {
+            // update the avatarUrl if needed
+            await UpdateAvatar("github", profile, user);
+        }
+    } else {
+        console.error("Invalid OAuth Provider!");
+        return null;
+    }
+
+    return user;
+}

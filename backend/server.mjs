@@ -13,7 +13,7 @@ import adminCtfRoutes from "./routes/adminCtf.mjs";
 import teamRoutes from "./routes/team.mjs";
 import infoRoutes from "./routes/info.mjs";
 
-import { MongoURI, UserCollection, UserIsAdmin } from "./db.mjs";
+import { MongoURI, UserCollection, HandleAccount } from "./db.mjs";
 import MongoStore from "connect-mongo";
 
 import cookieParser from 'cookie-parser';
@@ -105,36 +105,13 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET && process.
             },
             async (accessToken, refreshToken, profile, done) => {
                 try {
-                    // console.log("GitHub profile:", profile);
-                    let user = await UserCollection.findOne({
-                        provider: "github",
-                        providerId: profile.id,
-                    });
-                    if (!user) {
-                        user = await UserCollection.create({
-                            provider: "github",
-                            providerId: profile.id,
-                            username: profile.username,
-                            avatarUrl: profile.photos[0]?.value,
-                            email: profile.emails?.[0]?.value,
-                        });
+                    const user = await HandleAccount("github", profile);
+                    if (user) {
+                        return done(null, user);
                     } else {
-                        // update the avatarUrl if needed
-                        const pfpUrl = profile.photos[0]?.value;
-                        if (pfpUrl !== user.avatarUrl) {
-                            const updatePFP = await UserCollection.updateOne(
-                                {
-                                    provider: "github",
-                                    providerId: profile.id,
-                                },
-                                {
-                                    $set: {
-                                        avatarUrl: pfpUrl
-                                    }
-                                })
-                        }
+                        console.error("Bad Github OAuth");
+                        done(err, null);
                     }
-                    return done(null, user);
                 } catch (err) {
                     console.error("GitHub strategy error:", err);
                     done(err, null);
@@ -162,52 +139,13 @@ if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET && proces
             },
             async (accessToken, refreshToken, profile, done) => {
                 try {
-                    // console.log("Discord profile:", profile);
-    
-                    const guildId = "632634799303032852"; // HacKSU
-                    const adminRoleId = `${process.env.KHI_ADMIN_ID}`;
-                    const hasAdminRole = await UserIsAdmin(accessToken, guildId, adminRoleId);
-    
-                    console.log(`[*] ${profile.username} is admin? ${hasAdminRole}`)
-    
-                    // Construct avatar URL
-                    let avatarUrl = null;
-                    if (profile.avatar) {
-                        const format = profile.avatar.startsWith("a_") ? "gif" : "png"; // animated if starts with 'a_'
-                        avatarUrl = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}?size=512`;
-                    }
-    
-                    let user = await UserCollection.findOne({
-                        provider: "discord",
-                        providerId: profile.id,
-                    });
-    
-                    if (!user) {
-                        user = await UserCollection.create({
-                            provider: "discord",
-                            providerId: profile.id,
-                            username: profile.username,
-                            avatarUrl,
-                            email: profile.email,  // passport-discord puts verified email in profile.email
-                            is_admin: hasAdminRole // mark user as admin when needed
-                        });
+                    const user = await HandleAccount("discord", profile);
+                    if (user) {
+                        return done(null, user);
                     } else {
-                        // update the avatarUrl if needed
-                        if (avatarUrl !== user.avatarUrl) {
-                            const updatePFP = await UserCollection.updateOne(
-                                {
-                                    provider: "discord",
-                                    providerId: profile.id,
-                                },
-                                {
-                                    $set: {
-                                        avatarUrl: avatarUrl
-                                    }
-                                })
-                        }
+                        console.error("Bad Discord OAuth");
+                        done(err, null);
                     }
-    
-                    return done(null, user);
                 } catch (err) {
                     console.error("Discord strategy error:", err);
                     done(err, null);
