@@ -28,7 +28,7 @@ router.get("/list", async (req, res) => {
         const teams = await GetAllTeams();
         return res.json(teams);
     } catch (err) {
-        console.error(err)
+        console.error(err);
         return res.json([]);
     }
 });
