@@ -692,7 +692,7 @@ router.post('/replace-leader', async (req, res) => {
         return res.json(null);
     }
 });
-async function SetNewLeader(teamProfile) {
+export async function SetNewLeader(teamProfile) {
     // find the member_id of the user profile
     // who will be the new team leader
     let nextInLine = null;

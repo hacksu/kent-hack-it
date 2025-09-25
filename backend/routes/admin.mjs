@@ -1,5 +1,6 @@
 import { UserCollection, TeamCollection, TeamRequestCollection } from "../db.mjs";
 import { IsSiteActive, UpdateSiteInfo, SanitizeAlphaNumeric, IsAdmin, SanitizeString } from "../utils.mjs";
+import { SetNewLeader } from "./team.mjs";
 
 import { Router } from "express";
 const router = Router();
