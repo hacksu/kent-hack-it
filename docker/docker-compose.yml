@@ -69,3 +69,4 @@ networks:
 
 volumes:
   db_data:
+  uploads:
