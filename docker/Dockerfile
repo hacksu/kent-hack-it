@@ -6,9 +6,8 @@ WORKDIR /
 RUN apt-get update && apt-get install -y supervisor sudo nodejs npm net-tools
 
 # ensure directories exist
-RUN mkdir /var/www
-RUN mkdir /var/www/khi
-RUN mkdir /var/www/project
+RUN mkdir -p /var/www/khi
+RUN mkdir -p /var/www/project
 RUN mkdir -p /ctf/challenge_archives
 
 # give www-data ability to run commands and interact with web-root

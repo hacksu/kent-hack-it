@@ -60,6 +60,7 @@ services:
       - "traefik.http.services.khi.loadbalancer.server.port=80"
     volumes:
       - ./resumes:/app/resumes
+      - uploads:/ctf/challenge_archives
     networks:
       - app_internal
 
