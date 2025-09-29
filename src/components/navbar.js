@@ -95,7 +95,7 @@ function Navbar() {
                             <Link className="nav-link" to="/tools" target="_blank" rel="noopener noreferrer">Tools</Link>
                         </li>
                         <li className="nav-item">
-                            <Link className="nav-link" to="/discord" target="_blank" rel="noopener noreferrer">Discord</Link>
+                            <Link className="nav-link" to="/discord" target="_blank" rel="noopener noreferrer">Community</Link>
                         </li>
 
                         {authenticated ? (
