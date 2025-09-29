@@ -2,7 +2,7 @@
 * **Description** The Flashes encoded their secret with a hidden pattern. Only by XORing the right key with the data can you reveal their message.
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
-* **Difficulty:** Easy
+* **Difficulty:** Medium
 * **Points:** ?
 * **Flag:** khi{FlashBytes_1910}
 

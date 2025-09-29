@@ -281,8 +281,8 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         print("Letter Frequency Analyzer")
         print("=" * 30)
-        # filename = '.\\challenges\\Cryptography\\medium\enigma-machine\\_frequency_matched_text.txt'
-        filename = '.\\challenges\\Cryptography\\medium\enigma-machine\\_frequency_matched_text_w_flag.txt'
+        # filename = '.\\challenges\\Cryptography\\medium\monoalphabetic-cipher\\_frequency_matched_text.txt'
+        filename = '.\\challenges\\Cryptography\\medium\monoalphabetic-cipher\\_frequency_matched_text_w_flag.txt'
         
         if not filename:
             print("No filename provided. Exiting.")

@@ -2,7 +2,7 @@
 * **Description** One of my friends suggested and handed me a book to read. Later, when I opened the book a note fell out. What could this note mean? NOTE: Your input should be khi{[decrypted_text]} all lowercase.
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
-* **Difficulty:** Easy
+* **Difficulty:** Medium
 * **Points:** ?
 * **Flag:** khi{isn't_reading_the_best}
 

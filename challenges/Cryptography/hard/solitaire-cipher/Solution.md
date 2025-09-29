@@ -2,7 +2,7 @@
 * **Description** A Golden Flash operative left behind only a deck of cards and an encrypted message from their mission to protect Kent State secrets. The cards seem ordinary, but perhaps they hold the key to decoding the message. After all, what's more inconspicuous on a college campus than students playing cards? NOTE: the decryption message has to be formatted with underscores, lowercased, and wrapped in khi{[decrypted_text]}
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
-* **Difficulty:** Medium
+* **Difficulty:** Hard
 * **Points:** ?
 * **Flag:** khi{deck_of_the_golden_flash}
 
