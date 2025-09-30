@@ -11,6 +11,7 @@ function AdminChallengeCreateTab() {
         description: '',
         category: '',
         difficulty: '',
+        written_by: '',
         flag: '',
         points: '',
         files: []
@@ -82,6 +83,7 @@ function AdminChallengeCreateTab() {
                     "description": newFormData.description,
                     "category": newFormData.category,
                     "difficulty": newFormData.difficulty,
+                    "written_by": newFormData.written_by,
                     "flag": newFormData.flag,
                     "points": newFormData.points,
                     "files": newFormData.files,
@@ -144,6 +146,20 @@ function AdminChallengeCreateTab() {
                                         resize: 'vertical',
                                     }}
                                     placeholder="Enter a short challenge description"
+                                />
+                            </div>
+
+                            {/* Author */}
+                            <div className="mb-3">
+                                <label className="form-label fw-semibold">Written By</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    name="written_by"
+                                    value={newFormData.written_by}
+                                    onChange={handleNewChange}
+                                    required
+                                    placeholder="Enter challenge author name"
                                 />
                             </div>
 

@@ -41,6 +41,7 @@ function AdminChallengeEditTab({ target_challenge_id }) {
         description: '',
         category: '',
         difficulty: '',
+        written_by: '',
         flag: '',
         points: '',
         files: []
@@ -48,9 +49,22 @@ function AdminChallengeEditTab({ target_challenge_id }) {
 
     const handleUpdateChange = e => {
         const { name, value } = e.target;
+        
+        // Auto-set points based on difficulty
+        let updatedData = { [name]: value };
+        
+        if (name === 'difficulty') {
+            const pointsMap = {
+                'Easy': 100,
+                'Medium': 200,
+                'Hard': 300
+            };
+            updatedData.points = pointsMap[value] || '';
+        }
+        
         setUpdateFormData(prev => ({
             ...prev,
-            [name]: value
+            ...updatedData
         }));
     };
 
@@ -76,6 +90,10 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                 setUpdateFormData(prev => ({
                     ...prev,
                     'difficulty': challenge.difficulty
+                }));
+                setUpdateFormData(prev => ({
+                    ...prev,
+                    'written_by': challenge.written_by || 'Unknown Author'
                 }));
                 setUpdateFormData(prev => ({
                     ...prev,
@@ -116,6 +134,7 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                     "description": updateFormData.description,
                     "category": updateFormData.category,
                     "difficulty": updateFormData.difficulty,
+                    "written_by": updateFormData.written_by,
                     "flag": updateFormData.flag,
                     "points": updateFormData.points,
                     "files": updateFormData.files,
@@ -180,6 +199,20 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                                     width: "100%",
                                 }}
                                 placeholder="Enter challenge description"
+                            />
+                        </div>
+
+                        {/* Author */}
+                        <div className="mb-4">
+                            <label className="form-label fw-semibold">Written By</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                name="written_by"
+                                value={updateFormData.written_by}
+                                onChange={handleUpdateChange}
+                                required
+                                placeholder="Enter challenge author name"
                             />
                         </div>
 
@@ -280,16 +313,15 @@ function AdminChallengeEditTab({ target_challenge_id }) {
 
                         {/* Points */}
                         <div className="mb-4 text-center">
-                            <label className="form-label fw-semibold d-block">Points</label>
+                            <label className="form-label fw-semibold d-block">Points (Auto-calculated)</label>
                             <input
                                 type="number"
                                 className="form-control mx-auto text-center"
                                 name="points"
                                 value={updateFormData.points}
-                                onChange={handleUpdateChange}
-                                required
-                                style={{ maxWidth: "120px" }}
-                                placeholder="100"
+                                readOnly
+                                style={{ maxWidth: "120px", backgroundColor: '#f8f9fa' }}
+                                placeholder="Select difficulty first"
                             />
                         </div>
 

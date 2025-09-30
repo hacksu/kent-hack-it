@@ -85,6 +85,7 @@ const ChallengeSchema = new mongoose.Schema({
     description: String,
     category: String,
     difficulty: String,
+    written_by: { type: String, default: "Unknown Author" }, // Challenge author/creator
     user_rates: { type: Array, default: [] }, // [ 3, 3, 4, 5, 1, 2, ... ] 1-5 stars
     rating: { type: Number, default: 0 },    // shows the avg of user_rates (maybe only show whole int or one-decimal place)
     points: Number,

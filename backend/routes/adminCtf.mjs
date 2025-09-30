@@ -50,6 +50,7 @@ async function CreateChallenge(data) {
         "description": STRING,
         "category": STRING,
         "difficulty": STRING,
+        "written_by": STRING,
         "flag": STRING,
         "files": ARRAY_OF_STRINGS,
         "points": NUMBER
@@ -68,6 +69,7 @@ async function CreateChallenge(data) {
         "description": data.description,
         "category": data.category,
         "difficulty": data.difficulty,
+        "written_by": data.written_by || "Unknown Author",
         "flag": data.flag,
         "points": Number(data.points),
         "user_rates": [],
@@ -179,6 +181,7 @@ async function UpdateChallenge(data) {
         "description": STRING,
         "category": STRING,
         "difficulty": STRING,
+        "written_by": STRING,
         "flag": STRING,
         "files": ARRAY_OF_STRINGS,
         "points": NUMBER
@@ -194,6 +197,7 @@ async function UpdateChallenge(data) {
                 "description": data.description,
                 "category": data.category,
                 "difficulty": data.difficulty,
+                "written_by": data.written_by || "Unknown Author",
                 "flag": data.flag,
                 "hlinks": data.files,
                 "points": Number(data.points),
