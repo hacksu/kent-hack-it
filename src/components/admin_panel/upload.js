@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { SanitizeDescription } from '../../components/purification.js';
 
 function AdminChallengeUploadTab() {
-    const [file, setFile] = useState(null);
+    const [selectedFiles, setSelectedFiles] = useState([]);
     const [files, setFiles] = useState([]);
     const fileInputRef = useRef(null);
 
@@ -25,58 +25,86 @@ function AdminChallengeUploadTab() {
     }, []);
 
     const handleFileChange = (e) => {
-        const selectedFile = e.target.files[0];
-
-        if (selectedFile && selectedFile.type !== "application/zip" && !selectedFile.name.endsWith(".zip")) {
-            alert("Only ZIP files are allowed.");
+        const fileList = Array.from(e.target.files);
+        
+        // Check if all files are ZIP files
+        const invalidFiles = fileList.filter(file => 
+            file.type !== "application/zip" && !file.name.endsWith(".zip")
+        );
+        
+        if (invalidFiles.length > 0) {
+            alert(`Only ZIP files are allowed. Invalid files: ${invalidFiles.map(f => f.name).join(', ')}`);
             e.target.value = ""; // reset input
-            setFile(null);
+            setSelectedFiles([]);
         } else {
-            setFile(selectedFile);
+            setSelectedFiles(fileList);
         }
     };
 
-    const uploadFile = async (e) => {
+    const uploadFiles = async (e) => {
         e.preventDefault();
 
-        if (!file) return alert("Please select a ZIP file.");
-
-        const formData = new FormData();
-        formData.append("file", file);
+        if (selectedFiles.length === 0) return alert("Please select at least one ZIP file.");
 
         let msgArea = document.getElementById('msg_popup');
+        const results = [];
+        let successCount = 0;
+        let errorCount = 0;
 
-        try {
-            const response = await fetch(`/api/admin/ctf/upload`, {
-                method: "POST",
-                body: formData,
-                credentials: 'include'
-            });
+        // Show progress message
+        if (msgArea) {
+            msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: blue; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>Uploading files...</p>");
+        }
 
-            const data = await response.json();
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            const formData = new FormData();
+            formData.append("file", file);
 
-            if (data && data.acknowledge) {
-                if (msgArea) {
-                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+            try {
+                const response = await fetch(`/api/admin/ctf/upload`, {
+                    method: "POST",
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                
+                if (data && data.acknowledge) {
+                    results.push(`✓ ${file.name}: ${data.message}`);
+                    successCount++;
+                } else {
+                    results.push(`✗ ${file.name}: ${data.message}`);
+                    errorCount++;
                 }
-
-                await fetchUploads();
-
-                // clear form
-                setFile(null);
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                }
-            } else {
-                if (msgArea) {
-                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
-                }
+            } catch (error) {
+                console.error("Error uploading file:", file.name, error);
+                results.push(`✗ ${file.name}: Upload failed`);
+                errorCount++;
             }
-        } catch (error) {
-            console.error("Error sending request:", error);
-            if (msgArea) {
-                msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'> Error Occured! </p>");
-            }
+        }
+
+        // Display results
+        const resultColor = errorCount > 0 ? (successCount > 0 ? 'orange' : 'red') : 'green';
+        const summary = `Uploaded ${successCount} of ${selectedFiles.length} files successfully.`;
+        
+        if (msgArea) {
+            msgArea.innerHTML = SanitizeDescription(msgArea, 
+                `<div style='color: ${resultColor}; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>
+                    <strong>${summary}</strong><br/>
+                    <small>${results.join('<br/>')}</small>
+                </div>`
+            );
+        }
+
+        if (successCount > 0) {
+            await fetchUploads();
+        }
+
+        // Clear form
+        setSelectedFiles([]);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
         }
     };
 
@@ -122,19 +150,25 @@ function AdminChallengeUploadTab() {
                             <div className="card-body">
                                 <h3 className="card-title text-center mb-4">Upload Challenge</h3>
                                 <div id='msg_popup'></div>
-                                <form onSubmit={uploadFile}>
+                                <form onSubmit={uploadFiles}>
                                     <div className="mb-3">
                                         <input
                                             type="file"
                                             className="form-control"
                                             accept=".zip"
+                                            multiple
                                             onChange={handleFileChange}
                                             ref={fileInputRef}
                                         />
+                                        {selectedFiles.length > 0 && (
+                                            <small className="form-text text-muted mt-2">
+                                                Selected {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''}: {selectedFiles.map(f => f.name).join(', ')}
+                                            </small>
+                                        )}
                                     </div>
                                     <div className="d-grid">
-                                        <button type="submit" className="btn btn-primary">
-                                            Upload
+                                        <button type="submit" className="btn btn-primary" disabled={selectedFiles.length === 0}>
+                                            Upload {selectedFiles.length > 0 ? `${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}` : ''}
                                         </button>
                                     </div>
                                 </form>
