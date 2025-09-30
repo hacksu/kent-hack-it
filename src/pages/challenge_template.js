@@ -111,6 +111,11 @@ export function ChallengeDetail() {
                                             <h6 className="card-subtitle mb-2 text-muted">
                                                 {challenge.category} | Difficulty: {challenge.difficulty}
                                             </h6>
+                                            <div className="mb-2">
+                                                <small className="text-info">
+                                                    <i className="fas fa-user"></i> Written by: {challenge.written_by || "Unknown Author"}
+                                                </small>
+                                            </div>
                                             <p
                                                 className="card-text"
                                                 dangerouslySetInnerHTML={{ __html: SanitizeDescription(null, challenge.description) }}

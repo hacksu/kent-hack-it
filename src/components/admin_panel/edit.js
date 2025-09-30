@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SanitizeDescription } from '../../components/purification.js';
 
-function AdminChallengeEditTab({ target_challenge_id }) {
+function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
     const [files, setFiles] = useState([]);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -148,6 +148,13 @@ function AdminChallengeEditTab({ target_challenge_id }) {
             if (data && data.acknowledge) {
                 if (msgArea) {
                     msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                }
+                
+                // Navigate back to view after successful update
+                if (onUpdateSuccess) {
+                    setTimeout(() => {
+                        onUpdateSuccess();
+                    }, 1500); // Wait 1.5 seconds to show success message
                 }
             } else {
                 if (msgArea) {

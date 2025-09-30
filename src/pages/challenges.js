@@ -237,6 +237,11 @@ export function Challenges() {
                                                     <small className="text-muted">
                                                         {challenge.category} | Difficulty: {challenge.difficulty}
                                                     </small>
+                                                    <div className="mb-1">
+                                                        <small className="text-info">
+                                                            <i className="fas fa-user"></i> By: {challenge.written_by || "Unknown Author"}
+                                                        </small>
+                                                    </div>
                                                     <p
                                                         className="card-text small mt-2"
                                                         dangerouslySetInnerHTML={{ __html: SanitizeDescription(null, challenge.description) }}

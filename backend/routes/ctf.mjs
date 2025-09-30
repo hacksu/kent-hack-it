@@ -41,6 +41,7 @@ async function GetChallengeInfo(challenge_id) {
             "description": challengeProfile.description,
             "category": challengeProfile.category,
             "difficulty": challengeProfile.difficulty,
+            "written_by": challengeProfile.written_by,
             "rating": challengeProfile.rating,
         }
     } else {
