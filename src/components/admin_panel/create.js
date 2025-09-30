@@ -18,9 +18,22 @@ function AdminChallengeCreateTab() {
 
     const handleNewChange = e => {
         const { name, value } = e.target;
+        
+        // Auto-set points based on difficulty
+        let updatedData = { [name]: value };
+        
+        if (name === 'difficulty') {
+            const pointsMap = {
+                'Easy': 100,
+                'Medium': 200,
+                'Hard': 300
+            };
+            updatedData.points = pointsMap[value] || '';
+        }
+        
         setNewFormData(prev => ({
             ...prev,
-            [name]: value
+            ...updatedData
         }));
     };
 
@@ -228,16 +241,15 @@ function AdminChallengeCreateTab() {
 
                             {/* Points */}
                             <div className="mb-4 text-center">
-                                <label className="form-label fw-semibold d-block">Points</label>
+                                <label className="form-label fw-semibold d-block">Points (Auto-calculated)</label>
                                 <input
                                     type="number"
                                     className="form-control mx-auto"
                                     name="points"
                                     value={newFormData.points}
-                                    onChange={handleNewChange}
-                                    required
-                                    style={{ maxWidth: '150px' }}
-                                    placeholder="100"
+                                    readOnly
+                                    style={{ maxWidth: '150px', backgroundColor: '#f8f9fa' }}
+                                    placeholder="Select difficulty first"
                                 />
                             </div>
 
