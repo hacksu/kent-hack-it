@@ -7,7 +7,7 @@ export function Home() {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
-    const targetDate = new Date('2025-10-14T00:00:00').getTime();
+    const targetDate = new Date('2025-10-14T19:00:00-04:00').getTime();
     
     const updateCountdown = () => {
       const now = new Date().getTime();
@@ -161,7 +161,9 @@ export function Home() {
                       <div id="faq3" className="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                         <div className="accordion-body" style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)', lineHeight: '1.6' }}>
                           We recommend practicing with online CTF platforms like OverTheWire, PicoCTF, or HackTheBox. 
-                          Review common security topics and join our Discord for tips and discussions!
+                          Review common security topics and join our Discord for tips and discussions!<br/><br/>
+                          <strong>Some Challenges might use Kali Linux for completion!</strong> Check out our <a href="/kali-setup-guide" className="link-primary">Kali Linux VM Setup Guide</a> to 
+                          learn how to set up a virtual machine with essential cybersecurity tools.
                         </div>
                       </div>
                     </div>
