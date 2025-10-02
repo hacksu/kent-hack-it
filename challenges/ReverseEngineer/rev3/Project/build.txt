@@ -1,0 +1,6 @@
+mkdir build
+cd build
+cmake ../ && make
+
+The generate.py file is used to create the C-array used within program.cpp
+it is the obfuscated ctf flag.
