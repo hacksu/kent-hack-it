@@ -1,0 +1,25 @@
+You need to have dotnet installed on your system.
+
+1.)
+```
+cd Creation
+dotnet run
+```
+
+2.)
+After it generates variables copy and paste them into the `Lyolan.cs` file
+within Project.
+
+3.)
+Then run `dotnet build` to generate the DLL. (CHANGE THE VARIABLES BEFORE THIS STEP)
+
+4.)
+To create the flag.enc go into the Test.Project folder and run `dotnet test`.
+
+    HOW 2 SERVE:
+This challenge you serve the DLL and flag.enc in a zip archive.
+
+    SOLUTION:
+Reverse Engineer the DLL to discover AES encryption and off-site pulling for
+the KEY and IV, create a script to take files and decode AES using KEY and IV
+to read the flag in plain-text.
