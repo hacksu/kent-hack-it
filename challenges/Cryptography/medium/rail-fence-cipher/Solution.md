@@ -1,5 +1,5 @@
 # Golden Flash Express
-* **Description** While exploring the old Kent State railroad depot, you discovered a coded message left by a Golden Flash operative. The message appears to follow the pattern of train tracks. Can you decode this transportation cipher and uncover the secret message hidden within the rails?
+* **Description** While exploring the old Kent State railroad depot, you discovered a coded message left by a Golden Flash operative. The message appears to use some kind of pattern-based encryption. Can you decode this mysterious cipher and uncover the secret message hidden within?
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Medium
