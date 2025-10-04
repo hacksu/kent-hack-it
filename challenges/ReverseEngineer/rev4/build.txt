@@ -23,3 +23,5 @@ This challenge you serve the DLL and flag.enc in a zip archive.
 Reverse Engineer the DLL to discover AES encryption and off-site pulling for
 the KEY and IV, create a script to take files and decode AES using KEY and IV
 to read the flag in plain-text.
+
+NO REMOTE CONNECTION REQUIRED

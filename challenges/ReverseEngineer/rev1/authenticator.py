@@ -1,39 +1,43 @@
-import os, socket
+import os
 
 username = "w3eblR"
 password = "s3cUr1tYExprT_"
 
-def listener(code):
-    serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serversocket.bind(('0.0.0.0', 4444))
-    serversocket.listen()
-    
-    print("[*] Listening. . .")
-    print(f" |___solution: {code}")
-    while (True):
-        connection, address = serversocket.accept()
-        connection.send(b'Enter MFA: ')
-        
-        print(f"[+] Incoming Connection from {address}")
-        # Handle Single Connection
-        recvBuffer = connection.recv(64) # size of recv bytes we allow
-        if len(recvBuffer) > 0:
-            if str(code) == str(recvBuffer.decode().strip()):
-                connection.send(b'YIPPE!')
-            else:
-                connection.send(b'Invalid!')
-        connection.close()
-    serversocket.close()
+def show_timezone():
+    from datetime import datetime, timedelta
+
+    # Get current local time
+    now = datetime.now()
+
+    # Subtract 10 minutes
+    adjusted_time = now - timedelta(minutes=10)
+
+    # Format in AM/PM (12-hour clock)
+    t = adjusted_time.strftime("%I:%M %p")
+    print(f"[DEBUG] It was {t} | 10 minutes ago. . .")
+
+def enter_code(code):
+    # accept 15 attempts
+    for i in range(0,15):
+        s = input('Enter Code > ')
+
+        if str(code) == str(s):
+            print("Access Granted!")
+            with open('/home/programmer/flag.txt','r') as f:
+                print(f.readline())
+            return
+        else:
+            print("Access Denied!")
 
 def main():
-    result = os.system(f"./mfa {username} {password} > out.txt")
+    result = os.system(f"/home/programmer/mfa {username} {password} > /home/programmer/out.txt")
     if (result == 0):
         # read out.txt
-        with open('./out.txt','r') as f:
+        with open('/home/programmer/out.txt','r') as f:
             line = f.readline()
-        print(line)
         code = line.strip().split()[2]
-        listener(code)
+        show_timezone()
+        enter_code(code)
     else:
         print("[-] Error occured executing program!")
 

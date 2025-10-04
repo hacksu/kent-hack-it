@@ -1,0 +1,15 @@
+# How to run container: docker-compose up -d --build
+services:
+  rev_handler:
+    container_name: rev_handler
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - FLAG1="lorem_flag"
+      - FLAG2="lorem_flag"
+    image: rev_handler:latest
+    ports:
+      - "2530:2530"
+      - "2531:2531"
+    restart: unless-stopped
