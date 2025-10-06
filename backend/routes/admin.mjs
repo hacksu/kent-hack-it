@@ -207,45 +207,51 @@ router.post('/remove_team', async (req, res) => {
     }
 });
 async function RemoveTeam(team_id) {
-    if (!team_id) {
-        console.log("Issue Deleting Team")
-        return { "acknowledge": false, "message": "Error Deleting Team!" }
-    }
-
-    // change every member and leader team_id to None before deletion
-    const teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id.toString()) })
-    if (teamProfile) {
-        // remove all join requests to this team
-        await TeamRequestCollection.deleteMany({ team_id: teamProfile._id.toString() });
-
-        // update leader
-        const updateLeaderProfile = await UserCollection.updateOne(
-            { _id: teamProfile.team_leader_id },
-            { $set: { team_id: "None" } })
-
-        if (updateLeaderProfile.matchedCount === 1) {
-            console.log("Found Leader Profile and Updated Attribute")
+    try {
+        if (!team_id) {
+            console.log("Issue Deleting Team")
+            return { "acknowledge": false, "message": "Error Deleting Team!" }
         }
-
-        // update members
-        for (let member_id in teamProfile.members) {
-            const updateMemberProfile = await UserCollection.updateOne(
-                { _id: member_id },
+        
+        // change every member and leader team_id to None before deletion
+        // team_id is already a string, its not surrounded with ObjectId(...)
+        const teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id) })
+        if (teamProfile) {
+            // remove all join requests to this team
+            await TeamRequestCollection.deleteMany({ team_id: teamProfile._id.toString() });
+        
+            // update leader
+            const updateLeaderProfile = await UserCollection.updateOne(
+                { _id: teamProfile.team_leader_id },
                 { $set: { team_id: "None" } })
-
-            if (updateMemberProfile.matchedCount === 1) {
-                console.log("Found Profile and Updated Attribute")
+        
+            if (updateLeaderProfile.matchedCount === 1) {
+                console.log("Found Leader Profile and Updated Attribute")
+            }
+        
+            // update members
+            for (let member_id in teamProfile.members) {
+                const updateMemberProfile = await UserCollection.updateOne(
+                    { _id: member_id },
+                    { $set: { team_id: "None" } })
+        
+                if (updateMemberProfile.matchedCount === 1) {
+                    console.log("Found Profile and Updated Attribute")
+                }
             }
         }
-    }
-
-    // remove the team entry
-    const action = await TeamCollection.deleteOne({ _id: team_id.toString() });
-    if (action.deletedCount === 1) {
-        console.log("Team Deleted!")
-        return { "acknowledge": true, "message": "Team Deleted Successfully!" }
-    } else {
-        console.log("Issue Deleting Team")
+        
+        // remove the team entry
+        const action = await TeamCollection.deleteOne({ _id: team_id.toString() });
+        if (action.deletedCount === 1) {
+            console.log("Team Deleted!")
+            return { "acknowledge": true, "message": "Team Deleted Successfully!" }
+        } else {
+            console.log("Issue Deleting Team")
+            return { "acknowledge": false, "message": "Error Deleting Team!" }
+        }
+    } catch (err) {
+        console.error(`(RemoveTeam) Error: ${err}`);
         return { "acknowledge": false, "message": "Error Deleting Team!" }
     }
 }
