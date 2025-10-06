@@ -24,6 +24,8 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile
+      args:
+        - REACT_APP_HOMEPAGE_URL=${HOMEPAGE_URL}
     environment:
       - DATABASE_URL=mongodb://${DB_USER}:${DB_PASS}@${DB_HOST}:27017/${DB_NAME}?authSource=admin
       - ORIGIN=http://0.0.0.0:80
@@ -42,9 +44,6 @@ services:
 
       # Home page URL must match the OAuth apps homepage URL value
       - HOMEPAGE_URL=${HOMEPAGE_URL}
-
-      # React ENV
-      - REACT_APP_HOMEPAGE_URL=${HOMEPAGE_URL}
 
       # GitHub OAuth (has to match the OAuth app information)
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}

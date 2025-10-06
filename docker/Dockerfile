@@ -5,6 +5,9 @@ WORKDIR /
 # docker run -d --name khi_db -e MONGO_INITDB_ROOT_USERNAME=env.user -e MONGO_INITDB_ROOT_PASSWORD=env.password -e MONGO_INITDB_DATABASE=env.db -v mongodb_data:/data/db -p 27017:27017 mongo:latest
 RUN apt-get update && apt-get install -y supervisor sudo nodejs npm net-tools
 
+# ensure react env vars are present on build
+ENV REACT_APP_HOMEPAGE_URL=$HOMEPAGE_URL
+
 # ensure directories exist
 RUN mkdir -p /var/www/khi
 RUN mkdir -p /var/www/project
@@ -19,8 +22,7 @@ COPY public /var/www/project/public
 COPY src /var/www/project/src
 COPY package.json /var/www/project/package.json
 
-# create symlink to .env
-RUN ln -s /var/www/project/.env /var/www/khi/.env
+# create symlink(s)
 RUN ln -s /var/www/project/package.json /var/www/khi/package.json
 
 COPY docker/khi /etc/nginx/conf.d/khi.conf
