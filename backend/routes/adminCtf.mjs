@@ -276,6 +276,50 @@ async function ToggleChallenge(data, adminUsername) {
     }
 }
 
+router.get('/get_solvers', async (req, res) => {
+    try {
+        if (!IsAdmin(req)) {
+            console.log("Not an Admin!");
+            return res.status(401).json(null);
+        }
+
+        let challenges = await ChallengeCollection.find({}, {
+            user_rates: 0, flag: 0
+        });
+        const userData = await UserCollection.find({}, { username: 1, completions: 1, _id: 0 });
+    
+        const challengeSolvers = new Map();
+        const result = new Map();
+    
+        for (const user of userData) {
+            if (!user.completions) continue;
+    
+            for (const completion of user.completions) {
+                const id = completion.id?.toString();
+                if (!id) continue;
+    
+                if (!challengeSolvers.has(id)) {
+                    challengeSolvers.set(id, []);
+                }
+    
+                challengeSolvers.get(id).push(user.username);
+            }
+        }
+    
+        for (const challenge of challenges) {
+            const challenge_id = challenge._id?.toString();
+            const solvers = challengeSolvers.get(challenge_id) || [];
+            result.set(challenge.name, solvers);
+        }
+    
+        // result => ("challenge_name" : [username array])
+        return res.json({ acknowledge: true, "message": "Success!", solvers: result });
+    } catch (error) {
+        console.log(error);
+        return res.json({ acknowledge: false, "message": "Error getting solvers!" });
+    }
+})
+
 //###############################################
 //              FILE UPLOADING
 //###############################################

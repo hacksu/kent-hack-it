@@ -15,11 +15,33 @@ router.get("/challenges", async (req, res) => {
         return res.json(null);
     }
 });
+// generate completions number along side challenges to be displayed
+async function CalculateCompletions(challenges) {
+    const userData = await UserCollection.find({}, { completions: 1, _id: 0 });
+    const completionCounts = new Map();
+
+    for (const user of userData) {
+        if (!user.completions) continue;
+        for (const completion of user.completions) {
+            const id = completion.id?.toString();
+            if (!id) continue;
+            completionCounts.set(id, (completionCounts.get(id) || 0) + 1);
+        }
+    }
+
+    for (let challenge of challenges) {
+        const challenge_id = challenge._id?.toString() || null;
+        const completionCount = completionCounts.get(challenge_id) || 0;
+        challenge.user_completions = challenge_id ? completionCount : 0;
+    }
+
+    return challenges;
+}
 async function GetChallenges() {
-    const challenges = await ChallengeCollection.find({}, {
+    let challenges = await ChallengeCollection.find({}, {
         user_rates: 0, flag: 0
     });
-    return challenges;
+    return await CalculateCompletions(challenges);
 }
 
 router.post("/challenge", async (req, res) => {
