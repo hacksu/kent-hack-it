@@ -29,10 +29,11 @@ async function CalculateCompletions(challenges) {
         }
     }
 
-    for (let challenge of challenges) {
+    // manual iteration needed to update the entires of the challenges array
+    for (let i = 0; i < challenges.length; ++i) {
         const challenge_id = challenge._id?.toString() || null;
         const completionCount = completionCounts.get(challenge_id) || 0;
-        challenge.user_completions = challenge_id ? completionCount : 0;
+        challenges[i].user_completions = challenge_id ? completionCount : 0;
     }
 
     return challenges;
