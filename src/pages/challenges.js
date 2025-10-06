@@ -19,13 +19,17 @@ export function Challenges() {
     const [filters, setFilters] = useState({
         category: '',
         difficulty: '',
+        rating: '',
         searchText: '',
         showCompleted: false,
-        showUncompleted: true
+        showUncompleted: true,
+        showTeamCompleted: false,
+        showTeamUncompleted: true
     });
 
     const [availableCategories, setAvailableCategories] = useState([]);
     const [availableDifficulties, setAvailableDifficulties] = useState([]);
+    const [availableRatings, setAvailableRatings] = useState([]);
 
     async function GetProfileDetails() {
         try {
@@ -93,6 +97,14 @@ export function Challenges() {
             );
         }
 
+        // Filter by rating
+        if (filters.rating) {
+            const ratingThreshold = parseFloat(filters.rating);
+            filteredData = filteredData.filter(challenge => 
+                challenge.rating >= ratingThreshold
+            );
+        }
+
         // Filter by search text
         if (filters.searchText) {
             const searchTerm = filters.searchText.toLowerCase();
@@ -103,17 +115,25 @@ export function Challenges() {
             );
         }
 
-        // Filter by completion status
+        // Filter by user completion status
         if (!filters.showCompleted || !filters.showUncompleted) {
             const userCompletions = profileData?.completions || [];
-            const teamCompletions = teamData?.completions || [];
             
             filteredData = filteredData.filter(challenge => {
                 const isCompletedByUser = userCompletions.some(comp => comp.id === challenge._id);
-                const isCompletedByTeam = teamCompletions.some(comp => comp.id === challenge._id);
-                const isCompleted = isCompletedByUser || isCompletedByTeam;
                 
-                return (filters.showCompleted && isCompleted) || (filters.showUncompleted && !isCompleted);
+                return (filters.showCompleted && isCompletedByUser) || (filters.showUncompleted && !isCompletedByUser);
+            });
+        }
+
+        // Filter by team completion status
+        if (!filters.showTeamCompleted || !filters.showTeamUncompleted) {
+            const teamCompletions = teamData?.completions || [];
+            
+            filteredData = filteredData.filter(challenge => {
+                const isCompletedByTeam = teamCompletions.some(comp => comp.id === challenge._id);
+                
+                return (filters.showTeamCompleted && isCompletedByTeam) || (filters.showTeamUncompleted && !isCompletedByTeam);
             });
         }
 
@@ -129,8 +149,12 @@ export function Challenges() {
             const categories = [...new Set(data.map(challenge => challenge.category))].sort();
             const difficulties = [...new Set(data.map(challenge => challenge.difficulty))].sort();
             
+            // Create rating thresholds (4+ stars, 3+ stars, etc.)
+            const ratings = ['4.0', '3.0', '2.0', '1.0'];
+            
             setAvailableCategories(categories);
             setAvailableDifficulties(difficulties);
+            setAvailableRatings(ratings);
 
             // Apply all filters
             const filteredData = ApplyFilters(data);
@@ -193,6 +217,12 @@ export function Challenges() {
                         <Navbar />
                         <div className="container-fluid mt-4">
                             <div className="row">
+                                {/* Main Content */}
+                                <div className="col-12">
+                                    <h2 className="mb-4">Challenges</h2>
+                                </div>
+                            </div>
+                            <div className="row">
                                 {/* Filter Sidebar */}
                                 <div className="col-md-3 col-lg-2">
                                     <div className="card p-3 mb-4">
@@ -253,9 +283,28 @@ export function Challenges() {
                                             </select>
                                         </div>
 
-                                        {/* Completion Status */}
+                                        {/* Rating Filter */}
                                         <div className="mb-3">
-                                            <label className="form-label">Show</label>
+                                            <label className="form-label">Minimum Rating</label>
+                                            <select
+                                                className="form-select form-select-sm"
+                                                value={filters.rating}
+                                                onChange={(e) => setFilters({...filters, rating: e.target.value})}
+                                            >
+                                                <option value="">All Ratings</option>
+                                                {availableRatings.map(rating => (
+                                                    <option key={rating} value={rating}>
+                                                        {rating}+ ⭐ ({rating === '4.0' ? 'Excellent' : 
+                                                                    rating === '3.0' ? 'Good' : 
+                                                                    rating === '2.0' ? 'Fair' : 'Any'})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Individual Completion Status */}
+                                        <div className="mb-3">
+                                            <label className="form-label">Individual Progress</label>
                                             <div className="form-check">
                                                 <input
                                                     className="form-check-input"
@@ -265,7 +314,8 @@ export function Challenges() {
                                                     onChange={(e) => setFilters({...filters, showCompleted: e.target.checked})}
                                                 />
                                                 <label className="form-check-label" htmlFor="showCompleted">
-                                                    Completed
+                                                    <i className="fas fa-user me-1"></i>
+                                                    My Completed
                                                 </label>
                                             </div>
                                             <div className="form-check">
@@ -277,10 +327,44 @@ export function Challenges() {
                                                     onChange={(e) => setFilters({...filters, showUncompleted: e.target.checked})}
                                                 />
                                                 <label className="form-check-label" htmlFor="showUncompleted">
-                                                    Uncompleted
+                                                    <i className="fas fa-user me-1"></i>
+                                                    My Uncompleted
                                                 </label>
                                             </div>
                                         </div>
+
+                                        {/* Team Completion Status */}
+                                        {teamData && (
+                                            <div className="mb-3">
+                                                <label className="form-label">Team Progress</label>
+                                                <div className="form-check">
+                                                    <input
+                                                        className="form-check-input"
+                                                        type="checkbox"
+                                                        id="showTeamCompleted"
+                                                        checked={filters.showTeamCompleted}
+                                                        onChange={(e) => setFilters({...filters, showTeamCompleted: e.target.checked})}
+                                                    />
+                                                    <label className="form-check-label" htmlFor="showTeamCompleted">
+                                                        <i className="fas fa-users me-1"></i>
+                                                        Team Completed
+                                                    </label>
+                                                </div>
+                                                <div className="form-check">
+                                                    <input
+                                                        className="form-check-input"
+                                                        type="checkbox"
+                                                        id="showTeamUncompleted"
+                                                        checked={filters.showTeamUncompleted}
+                                                        onChange={(e) => setFilters({...filters, showTeamUncompleted: e.target.checked})}
+                                                    />
+                                                    <label className="form-check-label" htmlFor="showTeamUncompleted">
+                                                        <i className="fas fa-users me-1"></i>
+                                                        Team Uncompleted
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* Clear Filters */}
                                         <button
@@ -288,9 +372,12 @@ export function Challenges() {
                                             onClick={() => setFilters({
                                                 category: '',
                                                 difficulty: '',
+                                                rating: '',
                                                 searchText: '',
                                                 showCompleted: false,
-                                                showUncompleted: true
+                                                showUncompleted: true,
+                                                showTeamCompleted: false,
+                                                showTeamUncompleted: true
                                             })}
                                         >
                                             Clear Filters
@@ -316,7 +403,6 @@ export function Challenges() {
 
                                 {/* Main Content */}
                                 <div className="col-md-9 col-lg-10">
-                                    <h2 className="mb-3">Challenges</h2>
 
                                     {/* Pagination buttons at the top */}
                                     <div className="d-flex justify-content-center gap-4 mb-3">
@@ -350,7 +436,38 @@ export function Challenges() {
                                                     to={challenge.is_active ? `/challenge?id=${challenge._id}` : ""}
                                                     className="text-decoration-none text-dark"
                                                 >
-                                                    <div className={`card h-100 shadow-sm p-2 ${!challenge.is_active ? "opacity-50" : ""}`}>
+                                                    <div className={`card h-100 shadow-sm p-2 ${!challenge.is_active ? "opacity-50" : ""}`} style={{position: 'relative'}}>
+                                                        {/* Team completion indicator */}
+                                                        {teamData && (
+                                                            <div 
+                                                                className="position-absolute" 
+                                                                style={{
+                                                                    top: '8px',
+                                                                    right: '8px',
+                                                                    zIndex: 10,
+                                                                    width: '24px',
+                                                                    height: '24px'
+                                                                }}
+                                                                title={teamData.completions?.some(comp => comp.id === challenge._id) 
+                                                                    ? "Completed by your team" 
+                                                                    : "Not completed by your team"}
+                                                            >
+                                                                <img 
+                                                                    src={teamData.completions?.some(comp => comp.id === challenge._id) 
+                                                                        ? "/team_complete.png" 
+                                                                        : "/team_nocomplete.png"}
+                                                                    alt={teamData.completions?.some(comp => comp.id === challenge._id) 
+                                                                        ? "Team completed" 
+                                                                        : "Team not completed"}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: '100%',
+                                                                        objectFit: 'contain'
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        
                                                         <div className="card-body p-2">
                                                             {!challenge.is_active && (
                                                                 <>

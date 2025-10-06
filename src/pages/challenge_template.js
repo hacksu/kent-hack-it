@@ -16,6 +16,7 @@ export function ChallengeDetail() {
     const [rating, setRating] = useState('');
     const [ratingMessage, setRatingMessage] = useState('');
     const [showRatingReminder, setShowRatingReminder] = useState(false);
+    const [teamData, setTeamData] = useState(null);
 
     useEffect(() => {
         async function Verify() {
@@ -44,9 +45,28 @@ export function ChallengeDetail() {
                 // Check if user has already rated this challenge
                 const rated = data.user_rates?.includes(id);
                 setHasRated(rated);
+                
+                // Fetch team data if user has a team
+                if (data.team && data.team !== "None") {
+                    getTeamDetails();
+                }
             }
         } catch (error) {
             console.error("Error getting profile details:", error);
+        }
+    };
+
+    // Get team details to check team completion status
+    const getTeamDetails = async () => {
+        try {
+            const response = await fetch(`/api/team/info`, {
+                method: "GET",
+                credentials: 'include'
+            });
+            const data = await response.json();
+            setTeamData(data);
+        } catch (error) {
+            console.error("Error getting team details:", error);
         }
     };
 
@@ -190,7 +210,38 @@ export function ChallengeDetail() {
                         <div className="container mt-4">
                             <div className="row justify-content-center">
                                 <div className="col-12 col-md-8 col-lg-6">
-                                    <div className="card shadow-sm">
+                                    <div className="card shadow-sm" style={{position: 'relative'}}>
+                                        {/* Team completion indicator */}
+                                        {teamData && (
+                                            <div 
+                                                className="position-absolute" 
+                                                style={{
+                                                    top: '16px',
+                                                    right: '16px',
+                                                    zIndex: 10,
+                                                    width: '32px',
+                                                    height: '32px'
+                                                }}
+                                                title={teamData.completions?.some(comp => comp.id === id) 
+                                                    ? "Completed by your team" 
+                                                    : "Not completed by your team"}
+                                            >
+                                                <img 
+                                                    src={teamData.completions?.some(comp => comp.id === id) 
+                                                        ? "/team_complete.png" 
+                                                        : "/team_nocomplete.png"}
+                                                    alt={teamData.completions?.some(comp => comp.id === id) 
+                                                        ? "Team completed" 
+                                                        : "Team not completed"}
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        objectFit: 'contain'
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
+                                        
                                         <div className="card-body">
                                             <h4 className="card-title">{challenge.name}</h4>
                                             <h6 className="card-subtitle mb-2 text-muted">
@@ -247,10 +298,11 @@ export function ChallengeDetail() {
 
                                             {/* Rating reminder after successful completion */}
                                             {showRatingReminder && (
-                                                <div className="alert alert-success mt-3" role="alert">
+                                                <div className="alert alert-success mt-3 mb-0" role="alert">
                                                     <div className="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <strong>🎉 Great job!</strong> Consider rating this challenge to help others.
+                                                        <div className="d-flex align-items-center">
+                                                            <i className="fas fa-star text-warning me-2"></i>
+                                                            <span><strong>🎉 Great job!</strong> Consider rating this challenge to help others.</span>
                                                         </div>
                                                         <button 
                                                             type="button" 
@@ -263,63 +315,73 @@ export function ChallengeDetail() {
 
                                             {/* Rating section - only show if completed and not already rated */}
                                             {isCompleted && !hasRated && (
-                                                <div className="mt-4">
-                                                    <hr />
-                                                    <h6>Rate this Challenge</h6>
-                                                    <p className="text-muted small">
-                                                        Help other participants by rating the quality of this challenge.
-                                                    </p>
-                                                    
-                                                    <form onSubmit={handleRatingSubmit}>
-                                                        <div className="row align-items-end">
-                                                            <div className="col-auto">
-                                                                <label htmlFor="challengeRating" className="form-label">
-                                                                    Rating (1-5):
-                                                                </label>
-                                                                <select
-                                                                    id="challengeRating"
-                                                                    className="form-select form-select-sm"
-                                                                    value={rating}
-                                                                    onChange={(e) => setRating(e.target.value)}
-                                                                    style={{width: '120px'}}
-                                                                >
-                                                                    <option value="">Select...</option>
-                                                                    <option value="1">1 - Poor</option>
-                                                                    <option value="2">2 - Fair</option>
-                                                                    <option value="3">3 - Good</option>
-                                                                    <option value="4">4 - Very Good</option>
-                                                                    <option value="5">5 - Excellent</option>
-                                                                </select>
+                                                <div className="card mt-4 border-primary" style={{ backgroundColor: '#f8f9ff' }}>
+                                                    <div className="card-body">
+                                                        <h6 className="card-title text-primary mb-3">
+                                                            <i className="fas fa-star me-2"></i>
+                                                            Rate this Challenge
+                                                        </h6>
+                                                        <p className="text-muted mb-3" style={{ fontSize: '0.9rem' }}>
+                                                            Help other participants by rating the quality of this challenge.
+                                                        </p>
+                                                        
+                                                        <form onSubmit={handleRatingSubmit}>
+                                                            <div className="row g-3 align-items-end">
+                                                                <div className="col-md-6">
+                                                                    <label htmlFor="challengeRating" className="form-label fw-semibold">
+                                                                        Your Rating:
+                                                                    </label>
+                                                                    <select
+                                                                        id="challengeRating"
+                                                                        className="form-select"
+                                                                        value={rating}
+                                                                        onChange={(e) => setRating(e.target.value)}
+                                                                    >
+                                                                        <option value="">Select a rating...</option>
+                                                                        <option value="1">⭐ 1 - Poor</option>
+                                                                        <option value="2">⭐⭐ 2 - Fair</option>
+                                                                        <option value="3">⭐⭐⭐ 3 - Good</option>
+                                                                        <option value="4">⭐⭐⭐⭐ 4 - Very Good</option>
+                                                                        <option value="5">⭐⭐⭐⭐⭐ 5 - Excellent</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div className="col-md-6 col-lg-4">
+                                                                    <button 
+                                                                        type="submit" 
+                                                                        className="btn btn-primary w-100"
+                                                                        disabled={!rating || rating === 'select rating'}
+                                                                    >
+                                                                        <i className="fas fa-paper-plane me-2"></i>
+                                                                        Submit Rating
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                            <div className="col-auto">
-                                                                <button 
-                                                                    type="submit" 
-                                                                    className="btn btn-sm btn-success"
-                                                                    disabled={!rating || rating === 'select rating'}
-                                                                >
-                                                                    Submit Rating
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </form>
+                                                        </form>
 
-                                                    {ratingMessage && (
-                                                        <div 
-                                                            className={`alert mt-2 ${ratingMessage.includes('Error') ? 'alert-danger' : 'alert-success'}`}
-                                                            role="alert"
-                                                        >
-                                                            {ratingMessage}
-                                                        </div>
-                                                    )}
+                                                        {ratingMessage && (
+                                                            <div 
+                                                                className={`alert mt-3 mb-0 ${ratingMessage.includes('Error') ? 'alert-danger' : 'alert-success'}`}
+                                                                role="alert"
+                                                            >
+                                                                <i className={`fas ${ratingMessage.includes('Error') ? 'fa-exclamation-triangle' : 'fa-check-circle'} me-2`}></i>
+                                                                {ratingMessage}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
 
                                             {/* Show thank you message if already rated */}
                                             {isCompleted && hasRated && (
-                                                <div className="mt-4">
-                                                    <hr />
-                                                    <div className="alert alert-info" role="alert">
-                                                        <i className="fas fa-star text-warning"></i> Thank you for rating this challenge!
+                                                <div className="card mt-4 border-info" style={{ backgroundColor: '#e7f3ff' }}>
+                                                    <div className="card-body text-center py-3">
+                                                        <div className="text-info mb-2">
+                                                            <i className="fas fa-star fs-4"></i>
+                                                        </div>
+                                                        <h6 className="card-title text-info mb-1">Thank you for your feedback!</h6>
+                                                        <p className="text-muted small mb-0">
+                                                            Your rating helps improve the CTF experience for everyone.
+                                                        </p>
                                                     </div>
                                                 </div>
                                             )}
