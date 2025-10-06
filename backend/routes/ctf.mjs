@@ -18,7 +18,6 @@ router.get("/challenges", async (req, res) => {
 // generate completions number along side challenges to be displayed
 async function CalculateCompletions(challenges) {
     try {
-        
         console.log("Calculating Completion Counts. . .")
         const userData = await UserCollection.find({}, { completions: 1, _id: 0 });
         const completionCounts = new Map();
@@ -36,7 +35,7 @@ async function CalculateCompletions(challenges) {
         console.log("Inserting new data. . .")
         // manual iteration needed to update the entires of the challenges array
         for (let i = 0; i < challenges.length; ++i) {
-            const challenge_id = challenge._id?.toString() || null;
+            const challenge_id = challenges[i]._id?.toString() || null;
             const completionCount = completionCounts.get(challenge_id) || 0;
             challenges[i].user_completions = challenge_id ? completionCount : 0;
         }
