@@ -1,0 +1,25 @@
+{
+  "input_folder": "input_files",
+  "output_folder": "output",
+  "settings": {
+    "max_appendable_size": 204800,
+    "output_format": "mp4",
+    "include_all_zips": true,
+    "include_all_pdfs": false,
+    "include_all_html": false,
+    "use_first_image_only": false,
+    "use_first_video_only": false
+  },
+  "file_extensions": {
+    "images": [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico"],
+    "videos": [".mp4", ".avi", ".mov", ".wav", ".mp3", ".flv", ".mkv", ".webm"],
+    "html": [".html", ".htm"],
+    "pdf": [".pdf"],
+    "zip": [".zip", ".jar", ".apk", ".docx", ".xlsx", ".pptx"]
+  },
+  "naming": {
+    "pattern": "{image}_{video}_polyglot",
+    "include_timestamp": false,
+    "include_size_info": false
+  }
+}

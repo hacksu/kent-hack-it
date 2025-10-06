@@ -10,3 +10,4 @@ pyvenv.cfg
 test*.sh
 .env
 *.zip
+/challenges/Steganography/Polyglot/_Create_File/Bento4-SDK-1-6-0-641.x86_64-microsoft-win32
