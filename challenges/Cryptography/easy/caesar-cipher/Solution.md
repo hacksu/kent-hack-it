@@ -1,5 +1,5 @@
 # The Golden Shift
-* **Description** Can you crack the code and prove yourself a true Golden Cipherbreaker?
+* **Description** The Golden defenders used an ancient Roman technique to protect their secrets. Each letter follows the same pattern. Can you crack their code?
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Easy

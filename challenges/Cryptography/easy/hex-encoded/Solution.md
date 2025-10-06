@@ -1,5 +1,5 @@
 # Hex in the Halls
-* **Description** A secret lies in the halls of Kent State.
+* **Description** A secret message was left in the halls of Kent State, written in pairs of strange symbols. The Flashes used both numbers and certain letters to encode their message.
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Easy
