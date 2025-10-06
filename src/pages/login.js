@@ -19,7 +19,7 @@ export function Login() {
         );
 
         const handleMessage = (event) => {
-            if (event.origin !== `${REACT_APP_HOMEPAGE_URL}`) {
+            if (event.origin !== `${process.env.REACT_APP_HOMEPAGE_URL}`) {
                 console.log(`event.origin is different: ${event.origin}`);
                 return; // check backend origin
             }
