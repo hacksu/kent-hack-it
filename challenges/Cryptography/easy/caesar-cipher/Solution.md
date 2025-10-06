@@ -3,7 +3,6 @@
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Easy
-* **Points:** ?
 * **Flag:** khi{Golden_Key_Defense}
 
 ## Steps

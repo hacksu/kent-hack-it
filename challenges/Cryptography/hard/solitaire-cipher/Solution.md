@@ -3,7 +3,6 @@
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Hard
-* **Points:** ?
 * **Flag:** khi{deck_of_the_golden_flash}
 
 ## Steps

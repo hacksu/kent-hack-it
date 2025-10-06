@@ -3,9 +3,7 @@
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Hard
-* **Points:** ?
 * **Flag:** khi{byzantine_resilient_self_stabilizing_systems}
-* **Tools Required / Used:** Web browser, Shamir's Secret Sharing reconstruction algorithm
 
 ## Steps
 #### Step 1

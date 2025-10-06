@@ -3,7 +3,6 @@
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Medium
-* **Points:** ?
 * **Flag:** khi{wartime_wisdom_unlocked}
 
 ## Steps

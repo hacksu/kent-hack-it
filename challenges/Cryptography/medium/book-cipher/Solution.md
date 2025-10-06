@@ -3,7 +3,6 @@
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Medium
-* **Points:** ?
 * **Flag:** khi{isn't_reading_the_best}
 
 ## Steps

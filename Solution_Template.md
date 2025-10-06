@@ -3,9 +3,7 @@
 * **Event:** [Event Name]
 * **Category:** [Category] (Web, Crypto, Rev)
 * **Difficulty:** [Easy/Medium/Hard]
-* **Points:** [Number]
 * **Flag:** [Flag]
-* **(Optional) Tools Required / Used:** [List any specific tools needed]
 
 ## Steps
 #### Step 1
