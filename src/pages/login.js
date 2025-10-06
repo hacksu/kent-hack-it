@@ -20,7 +20,7 @@ export function Login() {
 
         const handleMessage = (event) => {
             if (event.origin !== `${process.env.REACT_APP_HOMEPAGE_URL}`) {
-                console.log(`event.origin is different: ${event.origin} expected got -> ${process.env.REACT_APP_HOMEPAGE_URL}`);
+                console.log(`event.origin is different: ${event.origin} expected got -> '${process.env.REACT_APP_HOMEPAGE_URL}'`);
                 return; // check backend origin
             }
 

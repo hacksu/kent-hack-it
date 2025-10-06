@@ -6,6 +6,7 @@ WORKDIR /
 RUN apt-get update && apt-get install -y supervisor sudo nodejs npm net-tools
 
 # ensure react env vars are present on build
+ARG T_URL
 ENV REACT_APP_HOMEPAGE_URL=$T_URL
 
 # ensure directories exist
