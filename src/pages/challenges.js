@@ -7,13 +7,25 @@ import { SanitizeDescription } from '../components/purification.js';
 export function Challenges() {
     const [challenges, setChallenges] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const challengesPerPage = 10;
+    const challengesPerPage = 20;
 
     const [joinedTeamName, SetJoinedTeamName] = useState("");
     const [profileData, SetProfileData] = useState(null);
     const [teamData, SetTeamData] = useState(null);
 
-    const [showSelfCompleted, setShowCompleted] = useState(false);
+
+
+    // Filter state
+    const [filters, setFilters] = useState({
+        category: '',
+        difficulty: '',
+        searchText: '',
+        showCompleted: false,
+        showUncompleted: true
+    });
+
+    const [availableCategories, setAvailableCategories] = useState([]);
+    const [availableDifficulties, setAvailableDifficulties] = useState([]);
 
     async function GetProfileDetails() {
         try {
@@ -61,75 +73,73 @@ export function Challenges() {
     }, [joinedTeamName]); // executes when joinedTeamName changes state
 
 
-    const SelfFilterChallenges = useCallback(async (data) => {
-        if (!profileData) {
-            return data;
+
+
+
+    const ApplyFilters = useCallback((data) => {
+        let filteredData = [...data];
+
+        // Filter by category
+        if (filters.category) {
+            filteredData = filteredData.filter(challenge => 
+                challenge.category === filters.category
+            );
         }
 
-        if (profileData.completions.length === 0) {
-            return data;
+        // Filter by difficulty
+        if (filters.difficulty) {
+            filteredData = filteredData.filter(challenge => 
+                challenge.difficulty === filters.difficulty
+            );
         }
 
-        const filteredChallenges = [];
-
-        for (const challenge of data) {
-            const exists = profileData.completions.find(chall => chall.id === challenge._id);
-            if (!exists) {
-                filteredChallenges.push(challenge);
-            }
+        // Filter by search text
+        if (filters.searchText) {
+            const searchTerm = filters.searchText.toLowerCase();
+            filteredData = filteredData.filter(challenge =>
+                challenge.name.toLowerCase().includes(searchTerm) ||
+                challenge.category.toLowerCase().includes(searchTerm) ||
+                (challenge.written_by && challenge.written_by.toLowerCase().includes(searchTerm))
+            );
         }
 
-        return filteredChallenges;
-    }, [profileData]);
-
-    const TeamFilterChallenges = useCallback(async (data) => {
-        if (!teamData) {
-            return data;
+        // Filter by completion status
+        if (!filters.showCompleted || !filters.showUncompleted) {
+            const userCompletions = profileData?.completions || [];
+            const teamCompletions = teamData?.completions || [];
+            
+            filteredData = filteredData.filter(challenge => {
+                const isCompletedByUser = userCompletions.some(comp => comp.id === challenge._id);
+                const isCompletedByTeam = teamCompletions.some(comp => comp.id === challenge._id);
+                const isCompleted = isCompletedByUser || isCompletedByTeam;
+                
+                return (filters.showCompleted && isCompleted) || (filters.showUncompleted && !isCompleted);
+            });
         }
 
-        if (teamData.completions.length === 0) {
-            return data;
-        }
-
-        const filteredChallenges = [];
-
-        for (const challenge of data) {
-            const exists = teamData.completions.find(chall => chall.id === challenge._id);
-            if (!exists) {
-                filteredChallenges.push(challenge);
-            }
-        }
-
-        return filteredChallenges;
-    }, [teamData]);
-
+        return filteredData;
+    }, [filters, profileData, teamData]);
 
     const FetchChallenges = useCallback(async () => {
         try {
             const response = await fetch(`/api/ctf/challenges`);
             const data = await response.json();
 
-            const teamFilteredData = await TeamFilterChallenges(data);
-            const selfFilteredData = await SelfFilterChallenges(data);
+            // Extract unique categories and difficulties for filter options
+            const categories = [...new Set(data.map(challenge => challenge.category))].sort();
+            const difficulties = [...new Set(data.map(challenge => challenge.difficulty))].sort();
+            
+            setAvailableCategories(categories);
+            setAvailableDifficulties(difficulties);
 
-            if (!teamData || showSelfCompleted) {
-                if (selfFilteredData) {
-                    setChallenges(selfFilteredData);
-                } else {
-                    setChallenges([]);
-                }
-            } else {
-                if (teamFilteredData) {
-                    setChallenges(teamFilteredData);
-                } else {
-                    setChallenges([]);
-                }
-            }
+            // Apply all filters
+            const filteredData = ApplyFilters(data);
+
+            setChallenges(filteredData);
         } catch (err) {
             console.error('Failed to fetch challenges:', err);
         }
-    }, [teamData, showSelfCompleted, setChallenges,
-        TeamFilterChallenges, SelfFilterChallenges]);
+    }, [ApplyFilters]);
 
     const [isAuth, SetAuth] = useState(false);
     useEffect(() => {
@@ -164,14 +174,16 @@ export function Challenges() {
         }
     };
 
-    const toggleFilter = () => {
-        setShowCompleted(prev => !prev);
-        FetchChallenges();
-    };
+
 
     useEffect(() => {
         FetchChallenges()
-    }, [profileData, FetchChallenges]);
+    }, [profileData, teamData, filters, FetchChallenges]);
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters]);
 
     return (
         <>
@@ -179,85 +191,204 @@ export function Challenges() {
                 <>
                     <div className="App page-background">
                         <Navbar />
-                        <div className="container mt-4">
-                            <h2 className="mb-3">Challenges</h2>
+                        <div className="container-fluid mt-4">
+                            <div className="row">
+                                {/* Filter Sidebar */}
+                                <div className="col-md-3 col-lg-2">
+                                    <div className="card p-3 mb-4">
+                                        <div className="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 className="mb-0">Filters</h5>
+                                            <button
+                                                className="btn btn-sm btn-outline-secondary d-md-none"
+                                                type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#filterCollapse"
+                                                aria-expanded="false"
+                                                aria-controls="filterCollapse"
+                                            >
+                                                Toggle
+                                            </button>
+                                        </div>
+                                        <div className="collapse d-md-block" id="filterCollapse">
+                                        
+                                        {/* Search */}
+                                        <div className="mb-3">
+                                            <label className="form-label">Search</label>
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm"
+                                                placeholder="Search challenges..."
+                                                value={filters.searchText}
+                                                onChange={(e) => setFilters({...filters, searchText: e.target.value})}
+                                            />
+                                        </div>
 
-                            {teamData && (
-                                <div className="container mb-3">
-                                    <h5>{showSelfCompleted ?
-                                        'Showing: Team unclaimed Challenges' :
-                                        'Showing: Your unclaimed Challenges'}
-                                    </h5>
+                                        {/* Category Filter */}
+                                        <div className="mb-3">
+                                            <label className="form-label">Category</label>
+                                            <select
+                                                className="form-select form-select-sm"
+                                                value={filters.category}
+                                                onChange={(e) => setFilters({...filters, category: e.target.value})}
+                                            >
+                                                <option value="">All Categories</option>
+                                                {availableCategories.map(category => (
+                                                    <option key={category} value={category}>{category}</option>
+                                                ))}
+                                            </select>
+                                        </div>
 
-                                    <button className="btn btn-sm btn-secondary" onClick={toggleFilter}>
-                                        {showSelfCompleted ? 'Filter Self Completions' : 'Filter Team Completions'}
-                                    </button>
-                                </div>
-                            )}
+                                        {/* Difficulty Filter */}
+                                        <div className="mb-3">
+                                            <label className="form-label">Difficulty</label>
+                                            <select
+                                                className="form-select form-select-sm"
+                                                value={filters.difficulty}
+                                                onChange={(e) => setFilters({...filters, difficulty: e.target.value})}
+                                            >
+                                                <option value="">All Difficulties</option>
+                                                {availableDifficulties.map(difficulty => (
+                                                    <option key={difficulty} value={difficulty}>{difficulty}</option>
+                                                ))}
+                                            </select>
+                                        </div>
 
-                            {/* Buttons at the top */}
-                            <div className="d-flex justify-content-center gap-4 mb-3">
-                                <button
-                                    className="btn btn-sm btn-primary mr-2"
-                                    onClick={prevPage}
-                                    disabled={currentPage === 1}
-                                >
-                                    ← Prev
-                                </button>
-                                <button
-                                    className="btn btn-sm btn-primary"
-                                    onClick={nextPage}
-                                    disabled={indexOfLast >= challenges.length}
-                                >
-                                    Next →
-                                </button>
-                            </div>
-
-                            <div className="row justify-content-center">
-                                {currentChallenges().map((challenge, idx) => (
-                                    <div
-                                        className="col-12 col-sm-6 col-md-3 col-lg-3 mb-3"
-                                        key={idx}
-                                        style={{ maxWidth: '250px' }}
-                                    >
-                                        <Link
-                                            to={challenge.is_active ? `/challenge?id=${challenge._id}` : ""}
-                                            className="text-decoration-none text-dark"
-                                        >
-                                            <div className={`card h-100 shadow-sm p-2 ${!challenge.is_active ? "opacity-50" : ""}`}>
-                                                <div className="card-body p-2">
-                                                    {!challenge.is_active && (
-                                                        <>
-                                                            <p>
-                                                                Challenge is currently Out-of-Order and will be back online soon!
-                                                            </p>
-                                                        </>
-                                                    )}
-                                                    <h6 className="card-title mb-1">{challenge.name}</h6>
-                                                    <small className="text-muted">
-                                                        {challenge.category} | Difficulty: {challenge.difficulty}
-                                                    </small>
-                                                    <div className="mb-1">
-                                                        <small className="text-info">
-                                                            <i className="fas fa-user"></i> By: {challenge.written_by || "Unknown Author"}
-                                                        </small>
-                                                    </div>
-                                                    <p className="card-text small mb-1">
-                                                        ⭐ {challenge.rating.toFixed(1)} / 5
-                                                    </p>
-                                                    <p className="card-text small">
-                                                        Points: {challenge.points}
-                                                    </p>
-                                                    <p className="card-text small">
-                                                        {challenge.user_completions} Solves
-                                                    </p>
-                                                </div>
+                                        {/* Completion Status */}
+                                        <div className="mb-3">
+                                            <label className="form-label">Show</label>
+                                            <div className="form-check">
+                                                <input
+                                                    className="form-check-input"
+                                                    type="checkbox"
+                                                    id="showCompleted"
+                                                    checked={filters.showCompleted}
+                                                    onChange={(e) => setFilters({...filters, showCompleted: e.target.checked})}
+                                                />
+                                                <label className="form-check-label" htmlFor="showCompleted">
+                                                    Completed
+                                                </label>
                                             </div>
-                                        </Link>
+                                            <div className="form-check">
+                                                <input
+                                                    className="form-check-input"
+                                                    type="checkbox"
+                                                    id="showUncompleted"
+                                                    checked={filters.showUncompleted}
+                                                    onChange={(e) => setFilters({...filters, showUncompleted: e.target.checked})}
+                                                />
+                                                <label className="form-check-label" htmlFor="showUncompleted">
+                                                    Uncompleted
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {/* Clear Filters */}
+                                        <button
+                                            className="btn btn-sm btn-outline-secondary"
+                                            onClick={() => setFilters({
+                                                category: '',
+                                                difficulty: '',
+                                                searchText: '',
+                                                showCompleted: false,
+                                                showUncompleted: true
+                                            })}
+                                        >
+                                            Clear Filters
+                                        </button>
+                                        </div>
                                     </div>
-                                ))}
+                                </div>
+
+                                {/* Main Content */}
+                                <div className="col-md-9 col-lg-10">
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                        <h2 className="mb-0">Challenges</h2>
+                                        <span className="text-muted">
+                                            {challenges.length} challenge{challenges.length !== 1 ? 's' : ''} found
+                                        </span>
+                                    </div>
+
+                                    {/* Pagination buttons at the top */}
+                                    <div className="d-flex justify-content-center gap-4 mb-3">
+                                        <button
+                                            className="btn btn-sm btn-primary"
+                                            onClick={prevPage}
+                                            disabled={currentPage === 1}
+                                        >
+                                            ← Prev
+                                        </button>
+                                        <span className="align-self-center">
+                                            Page {currentPage} of {Math.ceil(challenges.length / challengesPerPage) || 1}
+                                        </span>
+                                        <button
+                                            className="btn btn-sm btn-primary"
+                                            onClick={nextPage}
+                                            disabled={indexOfLast >= challenges.length}
+                                        >
+                                            Next →
+                                        </button>
+                                    </div>
+
+                                    {currentChallenges().length > 0 ? (
+                                        <div className="row">
+                                            {currentChallenges().map((challenge, idx) => (
+                                            <div
+                                                className="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-3"
+                                                key={idx}
+                                            >
+                                                <Link
+                                                    to={challenge.is_active ? `/challenge?id=${challenge._id}` : ""}
+                                                    className="text-decoration-none text-dark"
+                                                >
+                                                    <div className={`card h-100 shadow-sm p-2 ${!challenge.is_active ? "opacity-50" : ""}`}>
+                                                        <div className="card-body p-2">
+                                                            {!challenge.is_active && (
+                                                                <>
+                                                                    <p>
+                                                                        Challenge is currently Out-of-Order and will be back online soon!
+                                                                    </p>
+                                                                </>
+                                                            )}
+                                                            <h6 className="card-title mb-1">{challenge.name}</h6>
+                                                            <small className="text-muted">
+                                                                {challenge.category} | Difficulty: {challenge.difficulty}
+                                                            </small>
+                                                            <div className="mb-1">
+                                                                <small className="text-info">
+                                                                    <i className="fas fa-user"></i> By: {challenge.written_by || "Unknown Author"}
+                                                                </small>
+                                                            </div>
+                                                            {challenge.description && (
+                                                                <div className="mb-2">
+                                                                    <p className="card-text small text-muted" style={{fontSize: '0.75rem'}}>
+                                                                        <SanitizeDescription description={challenge.description} maxLength={100} />
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                            <p className="card-text small mb-1">
+                                                                ⭐ {challenge.rating.toFixed(1)} / 5
+                                                            </p>
+                                                            <p className="card-text small">
+                                                                Points: {challenge.points}
+                                                            </p>
+                                                            <p className="card-text small">
+                                                                {challenge.user_completions} Solves
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </Link>
+                                            </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-5">
+                                            <h4 className="text-muted">No challenges found</h4>
+                                            <p className="text-muted">Try adjusting your filters to see more challenges.</p>
+                                        </div>
+                                    )}
+                                    <Link className="navbar-brand btn btn-md btn-info" to="/rate-challenge">Rate Challenges</Link>
+                                </div>
                             </div>
-                            <Link className="navbar-brand btn btn-md btn-info" to="/rate-challenge">Rate Challenges</Link>
                         </div>
                     </div>
                 </>
