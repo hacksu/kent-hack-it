@@ -1,7 +1,7 @@
 # Flash's Media Hunt
 * **Description:**  
 * **Event:** Kent Hack It 2025
-* **Category:** Stegano
+* **Category:** Forensic
 * **Difficulty:** Medium
 * **Flag:** khi{0_free_volleyball_data}
 
