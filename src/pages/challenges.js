@@ -284,7 +284,7 @@ export function Challenges() {
 
                                         {/* Clear Filters */}
                                         <button
-                                            className="btn btn-sm btn-outline-secondary"
+                                            className="btn btn-sm btn-outline-secondary w-100 mb-3"
                                             onClick={() => setFilters({
                                                 category: '',
                                                 difficulty: '',
@@ -295,18 +295,28 @@ export function Challenges() {
                                         >
                                             Clear Filters
                                         </button>
+
+                                        {/* Rate Challenges Button */}
+                                        <div className="mt-4">
+                                            <hr className="mb-3" />
+                                            <Link 
+                                                className="btn btn-info w-100 d-flex align-items-center justify-content-center gap-2" 
+                                                to="/rate-challenge"
+                                            >
+                                                <i className="fas fa-star"></i>
+                                                Rate Challenges
+                                            </Link>
+                                            <small className="text-muted d-block mt-2 text-center">
+                                                Rate completed challenges
+                                            </small>
+                                        </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Main Content */}
                                 <div className="col-md-9 col-lg-10">
-                                    <div className="d-flex justify-content-between align-items-center mb-3">
-                                        <h2 className="mb-0">Challenges</h2>
-                                        <span className="text-muted">
-                                            {challenges.length} challenge{challenges.length !== 1 ? 's' : ''} found
-                                        </span>
-                                    </div>
+                                    <h2 className="mb-3">Challenges</h2>
 
                                     {/* Pagination buttons at the top */}
                                     <div className="d-flex justify-content-center gap-4 mb-3">
@@ -386,7 +396,6 @@ export function Challenges() {
                                             <p className="text-muted">Try adjusting your filters to see more challenges.</p>
                                         </div>
                                     )}
-                                    <Link className="navbar-brand btn btn-md btn-info" to="/rate-challenge">Rate Challenges</Link>
                                 </div>
                             </div>
                         </div>

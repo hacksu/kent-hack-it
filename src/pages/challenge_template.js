@@ -11,7 +11,6 @@ export function ChallengeDetail() {
     const [answer, setAnswer] = useState('');
     const [message, setMessage] = useState('');
     const [isAuth, SetAuth] = useState(false);
-    const [profileData, setProfileData] = useState(null);
     const [isCompleted, setIsCompleted] = useState(false);
     const [hasRated, setHasRated] = useState(false);
     const [rating, setRating] = useState('');
@@ -38,7 +37,6 @@ export function ChallengeDetail() {
             });
             const data = await response.json();
             if (data) {
-                setProfileData(data);
                 // Check if user has completed this challenge
                 const completed = data.completions?.some(comp => comp.id === id);
                 setIsCompleted(completed);
@@ -56,7 +54,7 @@ export function ChallengeDetail() {
         if (isAuth && id) {
             getProfileDetails();
         }
-    }, [isAuth, id]);
+    }, [isAuth, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         async function FetchChallenge() {
