@@ -1,5 +1,5 @@
-# Lightning XOR
-* **Description** The Flashes encoded their secret with a hidden pattern. Only by XORing the right key with the data can you reveal their message.
+# Flash Pattern
+* **Description** The Flashes encoded their secret using a repeating electrical operation. You'll need to find the right binary technique and key to reveal their message.
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Medium
