@@ -3,7 +3,7 @@
 # Auto-processing script for beheader polyglot generator
 # Automatically processes files from input_files folder and outputs to output folder
 
-set -e
+# set -e  # Temporarily disabled for debugging
 
 INPUT_FOLDER="input_files"
 OUTPUT_FOLDER="output"
@@ -205,7 +205,13 @@ run_beheader() {
     shift 3
     local additional_args=("$@")
     
-    local cmd=(bun run beheader.js "$output_file" "$image_file" "$video_file")
+    # Use full path to bun if it's not in PATH
+    local bun_cmd="bun"
+    if ! command -v bun &> /dev/null && [ -f "$HOME/.bun/bin/bun" ]; then
+        bun_cmd="$HOME/.bun/bin/bun"
+    fi
+    
+    local cmd=("$bun_cmd" run beheader.js "$output_file" "$image_file" "$video_file")
     cmd+=("${additional_args[@]}")
     
     echo "Executing: ${cmd[*]}"
@@ -232,7 +238,7 @@ if [ ${#IMAGES[@]} -gt 0 ] && [ ${#VIDEOS[@]} -gt 0 ]; then
         for video in "${VIDEOS[@]}"; do
             image_name=$(basename "$image" | sed 's/\.[^.]*$//')
             video_name=$(basename "$video" | sed 's/\.[^.]*$//')
-            output_name="${image_name}_${video_name}_polyglot.mp4"
+            output_name="_output"
             output_path="$OUTPUT_FOLDER/$output_name"
             
             # Prepare additional arguments
@@ -257,6 +263,12 @@ if [ ${#IMAGES[@]} -gt 0 ] && [ ${#VIDEOS[@]} -gt 0 ]; then
             additional_args+=("${OTHER_FILES[@]}")
             
             ((PROCESSED_COUNT++))
+            echo "About to call run_beheader with:"
+            echo "  Output: $output_path"
+            echo "  Image: $image"
+            echo "  Video: $video"
+            echo "  Additional args: ${additional_args[*]}"
+            
             if run_beheader "$output_path" "$image" "$video" "${additional_args[@]}"; then
                 ((SUCCESS_COUNT++))
             fi

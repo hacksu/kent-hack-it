@@ -1,0 +1,9 @@
+input files hold the flag chunk
+
+the user will be hinted to the each name by;
+free.html - price of the hackathon
+volleyball.png - object Flash is holding
+data - what are they collecting
+0 - the amount of wins for the session
+
+the zip folder will hold information to help you order the flag. it will also hint to the file formats available to use
