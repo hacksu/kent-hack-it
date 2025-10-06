@@ -17,26 +17,36 @@ router.get("/challenges", async (req, res) => {
 });
 // generate completions number along side challenges to be displayed
 async function CalculateCompletions(challenges) {
-    const userData = await UserCollection.find({}, { completions: 1, _id: 0 });
-    const completionCounts = new Map();
-
-    for (const user of userData) {
-        if (!user.completions) continue;
-        for (const completion of user.completions) {
-            const id = completion.id?.toString();
-            if (!id) continue;
-            completionCounts.set(id, (completionCounts.get(id) || 0) + 1);
+    try {
+        
+        console.log("Calculating Completion Counts. . .")
+        const userData = await UserCollection.find({}, { completions: 1, _id: 0 });
+        const completionCounts = new Map();
+    
+        console.log("Iterating over users. . .")
+        for (const user of userData) {
+            if (!user.completions) continue;
+            for (const completion of user.completions) {
+                const id = completion.id?.toString();
+                if (!id) continue;
+                completionCounts.set(id, (completionCounts.get(id) || 0) + 1);
+            }
         }
+        
+        console.log("Inserting new data. . .")
+        // manual iteration needed to update the entires of the challenges array
+        for (let i = 0; i < challenges.length; ++i) {
+            const challenge_id = challenge._id?.toString() || null;
+            const completionCount = completionCounts.get(challenge_id) || 0;
+            challenges[i].user_completions = challenge_id ? completionCount : 0;
+        }
+    
+        console.log("Finished!")
+        return challenges;
+    } catch (err) {
+        console.log(`(CalculateCompletions) Error: ${err}`)
+        return challenges;
     }
-
-    // manual iteration needed to update the entires of the challenges array
-    for (let i = 0; i < challenges.length; ++i) {
-        const challenge_id = challenge._id?.toString() || null;
-        const completionCount = completionCounts.get(challenge_id) || 0;
-        challenges[i].user_completions = challenge_id ? completionCount : 0;
-    }
-
-    return challenges;
 }
 async function GetChallenges() {
     let challenges = await ChallengeCollection.find({}, {
