@@ -6,13 +6,12 @@ WORKDIR /
 RUN apt-get update && apt-get install -y supervisor sudo nodejs npm net-tools
 
 # ensure directories exist
-RUN mkdir /var/www
-RUN mkdir /var/www/khi
-RUN mkdir /var/www/project
+RUN mkdir -p /var/www/khi
+RUN mkdir -p /var/www/project
+RUN mkdir -p /ctf/challenge_archives
 
 # give www-data ability to run commands and interact with web-root
 RUN chsh -s /bin/bash www-data
-RUN chown -R www-data:www-data /var/www
 
 # move production build into docker and move
 # nginx conf file into the docker
@@ -24,9 +23,6 @@ COPY package.json /var/www/project/package.json
 RUN ln -s /var/www/project/.env /var/www/khi/.env
 RUN ln -s /var/www/project/package.json /var/www/khi/package.json
 
-# build react app
-RUN su www-data -s /bin/sh -c "cd /var/www/project && npm install . && npm run build && cp -r build/* -t /var/www/khi"
-
 COPY docker/khi /etc/nginx/conf.d/khi.conf
 
 # move backend to web root
@@ -34,6 +30,13 @@ COPY backend /var/www/khi/backend
 
 # remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
+
+# after initial setup as root, give www-data full-access to /var/www
+RUN chown -R www-data:www-data /var/www
+RUN chown -R www-data:www-data /ctf/challenge_archives
+
+# build react app
+RUN su www-data -s /bin/sh -c "cd /var/www/project && npm install . && npm run build && cp -r build/* -t /var/www/khi"
 
 # install needed nodejs packages to allow the backend to run
 RUN su www-data -s /bin/sh -c "cd /var/www/khi && npm install ."

@@ -99,11 +99,20 @@ function AdminChallengeViewTab() {
         }
     }
 
+    // Function to go back to view from edit
+    const goBackToView = () => {
+        setActiveTab("");
+        FetchChallenges(); // Refresh the challenges list
+    };
+
     return (
         <>
             {activeTab === "edit" ? (
                 <>
-                    <AdminChallengeEditTab target_challenge_id={editId} />
+                    <AdminChallengeEditTab 
+                        target_challenge_id={editId} 
+                        onUpdateSuccess={goBackToView}
+                    />
                 </>
             ) : (
                 <>
@@ -136,6 +145,12 @@ function AdminChallengeViewTab() {
                                                 className="text-muted">
                                                 {challenge.category} | Difficulty: {challenge.difficulty}
                                             </small>
+                                            
+                                            <div className="mb-1">
+                                                <small className="text-info">
+                                                    <i className="fas fa-user"></i> By: {challenge.written_by || "Unknown Author"}
+                                                </small>
+                                            </div>
 
                                             <p
                                                 style={{
@@ -145,7 +160,7 @@ function AdminChallengeViewTab() {
                                                     paddingRight: "8px"
                                                 }}
                                                 className="card-text small mt-2"
-                                                dangerouslySetInnerHTML={{ __html: SanitizeDescription(challenge.description) }}
+                                                dangerouslySetInnerHTML={{ __html: SanitizeDescription(null, challenge.description) }}
                                             />
 
                                             <p

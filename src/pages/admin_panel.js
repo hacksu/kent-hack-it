@@ -8,6 +8,7 @@ import AdminView from '../components/admin_panel/admins.js'
 import AdminChallengeCreateTab from '../components/admin_panel/create.js'
 import AdminChallengeViewTab from '../components/admin_panel/view.js'
 import AdminChallengeUploadTab from '../components/admin_panel/upload.js'
+import AdminEventStatsTab from '../components/admin_panel/solvers.js'
 
 import '../App.css';
 
@@ -135,6 +136,15 @@ export function AdminPanel() {
                                     </li>
                                     <li className="nav-item">
                                         <button
+                                            className={`nav-link ${activeTab === "solvers" ? "active" : ""}`}
+                                            style={{ fontSize: "1.5rem", padding: "0.25rem 0.5rem" }}
+                                            onClick={() => ChangeTab("solvers")}
+                                        >
+                                            Solvers
+                                        </button>
+                                    </li>
+                                    <li className="nav-item">
+                                        <button
                                             className={`nav-link ${activeTab === "view" ? "active" : ""}`}
                                             style={{ fontSize: "1.5rem", padding: "0.25rem 0.5rem" }}
                                             onClick={() => ChangeTab("view")}
@@ -178,6 +188,12 @@ export function AdminPanel() {
                                     <>
                                         {activeTab === "admins" && (
                                             <AdminView />
+                                        )}
+                                    </>
+                                    
+                                    <>
+                                        {activeTab === "Solvers" && (
+                                            <AdminEventStatsTab />
                                         )}
                                     </>
 

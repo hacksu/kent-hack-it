@@ -92,10 +92,10 @@ function Navbar() {
                             <Link className="nav-link" to="/leaderboard">Leaderboard</Link>
                         </li>
                         <li className="nav-item">
-                            <Link className="nav-link" to="/tools">Tools</Link>
+                            <Link className="nav-link" to="/tools" target="_blank" rel="noopener noreferrer">Tools</Link>
                         </li>
                         <li className="nav-item">
-                            <Link className="nav-link" to="/discord">Discord</Link>
+                            <Link className="nav-link" to="/discord" target="_blank" rel="noopener noreferrer">Community</Link>
                         </li>
 
                         {authenticated ? (

@@ -1,21 +1,70 @@
 import { useEffect, useState } from 'react';
 import { SanitizeDescription } from '../../components/purification.js';
 
-function AdminChallengeEditTab({ target_challenge_id }) {
+function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
+    const [files, setFiles] = useState([]);
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+
+    async function fetchUploads() {
+        try {
+            const response = await fetch(`/api/admin/ctf/get_uploads`, {
+                method: "GET",
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+            if (data) setFiles(data);
+        } catch (error) {
+            console.error("Error sending request:", error);
+        }
+    }
+
+    useEffect(() => {
+        fetchUploads();
+    }, []);
+
+    function toggleFile(filename) {
+        setUpdateFormData(prev => {
+            const alreadySelected = prev.files.includes(filename);
+            return {
+                ...prev,
+                files: alreadySelected
+                    ? prev.files.filter(f => f !== filename) // remove
+                    : [...prev.files, filename]              // add
+            };
+        });
+    }
+
     const [updateFormData, setUpdateFormData] = useState({
         name: '',
         description: '',
         category: '',
         difficulty: '',
+        written_by: '',
         flag: '',
-        points: ''
+        points: '',
+        files: []
     });
 
     const handleUpdateChange = e => {
         const { name, value } = e.target;
+        
+        // Auto-set points based on difficulty
+        let updatedData = { [name]: value };
+        
+        if (name === 'difficulty') {
+            const pointsMap = {
+                'Easy': 100,
+                'Medium': 200,
+                'Hard': 300
+            };
+            updatedData.points = pointsMap[value] || '';
+        }
+        
         setUpdateFormData(prev => ({
             ...prev,
-            [name]: value
+            ...updatedData
         }));
     };
 
@@ -44,11 +93,19 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                 }));
                 setUpdateFormData(prev => ({
                     ...prev,
+                    'written_by': challenge.written_by || 'Unknown Author'
+                }));
+                setUpdateFormData(prev => ({
+                    ...prev,
                     'flag': challenge.flag
                 }));
                 setUpdateFormData(prev => ({
                     ...prev,
                     'points': challenge.points
+                }));
+                setUpdateFormData(prev => ({
+                    ...prev,
+                    'files': challenge.hlinks || [] // incase there are no hlinks we can default to empty array
                 }));
             }
         } catch (err) {
@@ -77,8 +134,10 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                     "description": updateFormData.description,
                     "category": updateFormData.category,
                     "difficulty": updateFormData.difficulty,
+                    "written_by": updateFormData.written_by,
                     "flag": updateFormData.flag,
                     "points": updateFormData.points,
+                    "files": updateFormData.files,
                 }),
                 credentials: 'include'  // ensures cookies are sent
             });
@@ -89,6 +148,13 @@ function AdminChallengeEditTab({ target_challenge_id }) {
             if (data && data.acknowledge) {
                 if (msgArea) {
                     msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                }
+                
+                // Navigate back to view after successful update
+                if (onUpdateSuccess) {
+                    setTimeout(() => {
+                        onUpdateSuccess();
+                    }, 1500); // Wait 1.5 seconds to show success message
                 }
             } else {
                 if (msgArea) {
@@ -143,6 +209,59 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                             />
                         </div>
 
+                        {/* Author */}
+                        <div className="mb-4">
+                            <label className="form-label fw-semibold">Written By</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                name="written_by"
+                                value={updateFormData.written_by}
+                                onChange={handleUpdateChange}
+                                required
+                                placeholder="Enter challenge author name"
+                            />
+                        </div>
+
+                        {/* Challenge Links */}
+                        <div className="mb-3">
+                            <label className="form-label fw-semibold">Challenge Files</label>
+                            <hr/>
+
+                            {/* Toggle button */}
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-outline-primary mb-2"
+                                onClick={() => setIsOpen(!isOpen)}
+                            >
+                                {isOpen ? "Hide Files" : "Show Files"}
+                            </button>
+
+                            {/* Collapsible area */}
+                            {isOpen && (
+                                <div className="border rounded p-2 d-flex flex-wrap gap-2">
+                                    {files.length === 0 && <p className="text-muted mb-0">No files uploaded</p>}
+                                    {files.map(file => (
+                                    <label
+                                        key={file}
+                                        htmlFor={`file-${file}`}
+                                        className="d-flex align-items-center gap-1 small border rounded px-2 py-1 hover-highlight"
+                                    >
+                                        <input
+                                        type="checkbox"
+                                        id={`file-${file}`}
+                                        className="form-check-input m-0"
+                                        checked={updateFormData.files.includes(file)}
+                                        onChange={() => toggleFile(file)}
+                                        />
+                                        {file}
+                                    </label>
+                                    ))}
+                                </div>
+                                )}
+                            <hr/>
+                        </div>
+
                         {/* Category */}
                         <div className="mb-4">
                             <label className="form-label fw-semibold">Category</label>
@@ -160,6 +279,7 @@ function AdminChallengeEditTab({ target_challenge_id }) {
                                 <option value="Cryptography">Cryptography</option>
                                 <option value="Reverse Engineering">Reverse Engineering</option>
                                 <option value="Forensics">Forensics</option>
+                                <option value="Steganography">Steganography</option>
                                 <option value="Binary Exploitation">Binary Exploitation</option>
                                 <option value="General">General</option>
                             </select>
@@ -200,16 +320,15 @@ function AdminChallengeEditTab({ target_challenge_id }) {
 
                         {/* Points */}
                         <div className="mb-4 text-center">
-                            <label className="form-label fw-semibold d-block">Points</label>
+                            <label className="form-label fw-semibold d-block">Points (Auto-calculated)</label>
                             <input
                                 type="number"
                                 className="form-control mx-auto text-center"
                                 name="points"
                                 value={updateFormData.points}
-                                onChange={handleUpdateChange}
-                                required
-                                style={{ maxWidth: "120px" }}
-                                placeholder="100"
+                                readOnly
+                                style={{ maxWidth: "120px", backgroundColor: '#f8f9fa' }}
+                                placeholder="Select difficulty first"
                             />
                         </div>
 

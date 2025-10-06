@@ -237,15 +237,19 @@ export function Challenges() {
                                                     <small className="text-muted">
                                                         {challenge.category} | Difficulty: {challenge.difficulty}
                                                     </small>
-                                                    <p
-                                                        className="card-text small mt-2"
-                                                        dangerouslySetInnerHTML={{ __html: SanitizeDescription(challenge.description) }}
-                                                    />
+                                                    <div className="mb-1">
+                                                        <small className="text-info">
+                                                            <i className="fas fa-user"></i> By: {challenge.written_by || "Unknown Author"}
+                                                        </small>
+                                                    </div>
                                                     <p className="card-text small mb-1">
                                                         ⭐ {challenge.rating.toFixed(1)} / 5
                                                     </p>
                                                     <p className="card-text small">
                                                         Points: {challenge.points}
+                                                    </p>
+                                                    <p className="card-text small">
+                                                        {challenge.user_completions} Solves
                                                     </p>
                                                 </div>
                                             </div>

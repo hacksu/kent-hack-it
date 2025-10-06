@@ -8,8 +8,6 @@ const router = Router();
 
 // expands end-point root '/ctf'
 router.get("/challenges", async (req, res) => {
-    if (!req.isAuthenticated()) return res.json(null);
-
     if (await IsSiteActive(req, false)) {
         const challenges = await GetChallenges();
         res.send(challenges);
@@ -17,16 +15,46 @@ router.get("/challenges", async (req, res) => {
         return res.json(null);
     }
 });
+// generate completions number along side challenges to be displayed
+async function CalculateCompletions(challenges) {
+    try {
+        console.log("Calculating Completion Counts. . .")
+        const userData = await UserCollection.find({}, { completions: 1, _id: 0 });
+        const completionCounts = new Map();
+    
+        console.log("Iterating over users. . .")
+        for (const user of userData) {
+            if (!user.completions) continue;
+            for (const completion of user.completions) {
+                const id = completion.id?.toString();
+                if (!id) continue;
+                completionCounts.set(id, (completionCounts.get(id) || 0) + 1);
+            }
+        }
+        
+        console.log("Inserting new data. . .")
+        // manual iteration needed to update the entires of the challenges array
+        for (let i = 0; i < challenges.length; ++i) {
+            const challenge_id = challenges[i]._id?.toString() || null;
+            const completionCount = completionCounts.get(challenge_id) || 0;
+            challenges[i].user_completions = challenge_id ? completionCount : 0;
+        }
+    
+        console.log("Finished!")
+        return challenges;
+    } catch (err) {
+        console.log(`(CalculateCompletions) Error: ${err}`)
+        return challenges;
+    }
+}
 async function GetChallenges() {
-    const challenges = await ChallengeCollection.find({}, {
+    let challenges = await ChallengeCollection.find({}, {
         user_rates: 0, flag: 0
     });
-    return challenges;
+    return await CalculateCompletions(challenges);
 }
 
 router.post("/challenge", async (req, res) => {
-    if (!req.isAuthenticated()) return res.json(null);
-
     if (await IsSiteActive(req, false)) {
         const data = req.body;
         // fetches details from given challenge id
@@ -45,6 +73,7 @@ async function GetChallengeInfo(challenge_id) {
             "description": challengeProfile.description,
             "category": challengeProfile.category,
             "difficulty": challengeProfile.difficulty,
+            "written_by": challengeProfile.written_by,
             "rating": challengeProfile.rating,
         }
     } else {

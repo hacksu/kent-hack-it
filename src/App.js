@@ -8,6 +8,7 @@ import { AdminPanel } from './pages/admin_panel.js'
 import { Leaderboard } from './pages/leaderboard.js'
 import { RatingPage } from './pages/rate_challenge.js'
 import { ChallengeDetail } from './pages/challenge_template.js'
+import { KaliSetupGuide } from './pages/kali_setup_guide.js'
 
 // helper function for redirections
 function ExternalRedirect({ to }) {
@@ -32,6 +33,7 @@ function App() {
                 <Route path="/leaderboard" element={<Leaderboard />} />
                 <Route path="/challenge" element={<ChallengeDetail />} />
                 <Route path="/rate-challenge" element={<RatingPage />} />
+                <Route path="/kali-setup-guide" element={<KaliSetupGuide />} />
                 {/* Redirection route */}
                 <Route path="/admin" element={<Navigate to="/admin/panel" replace />} />
                 <Route path="/discord" element={<ExternalRedirect to="https://discord.gg/rJDdvnt" />} />

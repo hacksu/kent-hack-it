@@ -2,22 +2,71 @@ import { useEffect, useState } from 'react';
 import { SanitizeDescription } from '../../components/purification.js';
 
 function AdminChallengeCreateTab() {
+    const [files, setFiles] = useState([]);
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+
     const [newFormData, setNewFormData] = useState({
         name: '',
         description: '',
         category: '',
         difficulty: '',
+        written_by: '',
         flag: '',
-        points: ''
+        points: '',
+        files: []
     });
 
     const handleNewChange = e => {
         const { name, value } = e.target;
+        
+        // Auto-set points based on difficulty
+        let updatedData = { [name]: value };
+        
+        if (name === 'difficulty') {
+            const pointsMap = {
+                'Easy': 100,
+                'Medium': 200,
+                'Hard': 300
+            };
+            updatedData.points = pointsMap[value] || '';
+        }
+        
         setNewFormData(prev => ({
             ...prev,
-            [name]: value
+            ...updatedData
         }));
     };
+
+    async function fetchUploads() {
+        try {
+            const response = await fetch(`/api/admin/ctf/get_uploads`, {
+                method: "GET",
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+            if (data) setFiles(data);
+        } catch (error) {
+            console.error("Error sending request:", error);
+        }
+    }
+
+    useEffect(() => {
+        fetchUploads();
+    }, []);
+
+    function toggleFile(filename) {
+        setNewFormData(prev => {
+            const alreadySelected = prev.files.includes(filename);
+            return {
+                ...prev,
+                files: alreadySelected
+                    ? prev.files.filter(f => f !== filename) // remove
+                    : [...prev.files, filename]              // add
+            };
+        });
+    }
 
     const addChallenge = async (event) => {
         event.preventDefault();
@@ -34,8 +83,10 @@ function AdminChallengeCreateTab() {
                     "description": newFormData.description,
                     "category": newFormData.category,
                     "difficulty": newFormData.difficulty,
+                    "written_by": newFormData.written_by,
                     "flag": newFormData.flag,
                     "points": newFormData.points,
+                    "files": newFormData.files,
                 }),
                 credentials: 'include'  // ensures cookies are sent
             });
@@ -98,6 +149,59 @@ function AdminChallengeCreateTab() {
                                 />
                             </div>
 
+                            {/* Author */}
+                            <div className="mb-3">
+                                <label className="form-label fw-semibold">Written By</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    name="written_by"
+                                    value={newFormData.written_by}
+                                    onChange={handleNewChange}
+                                    required
+                                    placeholder="Enter challenge author name"
+                                />
+                            </div>
+
+                            {/* Challenge Links */}
+                            <div className="mb-3">
+                                <label className="form-label fw-semibold">Challenge Files</label>
+                                <hr />
+
+                                {/* Toggle button */}
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-primary mb-2"
+                                    onClick={() => setIsOpen(!isOpen)}
+                                >
+                                    {isOpen ? "Hide Files" : "Show Files"}
+                                </button>
+
+                                {/* Collapsible area */}
+                                {isOpen && (
+                                <div className="border rounded p-2 d-flex flex-wrap gap-2">
+                                    {files.length === 0 && <p className="text-muted mb-0">No files uploaded</p>}
+                                    {files.map(file => (
+                                    <label
+                                        key={file}
+                                        htmlFor={`file-${file}`}
+                                        className="d-flex align-items-center gap-1 small border rounded px-2 py-1 hover-highlight"
+                                    >
+                                        <input
+                                        type="checkbox"
+                                        id={`file-${file}`}
+                                        className="form-check-input m-0"
+                                        checked={newFormData.files.includes(file)}
+                                        onChange={() => toggleFile(file)}
+                                        />
+                                        {file}
+                                    </label>
+                                    ))}
+                                </div>
+                                )}
+                                <hr />
+                            </div>
+
                             {/* Category & Difficulty side by side */}
                             <div className="row">
                                 <div className="col-md-6 mb-3">
@@ -114,6 +218,7 @@ function AdminChallengeCreateTab() {
                                         <option value="Cryptography">Cryptography</option>
                                         <option value="Reverse Engineering">Reverse Engineering</option>
                                         <option value="Forensics">Forensics</option>
+                                        <option value="Steganography">Steganography</option>
                                         <option value="Binary Exploitation">Binary Exploitation</option>
                                         <option value="General">General</option>
                                     </select>
@@ -152,16 +257,15 @@ function AdminChallengeCreateTab() {
 
                             {/* Points */}
                             <div className="mb-4 text-center">
-                                <label className="form-label fw-semibold d-block">Points</label>
+                                <label className="form-label fw-semibold d-block">Points (Auto-calculated)</label>
                                 <input
                                     type="number"
                                     className="form-control mx-auto"
                                     name="points"
                                     value={newFormData.points}
-                                    onChange={handleNewChange}
-                                    required
-                                    style={{ maxWidth: '150px' }}
-                                    placeholder="100"
+                                    readOnly
+                                    style={{ maxWidth: '150px', backgroundColor: '#f8f9fa' }}
+                                    placeholder="Select difficulty first"
                                 />
                             </div>
 
