@@ -19,7 +19,7 @@ export function Login() {
         );
 
         const handleMessage = (event) => {
-            if (event.origin !== "https://ctf.hacksu.com") {
+            if (event.origin !== `${HOMEPAGE_URL}`) {
                 console.log(`event.origin is different: ${event.origin}`);
                 return; // check backend origin
             }
