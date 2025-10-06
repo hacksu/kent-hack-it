@@ -1,0 +1,36 @@
+http://antares.cs.kent.edu/~mikhail/Personal/
+the user will be told they have to find 6 out of 10 numbers hidden within this website.
+
+Books Section:
+http://antares.cs.kent.edu/~mikhail/Personal/books.html
+the user will be hinted to the numbers 50 and 67 by the year and line and quote.
+http://antares.cs.kent.edu/~mikhail/Personal/road.txt | 2006 | "On the Road" by Jack Kerouac | '50 pages to go.' | 50
+http://antares.cs.kent.edu/~mikhail/Personal/bear.txt | 2009 | "Afghanistan, The Bear Trap: The Defeat of a Superpower" Mohammed Yousaf and Mark Adkin | 'I am on page 67 or so.' | 67
+
+
+Quotes Section:
+http://antares.cs.kent.edu/~mikhail/Personal/quotes.html
+the user will be hinted the the numbers 1820 and 400 by which quote from another quote or from starting at a quote from Bruce Sterling
+29 down | The prayers of slaves are not heard in Heaven. -Teaching of al-Yaraghi,	+muslim leader in Chechnya and Daghestan, 1820-ies | 1820 
+59 down | When you turn an election into a three-ring circus, there's always a chance that the dancing bear will win. "White Trash: The 400-Year Untold History of Class in America" Nancy Isenberg | 400
+
+
+Stories Section:
+http://antares.cs.kent.edu/~mikhail/Personal/Stories/
+the user will be hinted to find the numbers
+http://antares.cs.kent.edu/~mikhail/Personal/Stories/t34.txt | 34
+http://antares.cs.kent.edu/~mikhail/Personal/Stories/personalBest.txt | 'a PR by 16 seconds' | 16 
+
+
+Movies Section:
+http://antares.cs.kent.edu/~mikhail/Personal/movies.txt
+the user will be hinted to the movie's length in minutes by comparing the movies to design patterns taught in cs3
+mediator | Pushing Tin - John Cusack, Billy Bob Thornton, Angelina Jolie | 124 Minutes
+Observer | The Matrix - Keanu Reeves, Lawrence Fishburne, Watchowski Bros (dir) | 136 Minutes
+
+
+Former Life Section:
+http://antares.cs.kent.edu/~mikhail/Personal/Sysadmin.Kansas/
+the user will be given some hint so they can find the numbers
+Setting Up RAID | 'RAID 5' | 5
+Bringing Helios(Ultra Enterprise 4000) to life 'Recently Helios got upgraded to 10 UltraSPARC2 processors.' | 10

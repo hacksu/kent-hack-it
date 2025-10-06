@@ -1,0 +1,5 @@
+Dr. Nesterenko's system administration background provides insight into hardware configurations that mirror his fault-tolerant research. Look for documentation on redundancy implementations and multi-processor specifications.
+
+Find RAID configuration documentation.
+
+Find server upgrade specifications for enterprise systems.
