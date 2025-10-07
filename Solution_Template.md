@@ -2,7 +2,7 @@
 * **Description** [Description Text]
 * **Event:** [Event Name]
 * **Category:** [Category] (Web, Crypto, Rev)
-* **Difficulty:** [Easy/Medium/Hard]
+* **Difficulty:** [Simple/Easy/Medium/Hard/Extreme]
 * **Flag:** [Flag]
 
 ## Steps
