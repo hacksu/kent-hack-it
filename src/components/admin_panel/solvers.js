@@ -6,7 +6,7 @@ function AdminEventStatsTab() {
 
     async function GetSolvers() {
         try {
-            const response = await fetch(`/api/admin/get_solvers`, {
+            const response = await fetch(`/api/admin/ctf/get_solvers`, {
                 method: "GET",
                 credentials: 'include'
             });
