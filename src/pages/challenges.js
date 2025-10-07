@@ -220,13 +220,17 @@ export function Challenges() {
                     <div className="App page-background">
                         <Navbar />
                         <div className="container-fluid mt-4">
-                            <div className="row">
-                                {/* Main Content */}
-                                <div className="col-12">
-                                    <h2 className="mb-4">Challenges</h2>
-                                    <Link className="nav-link" to="/challenge_help">Challenge Help</Link>
+
+                            <div className="row align-items-center mb-4">
+                                <div className="col-12 d-flex justify-content-between align-items-center">
+                                    {/* Main Content */}
+                                    <h2 className="mb-0">Challenges</h2>
+                                    <Link className="nav-link fw-semibold text-primary" to="/challenge_help">
+                                    Challenge Help
+                                    </Link>
                                 </div>
                             </div>
+
                             <div className="row">
                                 {/* Filter Sidebar */}
                                 <div className="col-md-3 col-lg-2" style={{marginTop: "45px"}}>
