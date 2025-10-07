@@ -71,7 +71,7 @@ g++ -o test_fixed oracle.o functions_fixed.o
 ```
 
 ## Expected Flag
-When all tests pass, the oracle outputs: `hacksu{c++_debugging_is_ez_128}`
+When all tests pass, the oracle outputs: `khi{c++_debugging_is_ez_128}`
 
 ## Learning Objectives
 - Identifying common off-by-one errors
