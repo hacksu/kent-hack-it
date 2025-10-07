@@ -21,14 +21,14 @@ export function ChallengeHelp() {
             <>
             <div className="App">
                 <Navbar />
-                <header className="hero bg-light py-5">
+                <header className="App-header d-flex flex-column" style={{ minHeight: '100vh', padding: '1rem 0px' }}>
                 <div className="container text-center">
                     <h1 className="display-5 fw-bold mb-3">Confused with a Challenge?</h1>
 
                     <p className="lead mx-auto mb-3" style={{ maxWidth: 900 }}>
                     Some challenges offer remote endpoints such as{" "}
-                    <strong>rev.ctf.hacksu.com:2530</strong>. To interact with this endpoint,
-                    use <em>netcat</em> (nc) from your Kali or other Unix shell.
+                    <strong>rev.ctf.hacksu.com:2530</strong>.<br></br>
+                    To interact with this endpoint, use <em>netcat</em> (nc) from your Kali or other Unix shell.
                     </p>
 
                     {/* CLI command block */}
@@ -64,9 +64,8 @@ export function ChallengeHelp() {
                     </button>
                     </div>
 
-                    <p className="text-muted" style={{ maxWidth: 900, margin: "0 auto" }}>
-                    Don't get frustrated if you get stuck — there are lots of challenges to try.
-                    Ask for hints, search around, or try ChatGPT — we're all learning!
+                    <p className="text-muted" style={{ maxWidth: 900, margin: "0 auto", color:'#494949ff' }}>
+                    Don't get frustrated if you get stuck — there are lots of challenges to try.<br></br>Ask for hints, search around, or try ChatGPT — we're all learning!
                     </p>
                 </div>
                 </header>
