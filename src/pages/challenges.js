@@ -230,7 +230,7 @@ export function Challenges() {
 
                             <div className="row">
                                 {/* Filter Sidebar */}
-                                <div className="col-md-3 col-lg-2" style={{marginTop: "45px"}}>
+                                <div className="col-md-3 col-lg-2">
                                     <div className="card p-3 mb-4">
                                         <div className="d-flex justify-content-between align-items-center mb-3">
                                             <h5 className="mb-0" style={{color: "black", textAlign: "center"}}>Filters</h5>

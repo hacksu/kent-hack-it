@@ -4,9 +4,11 @@ import { SanitizeDescription } from '../purification.js';
 function AdminEventStatsTab() {
     const [solvers, setSolvers] = useState([]);
     const [filters, setFilters] = useState({
-        challengeSearch: '',
-        userSearch: ''
+        challengeFilter: '',
+        userFilter: ''
     });
+    const [availableChallenges, setAvailableChallenges] = useState([]);
+    const [availableUsers, setAvailableUsers] = useState([]);
 
     async function GetSolvers() {
         try {
@@ -19,6 +21,15 @@ function AdminEventStatsTab() {
             if (data && data.acknowledge) {
                 setSolvers(data.solvers);
                 console.log(data.solvers);
+                
+                // Extract unique challenges and users for dropdown options
+                const challenges = Object.keys(data.solvers).sort();
+                const users = [...new Set(
+                    Object.values(data.solvers).flat()
+                )].sort();
+                
+                setAvailableChallenges(challenges);
+                setAvailableUsers(users);
             }
         } catch (err) {
             console.error('Failed to fetch solvers:', err);
@@ -34,18 +45,16 @@ function AdminEventStatsTab() {
         let filtered = Object.entries(solvers);
 
         // Filter by challenge name
-        if (filters.challengeSearch) {
+        if (filters.challengeFilter) {
             filtered = filtered.filter(([challenge_name]) => 
-                challenge_name.toLowerCase().includes(filters.challengeSearch.toLowerCase())
+                challenge_name === filters.challengeFilter
             );
         }
 
         // Filter by username
-        if (filters.userSearch) {
+        if (filters.userFilter) {
             filtered = filtered.filter(([, usernames]) => 
-                usernames.some(username => 
-                    username.toLowerCase().includes(filters.userSearch.toLowerCase())
-                )
+                usernames.includes(filters.userFilter)
             );
         }
 
@@ -54,75 +63,86 @@ function AdminEventStatsTab() {
 
     const clearFilters = () => {
         setFilters({
-            challengeSearch: '',
-            userSearch: ''
+            challengeFilter: '',
+            userFilter: ''
         });
     };
 
     return (
         <div className="users-tab container-fluid py-3">
-            {/* Filter Controls */}
-            <div className="row mb-4">
-                <div className="col-12">
-                    <div className="card">
-                        <div className="card-body">
-                            <h5 className="card-title mb-3">
-                                <i className="bi bi-funnel me-2"></i>
-                                Filter Solvers
-                            </h5>
-                            <div className="row g-3">
-                                <div className="col-md-4">
-                                    <label htmlFor="challengeSearch" className="form-label">
-                                        <i className="bi bi-trophy me-1"></i>
-                                        Challenge Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        id="challengeSearch"
-                                        placeholder="Search challenges..."
-                                        value={filters.challengeSearch}
-                                        onChange={(e) => setFilters({...filters, challengeSearch: e.target.value})}
-                                    />
-                                </div>
-                                <div className="col-md-4">
-                                    <label htmlFor="userSearch" className="form-label">
-                                        <i className="bi bi-person me-1"></i>
-                                        Username
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        id="userSearch"
-                                        placeholder="Search users..."
-                                        value={filters.userSearch}
-                                        onChange={(e) => setFilters({...filters, userSearch: e.target.value})}
-                                    />
-                                </div>
-                                <div className="col-md-4 d-flex align-items-end">
-                                    <button
-                                        className="btn btn-outline-secondary"
-                                        onClick={clearFilters}
-                                        disabled={!filters.challengeSearch && !filters.userSearch}
-                                    >
-                                        <i className="bi bi-x-circle me-1"></i>
-                                        Clear Filters
-                                    </button>
-                                </div>
+            <div className="row">
+                {/* Filter Sidebar */}
+                <div className="col-md-3 col-lg-2">
+                    <div className="card p-3 mb-4">
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h5 className="mb-0" style={{color: "black", textAlign: "center"}}>Filters</h5>
+                            <button
+                                className="btn btn-sm btn-outline-secondary d-md-none"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#filterCollapse"
+                                aria-expanded="false"
+                                aria-controls="filterCollapse"
+                            >
+                                Filter Options
+                            </button>
+                        </div>
+                        <div className="collapse d-md-block" id="filterCollapse">
+
+                        {/* Challenge Filter */}
+                        <div className="mb-3">
+                            <label className="form-label">Challenge</label>
+                            <select
+                                className="form-select form-select-sm"
+                                value={filters.challengeFilter}
+                                onChange={(e) => setFilters({...filters, challengeFilter: e.target.value})}
+                            >
+                                <option value="">All Challenges</option>
+                                {availableChallenges.map(challenge => (
+                                    <option key={challenge} value={challenge}>{challenge}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* User Filter */}
+                        <div className="mb-3">
+                            <label className="form-label">User</label>
+                            <select
+                                className="form-select form-select-sm"
+                                value={filters.userFilter}
+                                onChange={(e) => setFilters({...filters, userFilter: e.target.value})}
+                            >
+                                <option value="">All Users</option>
+                                {availableUsers.map(user => (
+                                    <option key={user} value={user}>{user}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Clear Filters */}
+                        <button
+                            className="btn btn-sm btn-outline-secondary w-100 mb-3"
+                            onClick={clearFilters}
+                        >
+                            Clear Filters
+                        </button>
+
+                        {/* Filter Status */}
+                        {(filters.challengeFilter || filters.userFilter) && (
+                            <div className="mt-3">
+                                <small className="text-muted text-center d-block">
+                                    Showing {filteredSolvers().length} of {Object.keys(solvers).length} challenges
+                                </small>
                             </div>
-                            {(filters.challengeSearch || filters.userSearch) && (
-                                <div className="mt-3">
-                                    <small className="text-muted">
-                                        Showing {filteredSolvers().length} of {Object.keys(solvers).length} challenges
-                                    </small>
-                                </div>
-                            )}
+                        )}
+
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="row g-3">
+                {/* Main Content */}
+                <div className="col-md-9 col-lg-10">
+                    <div className="row g-3">
             {filteredSolvers().length > 0 ? (
                 filteredSolvers().map(([challenge_name, usernames]) => (
                 <div key={challenge_name} className="col-12 col-sm-6 col-md-4 col-lg-3">
@@ -164,11 +184,11 @@ function AdminEventStatsTab() {
                         <i className="bi bi-search text-muted" style={{fontSize: '3rem'}}></i>
                         <h4 className="text-muted mt-3">No challenges found</h4>
                         <p className="text-muted">
-                            {filters.challengeSearch || filters.userSearch 
+                            {filters.challengeFilter || filters.userFilter 
                                 ? 'Try adjusting your filters to see more results.' 
                                 : 'No solver data available.'}
                         </p>
-                        {(filters.challengeSearch || filters.userSearch) && (
+                        {(filters.challengeFilter || filters.userFilter) && (
                             <button 
                                 className="btn btn-outline-primary"
                                 onClick={clearFilters}
@@ -179,6 +199,8 @@ function AdminEventStatsTab() {
                     </div>
                 </div>
             )}
+                    </div>
+                </div>
             </div>
         </div>
     );
