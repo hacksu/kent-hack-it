@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
 import Navbar, { VerifyAuth } from '../components/navbar.js';
-import ChallengeHelp from './challenge_help.js'
 import { SanitizeDescription } from '../components/purification.js';
 
 export function Challenges() {

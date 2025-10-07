@@ -2,19 +2,19 @@ import { useState, useEffect } from 'react';
 import '../App.css';
 import Navbar, { VerifyAuth } from '../components/navbar.js';
 
-const [isAuth, SetAuth] = useState(false);
-useEffect(() => {
-    async function Verify() {
-        const authenticated = await VerifyAuth();
-        SetAuth(authenticated);
-        if (authenticated === false) {
-            window.location.href = "/login";
-        }
-    }
-    Verify();
-}, [challenges]); // run on state change
-
 export function ChallengeHelp() {
+    const [isAuth, SetAuth] = useState(false);
+    useEffect(() => {
+        async function Verify() {
+            const authenticated = await VerifyAuth();
+            SetAuth(authenticated);
+            if (authenticated === false) {
+                window.location.href = "/login";
+            }
+        }
+        Verify();
+    }, []); // runs on-load
+
     return (
         <>
         {isAuth === true ? (
