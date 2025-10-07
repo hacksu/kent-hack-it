@@ -179,7 +179,7 @@ app.use("/team", teamRoutes);   // team actions
 app.use("/info", infoRoutes);   // team actions
 
 // Serve challenge files for CTF challenges (directory browsing, etc.)
-app.get('/files/*', (req, res) => {
+app.get('/api/files/*', (req, res) => {
     // Optional: Add authentication if you want to require login
     // if (!req.isAuthenticated()) return res.status(401).send('Unauthorized!');
     
