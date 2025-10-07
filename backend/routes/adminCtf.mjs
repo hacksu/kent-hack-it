@@ -304,7 +304,7 @@ router.get('/get_solvers', async (req, res) => {
                 }
     
                 challengeSolvers.get(id).push(user.username);
-                console.log(`  |___ ${username} solved challenge_id: ${id}`);
+                console.log(`  |___ ${user.username} solved challenge_id: ${id}`);
             }
         }
     
