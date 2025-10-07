@@ -222,17 +222,9 @@ export function Challenges() {
                         <div className="container-fluid mt-4">
 
                         <div className="row align-items-center mb-4">
-                            <div className="col-12 position-relative text-center">
+                            <div className="col-12 text-center">
                                 {/* Centered Title */}
                                 <h2 className="mb-0">Challenges</h2>
-
-                                {/* Left-Aligned Link */}
-                                <Link
-                                className="challenge-link position-absolute top-50 start-0 translate-middle-y ps-4"
-                                to="/challenge_help"
-                                >
-                                Challenge Help
-                                </Link>
                             </div>
                         </div>
 
@@ -254,6 +246,17 @@ export function Challenges() {
                                             </button>
                                         </div>
                                         <div className="collapse d-md-block" id="filterCollapse">
+                                        
+                                        {/* Challenge Help Button */}
+                                        <div className="mb-3">
+                                            <Link 
+                                                className="btn btn-info w-100 d-flex align-items-center justify-content-center gap-2" 
+                                                to="/challenge_help"
+                                            >
+                                                <i className="fas fa-question-circle"></i>
+                                                Challenge Help
+                                            </Link>
+                                        </div>
                                         
                                         {/* Search */}
                                         <div className="mb-3">
@@ -418,27 +421,6 @@ export function Challenges() {
                                 {/* Main Content */}
                                 <div className="col-md-9 col-lg-10">
 
-                                    {/* Pagination buttons at the top */}
-                                    <div className="d-flex justify-content-center gap-4 mb-3">
-                                        <button
-                                            className="btn btn-sm btn-primary"
-                                            onClick={prevPage}
-                                            disabled={currentPage === 1}
-                                        >
-                                            ← Prev
-                                        </button>
-                                        <span className="align-self-center">
-                                            Page {currentPage} of {Math.ceil(challenges.length / challengesPerPage) || 1}
-                                        </span>
-                                        <button
-                                            className="btn btn-sm btn-primary"
-                                            onClick={nextPage}
-                                            disabled={indexOfLast >= challenges.length}
-                                        >
-                                            Next →
-                                        </button>
-                                    </div>
-
                                     {currentChallenges().length > 0 ? (
                                         <div className="row">
                                             {currentChallenges().map((challenge, idx) => (
@@ -527,6 +509,27 @@ export function Challenges() {
                                             <p className="text-muted">Try adjusting your filters to see more challenges.</p>
                                         </div>
                                     )}
+
+                                    {/* Pagination buttons at the bottom */}
+                                    <div className="d-flex justify-content-center gap-4 mt-4">
+                                        <button
+                                            className="btn btn-sm btn-primary"
+                                            onClick={prevPage}
+                                            disabled={currentPage === 1}
+                                        >
+                                            ← Prev
+                                        </button>
+                                        <span className="align-self-center">
+                                            Page {currentPage} of {Math.ceil(challenges.length / challengesPerPage) || 1}
+                                        </span>
+                                        <button
+                                            className="btn btn-sm btn-primary"
+                                            onClick={nextPage}
+                                            disabled={indexOfLast >= challenges.length}
+                                        >
+                                            Next →
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
