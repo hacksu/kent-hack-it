@@ -32,9 +32,6 @@ async function CalculateCompletions(challenges) {
                 completionCounts.set(id, (completionCounts.get(id) || 0) + 1);
             }
         }
-
-        console.log("completionCounts -->")
-        console.log(completionCounts);
         
         console.log("Inserting new data. . .")
         // manual iteration needed to update the entires of the challenges array
@@ -43,6 +40,7 @@ async function CalculateCompletions(challenges) {
             const completionCount = completionCounts.get(challenge_id) || 0;
             console.log(`[DEBUG] completionCount -> ${completionCount}`);
             challenges[i].user_completions = completionCount;
+            console.log(`[DEBUG] modified_challenge -> ${JSON.stringify(challenges[i])}`);
         }
     
         console.log("Finished!")
