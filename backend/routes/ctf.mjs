@@ -1,5 +1,5 @@
 import { UserCollection, ChallengeCollection } from '../db.mjs';
-import { SanitizeAlphaNumeric, SanitizeString,
+import { SanitizeAlphaNumeric, SanitizeString, IsAdmin,
         Hash_SHA256, ValidRatingNumber,
         IsSiteActive } from '../utils.mjs';
 
