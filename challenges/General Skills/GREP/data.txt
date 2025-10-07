@@ -1,0 +1,1129 @@
+# System Log Analysis - Server Maintenance Records
+# Generated on 2025-10-07
+# Administrator: John Doe
+
+2025-10-01 08:15:32 [INFO] System boot sequence initiated
+2025-10-01 08:15:45 [INFO] Loading kernel modules...
+2025-10-01 08:15:46 [INFO] eth0: Link up at 1000 Mbps full duplex
+2025-10-01 08:15:47 [INFO] DHCP client started for interface eth0
+2025-10-01 08:15:48 [INFO] IP address assigned: 192.168.1.100
+2025-10-01 08:16:00 [INFO] SSH daemon started on port 22
+2025-10-01 08:16:01 [INFO] Web server started on port 80
+2025-10-01 08:16:02 [INFO] Database service started on port 3306
+
+#!/bin/bash
+# Backup script for critical system files
+BACKUP_DIR="/var/backups/system"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+echo "Starting backup at $(date)"
+tar -czf "$BACKUP_DIR/system_backup_$DATE.tar.gz" /etc /home /var/log
+echo "Backup completed successfully"
+
+/* C++ Code Fragment - Authentication Module */
+#include <iostream>
+#include <string>
+#include <vector>
+
+class UserAuthentication {
+private:
+    std::vector<std::string> validUsers;
+    
+public:
+    bool authenticateUser(const std::string& username, const std::string& password) {
+        // Simple authentication logic
+        if (username == "admin" && password == "secure123") {
+            return true;
+        }
+        return false;
+    }
+    
+    void addUser(const std::string& username) {
+        validUsers.push_back(username);
+    }
+};
+
+2025-10-01 09:30:15 [WARNING] Failed login attempt from IP: 203.0.113.45
+2025-10-01 09:30:18 [WARNING] Failed login attempt from IP: 203.0.113.45
+2025-10-01 09:30:22 [WARNING] Failed login attempt from IP: 203.0.113.45
+2025-10-01 09:30:25 [ERROR] IP 203.0.113.45 blocked due to excessive failed attempts
+2025-10-01 09:45:33 [INFO] User 'alice' logged in successfully
+2025-10-01 09:47:12 [INFO] User 'bob' logged in successfully
+
+# Python Configuration File
+DATABASE_CONFIG = {
+    'host': 'localhost',
+    'port': 3306,
+    'username': 'webapp',
+    'password': 'db_secure_pass_2024',
+    'database': 'production_db'
+}
+
+API_KEYS = {
+    'google_maps': 'AIzaSyBvOkBo_bLTzHLgX5Y8xZ3mNpQrStUvWxY',
+    'stripe': 'sk_live_51HvJ5GLm6XXasd9fjklASDFghJKLqwe',
+    'sendgrid': 'SG.nXxSdFgHjKl.qWeRtYuIoPaSdFgHjKlZxCvBnM'
+}
+
+2025-10-01 10:15:44 [INFO] Cron job started: daily_cleanup.sh
+2025-10-01 10:15:45 [INFO] Cleaning temporary files...
+2025-10-01 10:15:46 [INFO] Removed 247 temporary files (156 MB)
+2025-10-01 10:15:47 [INFO] Cleaning log files older than 30 days...
+2025-10-01 10:15:48 [INFO] Archived 12 log files (892 MB)
+2025-10-01 10:15:49 [INFO] Daily cleanup completed successfully
+
+=== Network Configuration ===
+Interface: eth0
+  Type: Ethernet
+  MAC: 00:1B:44:11:3A:B7
+  IPv4: 192.168.1.100/24
+  Gateway: 192.168.1.1
+  DNS: 8.8.8.8, 8.8.4.4
+
+Interface: lo
+  Type: Loopback
+  IPv4: 127.0.0.1/8
+  IPv6: ::1/128
+
+2025-10-01 11:22:33 [INFO] Software update check initiated
+2025-10-01 11:22:35 [INFO] 15 packages available for update
+2025-10-01 11:22:36 [INFO] Security updates: 3 packages
+2025-10-01 11:22:37 [INFO] Regular updates: 12 packages
+
+/* JavaScript Code - Frontend Authentication */
+const authenticationService = {
+    login: async (username, password) => {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('authToken', data.token);
+            return true;
+        }
+        return false;
+    },
+    
+    logout: () => {
+        localStorage.removeItem('authToken');
+        window.location.href = '/login';
+    }
+};
+
+2025-10-01 12:45:22 [INFO] Database maintenance started
+2025-10-01 12:45:23 [INFO] Analyzing table structures...
+2025-10-01 12:45:24 [INFO] Optimizing indexes...
+2025-10-01 12:45:25 [INFO] Rebuilding statistics...
+2025-10-01 12:45:26 [INFO] Database maintenance completed
+
+# SQL Query Examples
+SELECT u.username, u.email, p.profile_picture 
+FROM users u 
+LEFT JOIN profiles p ON u.id = p.user_id 
+WHERE u.active = 1 
+AND u.last_login > DATE_SUB(NOW(), INTERVAL 30 DAY);
+
+UPDATE users 
+SET last_login = NOW() 
+WHERE username = 'admin' AND password = MD5('admin123');
+
+INSERT INTO audit_log (user_id, action, timestamp) 
+VALUES (1, 'LOGIN_SUCCESS', NOW());
+
+2025-10-01 13:15:18 [DEBUG] Memory usage: 67% (2.8GB / 4.2GB)
+2025-10-01 13:15:19 [DEBUG] CPU usage: 23% (avg 5min)
+2025-10-01 13:15:20 [DEBUG] Disk usage: /var 45% (8.9GB / 20GB)
+2025-10-01 13:15:21 [DEBUG] Active connections: 127
+2025-10-01 13:15:22 [DEBUG] Queue size: 3 pending requests
+
+# Configuration for Web Application
+server {
+    listen 80;
+    server_name example.com www.example.com;
+    
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    
+    location /api/ {
+        proxy_pass http://localhost:8080/api/;
+        add_header 'Access-Control-Allow-Origin' '*';
+    }
+}
+
+2025-10-01 14:30:45 [INFO] Backup verification started
+2025-10-01 14:30:46 [INFO] Checking backup integrity...
+2025-10-01 14:30:47 [INFO] Backup file: system_backup_20251001_083000.tar.gz
+2025-10-01 14:30:48 [INFO] Size: 2.4 GB
+2025-10-01 14:30:49 [INFO] MD5: 7d865e959b2466918c9863afca942d0f
+2025-10-01 14:30:50 [INFO] Backup verification successful
+
+# Docker Container Management
+version: '3.8'
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app
+      
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://user:pass@db:5432/myapp
+    depends_on:
+      - db
+      
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=myapp
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+2025-10-01 15:45:33 [WARNING] SSL certificate expires in 30 days
+2025-10-01 15:45:34 [WARNING] Certificate: /etc/ssl/certs/example.com.crt
+2025-10-01 15:45:35 [INFO] Renewal process should be initiated soon
+2025-10-01 15:45:36 [INFO] Auto-renewal configured via cron job
+
+// Java Application Configuration
+public class ApplicationConfig {
+    private String databaseUrl = "jdbc:mysql://localhost:3306/app_db";
+    private String databaseUser = "app_user";
+    private String databasePassword = "secure_db_password_123";
+    
+    public Connection getDatabaseConnection() throws SQLException {
+        return DriverManager.getConnection(databaseUrl, databaseUser, databasePassword);
+    }
+    
+    public void initializeApplication() {
+        System.out.println("Application starting...");
+        loadConfiguration();
+        connectToDatabase();
+        startWebServer();
+    }
+}
+
+2025-10-01 16:20:12 [INFO] Security scan initiated
+2025-10-01 16:20:13 [INFO] Scanning for vulnerabilities...
+2025-10-01 16:20:14 [INFO] Port scan: 22 (SSH), 80 (HTTP), 443 (HTTPS)
+2025-10-01 16:20:15 [INFO] Service versions: OpenSSH 8.9, Apache 2.4.52
+2025-10-01 16:20:16 [INFO] No critical vulnerabilities found
+2025-10-01 16:20:17 [INFO] 2 medium-risk issues identified
+2025-10-01 16:20:18 [INFO] Security scan completed
+
+# Environment Variables for Production
+export DATABASE_URL="postgresql://produser:267979@db.example.com:5432/production"
+export REDIS_URL="redis://redis.example.com:6379/0"
+export SECRET_KEY="super_secret_key_for_production_2024"
+export DEBUG=false
+export LOG_LEVEL=info
+
+2025-10-01 17:05:44 [INFO] Email service health check
+2025-10-01 17:05:45 [INFO] SMTP server: mail.example.com:587
+2025-10-01 17:05:46 [INFO] Authentication: STARTTLS enabled
+2025-10-01 17:05:47 [INFO] Queue status: 0 pending emails
+2025-10-01 17:05:48 [INFO] Daily sent: 247 emails
+2025-10-01 17:05:49 [INFO] Email service operating normally
+
+# Monitoring Configuration
+monitors:
+  - name: "Web Server"
+    type: "http"
+    url: "https://example.com"
+    interval: 60
+    timeout: 10
+    
+  - name: "Database"
+    type: "tcp"
+    host: "db.example.com"
+    port: 5432
+    interval: 30
+    
+  - name: "API Endpoint"
+    type: "http"
+    url: "https://api.example.com/health"
+    interval: 120
+    expected_status: 200
+
+2025-10-01 18:15:22 [INFO] Log rotation started
+2025-10-01 18:15:23 [INFO] Rotating access.log (245 MB)
+2025-10-01 18:15:24 [INFO] Rotating error.log (67 MB)
+2025-10-01 18:15:25 [INFO] Rotating application.log (134 MB)
+2025-10-01 18:15:26 [INFO] Compressed old logs with gzip
+2025-10-01 18:15:27 [INFO] Log rotation completed successfully
+
+/* PHP Code - Session Management */
+<?php
+session_start();
+
+class SessionManager {
+    private $sessionTimeout = 3600; // 1 hour
+    
+    public function validateSession() {
+        if (!isset($_SESSION['user_id'])) {
+            return false;
+        }
+        
+        if (isset($_SESSION['last_activity']) && 
+            (time() - $_SESSION['last_activity']) > $this->sessionTimeout) {
+            session_destroy();
+            return false;
+        }
+        
+        $_SESSION['last_activity'] = time();
+        return true;
+    }
+    
+    public function createSession($userId) {
+        $_SESSION['user_id'] = $userId;
+        $_SESSION['last_activity'] = time();
+        session_regenerate_id(true);
+    }
+}
+?>
+
+2025-10-01 19:30:18 [INFO] System metrics collection
+2025-10-01 19:30:19 [DEBUG] Load average: 0.75, 0.82, 0.91
+2025-10-01 19:30:20 [DEBUG] Network traffic: 456 KB/s in, 234 KB/s out
+2025-10-01 19:30:21 [DEBUG] Active processes: 127
+2025-10-01 19:30:22 [DEBUG] Available memory: 1.8 GB
+2025-10-01 19:30:23 [INFO] All metrics within normal range
+
+# Firewall Rules Configuration
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -j DROP
+
+2025-10-01 20:45:55 [INFO] Automated testing suite started
+2025-10-01 20:45:56 [INFO] Running unit tests... PASSED (156/156)
+2025-10-01 20:45:57 [INFO] Running integration tests... PASSED (43/43)
+2025-10-01 20:45:58 [INFO] Running security tests... PASSED (28/28)
+2025-10-01 20:45:59 [INFO] Running performance tests... PASSED (12/12)
+2025-10-01 20:46:00 [INFO] All tests completed successfully
+
+# Git Repository Information
+Repository: company/web-application
+Branch: main
+Last commit: 7a8b9c2 - "Fix authentication bug in user login"
+Author: Jane Smith <jane@example.com>
+Date: 2025-10-01 14:30:00 -0400
+
+Recent commits:
+- 7a8b9c2: Fix authentication bug in user login
+- 6d7e8f1: Update dependencies for security patches  
+- 5c6d7e8: Implement rate limiting for API endpoints
+- 4b5c6d7: Add monitoring dashboard for system health
+
+2025-10-01 21:20:33 [INFO] Daily report generation started
+2025-10-01 21:20:34 [INFO] Processing access logs...
+2025-10-01 21:20:35 [INFO] Unique visitors: 1,247
+2025-10-01 21:20:36 [INFO] Page views: 4,589
+2025-10-01 21:20:37 [INFO] API requests: 12,456
+2025-10-01 21:20:38 [INFO] Error rate: 0.23%
+2025-10-01 21:20:39 [INFO] Average response time: 145ms
+2025-10-01 21:20:40 [INFO] Daily report saved to /var/reports/
+
+2025-10-01 22:15:45 [INFO] Night shift monitoring started
+2025-10-01 22:15:46 [INFO] Reduced logging level to essential only
+2025-10-01 22:15:47 [INFO] Automated maintenance window begins
+2025-10-01 22:15:48 [INFO] Background optimization processes enabled
+
+# Ruby on Rails Application Configuration
+class ApplicationController < ActionController::Base
+  protect_from_forgery with: :exception
+  before_action :authenticate_user!
+  
+  private
+  
+  def authenticate_user!
+    redirect_to login_path unless user_signed_in?
+  end
+  
+  def current_user
+    @current_user ||= User.find(session[:user_id]) if session[:user_id]
+  end
+end
+
+2025-10-01 22:30:22 [DEBUG] Cache statistics updated
+2025-10-01 22:30:23 [DEBUG] Redis connections: 45 active, 12 idle
+2025-10-01 22:30:24 [DEBUG] Cache hit ratio: 87.3%
+2025-10-01 22:30:25 [DEBUG] Memory usage: Redis 234MB, Memcached 156MB
+2025-10-01 22:30:26 [DEBUG] Cache purge operations: 12 completed
+
+/* Go Application - Microservice Handler */
+package main
+
+import (
+    "encoding/json"
+    "net/http"
+    "log"
+    "time"
+)
+
+type APIResponse struct {
+    Status    string      `json:"status"`
+    Data      interface{} `json:"data,omitempty"`
+    Error     string      `json:"error,omitempty"`
+    Timestamp time.Time   `json:"timestamp"`
+}
+
+func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
+    response := APIResponse{
+        Status:    "healthy",
+        Data:      map[string]string{"service": "user-management", "version": "1.2.3"},
+        Timestamp: time.Now(),
+    }
+    
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(response)
+}
+
+2025-10-01 23:00:15 [INFO] Scheduled task: database_optimization
+2025-10-01 23:00:16 [INFO] Analyzing query performance...
+2025-10-01 23:00:17 [INFO] Slow queries detected: 3
+2025-10-01 23:00:18 [INFO] Query optimization suggestions generated
+2025-10-01 23:00:19 [INFO] Index recommendations: 5 new indexes suggested
+
+# Kubernetes Deployment Configuration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-application
+  namespace: production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-application
+  template:
+    metadata:
+      labels:
+        app: web-application
+    spec:
+      containers:
+      - name: web-app
+        image: company/web-app:v1.2.3
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: database-url
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+
+2025-10-01 23:30:44 [WARNING] Memory usage above threshold
+2025-10-01 23:30:45 [WARNING] Current usage: 3.8GB / 4.0GB (95%)
+2025-10-01 23:30:46 [INFO] Triggering garbage collection
+2025-10-01 23:30:47 [INFO] Memory freed: 456MB
+2025-10-01 23:30:48 [INFO] New usage: 3.3GB / 4.0GB (83%)
+
+# Ansible Playbook for Server Configuration
+---
+- name: Configure web servers
+  hosts: webservers
+  become: yes
+  vars:
+    nginx_version: "1.20.2"
+    ssl_cert_path: "/etc/ssl/certs/server.crt"
+    ssl_key_path: "/etc/ssl/private/server.key"
+    
+  tasks:
+    - name: Install nginx
+      package:
+        name: nginx
+        state: present
+        
+    - name: Configure nginx
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+      notify: restart nginx
+      
+    - name: Ensure SSL directory exists
+      file:
+        path: "{{ ssl_cert_path | dirname }}"
+        state: directory
+        mode: '0755'
+
+2025-10-02 00:15:33 [INFO] Midnight maintenance cycle
+2025-10-02 00:15:34 [INFO] System checkpoint created
+2025-10-02 00:15:35 [INFO] Transaction log cleanup initiated
+2025-10-02 00:15:36 [INFO] Removed 1,247 old transaction records
+2025-10-02 00:15:37 [INFO] Database size reduced by 89MB
+
+// TypeScript Interface Definitions
+interface UserProfile {
+    id: number;
+    username: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    avatar?: string;
+    createdAt: Date;
+    updatedAt: Date;
+    preferences: UserPreferences;
+}
+
+interface UserPreferences {
+    theme: 'light' | 'dark' | 'auto';
+    language: string;
+    notifications: NotificationSettings;
+    privacy: PrivacySettings;
+}
+
+interface NotificationSettings {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+    frequency: 'immediate' | 'daily' | 'weekly';
+}
+
+class UserService {
+    private apiClient: ApiClient;
+    
+    constructor(apiClient: ApiClient) {
+        this.apiClient = apiClient;
+    }
+    
+    async getUserProfile(userId: number): Promise<UserProfile> {
+        const response = await this.apiClient.get(`/users/${userId}`);
+        return response.data;
+    }
+}
+
+2025-10-02 01:45:22 [DEBUG] Network latency measurements
+2025-10-02 01:45:23 [DEBUG] Average latency: 12ms
+2025-10-02 01:45:24 [DEBUG] Packet loss: 0.02%
+2025-10-02 01:45:25 [DEBUG] Bandwidth utilization: 23%
+2025-10-02 01:45:26 [DEBUG] Connection quality: Excellent
+
+# Terraform Infrastructure as Code
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+  
+  tags = {
+    Name = "main-vpc"
+    Environment = "production"
+  }
+}
+
+resource "aws_subnet" "public" {
+  count             = 2
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.${count.index + 1}.0/24"
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+  
+  map_public_ip_on_launch = true
+  
+  tags = {
+    Name = "public-subnet-${count.index + 1}"
+    Type = "public"
+  }
+}
+
+resource "aws_security_group" "web" {
+  name_prefix = "web-sg"
+  vpc_id      = aws_vpc.main.id
+  
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+2025-10-02 02:30:18 [INFO] Automated testing cycle initiated
+2025-10-02 02:30:19 [INFO] Running smoke tests... PASSED
+2025-10-02 02:30:20 [INFO] Running regression tests... PASSED
+2025-10-02 02:30:21 [INFO] Running load tests... PASSED
+2025-10-02 02:30:22 [INFO] Running security tests... PASSED
+2025-10-02 02:30:23 [INFO] All automated tests completed successfully
+
+# Python Flask API Implementation
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token
+import bcrypt
+import datetime
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/webapp'
+app.config['JWT_SECRET_KEY'] = 'super-secret-jwt-key-change-in-production'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(hours=24)
+
+db = SQLAlchemy(app)
+jwt = JWTManager(app)
+secret_key = a2hpe0I0UzNfNjRfR1IzUDNEfQ==
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128))
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    
+    def check_password(self, password):
+        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash)
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    username = request.json.get('username')
+    password = request.json.get('password')
+    
+    user = User.query.filter_by(username=username).first()
+    
+    if user and user.check_password(password):
+        access_token = create_access_token(identity=user.id)
+        return jsonify({'access_token': access_token}), 200
+    
+    return jsonify({'message': 'Invalid credentials'}), 401
+
+2025-10-02 03:15:44 [INFO] Content delivery network status
+2025-10-02 03:15:45 [INFO] CDN edge servers: 247 online, 3 maintenance
+2025-10-02 03:15:46 [INFO] Cache hit ratio: 94.2%
+2025-10-02 03:15:47 [INFO] Data transferred: 2.4 TB (24h)
+2025-10-02 03:15:48 [INFO] Average response time: 45ms globally
+
+/* C# .NET Core Web API Controller */
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+
+namespace WebAPI.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class UsersController : ControllerBase
+    {
+        private readonly IUserService _userService;
+        private readonly ILogger<UsersController> _logger;
+        
+        public UsersController(IUserService userService, ILogger<UsersController> logger)
+        {
+            _userService = userService;
+            _logger = logger;
+        }
+        
+        [HttpGet("{id}")]
+        public async Task<ActionResult<UserDto>> GetUser(int id)
+        {
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            
+            if (currentUserId != id && !User.IsInRole("Admin"))
+            {
+                return Forbid();
+            }
+            
+            var user = await _userService.GetUserByIdAsync(id);
+            
+            if (user == null)
+            {
+                return NotFound();
+            }
+            
+            return Ok(user);
+        }
+        
+        [HttpPut("{id}")]
+        public async Task<ActionResult> UpdateUser(int id, UpdateUserRequest request)
+        {
+            var result = await _userService.UpdateUserAsync(id, request);
+            
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage);
+            }
+            
+            return NoContent();
+        }
+    }
+}
+
+2025-10-02 04:00:33 [INFO] Search index optimization
+2025-10-02 04:00:34 [INFO] Elasticsearch cluster health: Green
+2025-10-02 04:00:35 [INFO] Index size: 45.6 GB
+2025-10-02 04:00:36 [INFO] Documents indexed: 12,456,789
+2025-10-02 04:00:37 [INFO] Query performance: 95th percentile 23ms
+2025-10-02 04:00:38 [INFO] Replication status: All shards replicated
+
+# Apache Kafka Configuration
+server:
+  bootstrap.servers: localhost:9092
+  key.serializer: org.apache.kafka.common.serialization.StringSerializer
+  value.serializer: org.apache.kafka.common.serialization.JsonSerializer
+  
+consumer:
+  group.id: web-application-consumer
+  auto.offset.reset: earliest
+  key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  value.deserializer: org.apache.kafka.common.serialization.JsonDeserializer
+  
+topics:
+  user.events: user-events-topic
+  order.events: order-events-topic
+  notification.events: notification-events-topic
+
+2025-10-02 05:30:12 [DEBUG] Database connection pool stats
+2025-10-02 05:30:13 [DEBUG] Active connections: 45/100
+2025-10-02 05:30:14 [DEBUG] Idle connections: 23
+2025-10-02 05:30:15 [DEBUG] Connection wait time: 2ms average
+2025-10-02 05:30:16 [DEBUG] Query execution time: 15ms average
+2025-10-02 05:30:17 [DEBUG] Connection pool health: Optimal
+
+// React Component with Hooks
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { UserService } from '../services/UserService';
+
+interface UserProfileProps {
+  userId: number;
+}
+
+const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
+  const { user, isAuthenticated } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const fetchProfile = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const profileData = await UserService.getUserProfile(userId);
+      setProfile(profileData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+  
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProfile();
+    }
+  }, [isAuthenticated, fetchProfile]);
+  
+  const handleUpdateProfile = async (updates: Partial<UserProfile>) => {
+    try {
+      await UserService.updateUserProfile(userId, updates);
+      setProfile(prev => prev ? { ...prev, ...updates } : null);
+    } catch (err) {
+      setError('Failed to update profile');
+    }
+  };
+  
+  if (loading) return <div className="loading-spinner">Loading...</div>;
+  if (error) return <div className="error-message">{error}</div>;
+  if (!profile) return <div className="no-data">Profile not found</div>;
+  
+  return (
+    <div className="user-profile">
+      <h2>{profile.firstName} {profile.lastName}</h2>
+      <p>Email: {profile.email}</p>
+      <p>Member since: {new Date(profile.createdAt).toLocaleDateString()}</p>
+    </div>
+  );
+};
+
+export default UserProfile;
+
+2025-10-02 06:15:55 [INFO] Morning maintenance window
+2025-10-02 06:15:56 [INFO] System health check initiated
+2025-10-02 06:15:57 [INFO] CPU usage: Normal (avg 25%)
+2025-10-02 06:15:58 [INFO] Memory usage: Normal (67%)
+2025-10-02 06:15:59 [INFO] Disk usage: Normal (45%)
+2025-10-02 06:16:00 [INFO] Network connectivity: Optimal
+2025-10-02 06:16:01 [INFO] All systems operating normally
+
+# Redis Configuration for Caching
+# Redis configuration for production environment
+port 6379
+bind 127.0.0.1
+protected-mode yes
+timeout 0
+tcp-keepalive 300
+
+# Memory management
+maxmemory 2gb
+maxmemory-policy allkeys-lru
+maxmemory-samples 5
+
+# Persistence
+save 900 1
+save 300 10
+save 60 10000
+
+dir /var/lib/redis
+dbfilename dump.rdb
+rdbcompression yes
+rdbchecksum yes
+
+# Logging
+loglevel notice
+logfile /var/log/redis/redis-server.log
+syslog-enabled yes
+syslog-ident redis
+
+2025-10-02 07:45:33 [INFO] API rate limiting statistics
+2025-10-02 07:45:34 [INFO] Total requests: 145,678
+2025-10-02 07:45:35 [INFO] Rate limited requests: 234 (0.16%)
+2025-10-02 07:45:36 [INFO] Average requests per second: 67
+2025-10-02 07:45:37 [INFO] Peak requests per second: 145
+2025-10-02 07:45:38 [INFO] Rate limiting working effectively
+
+# Prometheus Monitoring Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'web-application'
+    static_configs:
+      - targets: ['localhost:3000']
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+    
+  - job_name: 'database'
+    static_configs:
+      - targets: ['localhost:9187']
+    scrape_interval: 10s
+    
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['localhost:9121']
+    scrape_interval: 10s
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+2025-10-02 08:30:18 [WARNING] SSL certificate renewal reminder
+2025-10-02 08:30:19 [WARNING] Certificate expires in 25 days
+2025-10-02 08:30:20 [INFO] Auto-renewal scheduled for 2025-10-15
+2025-10-02 08:30:21 [INFO] Backup certificate authority contacted
+2025-10-02 08:30:22 [INFO] Renewal process verification completed
+
+/* Rust Web Server Implementation */
+use actix_web::{web, App, HttpResponse, HttpServer, Result};
+use serde::{Deserialize, Serialize};
+use sqlx::{PgPool, Row};
+use std::env;
+
+#[derive(Serialize, Deserialize)]
+struct User {
+    id: i32,
+    username: String,
+    email: String,
+    created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Deserialize)]
+struct CreateUserRequest {
+    username: String,
+    email: String,
+    password: String,
+}
+
+async fn get_user(
+    path: web::Path<i32>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse> {
+    let user_id = path.into_inner();
+    
+    let user = sqlx::query_as!(
+        User,
+        "SELECT id, username, email, created_at FROM users WHERE id = $1",
+        user_id
+    )
+    .fetch_optional(pool.get_ref())
+    .await;
+    
+    match user {
+        Ok(Some(user)) => Ok(HttpResponse::Ok().json(user)),
+        Ok(None) => Ok(HttpResponse::NotFound().json("User not found")),
+        Err(_) => Ok(HttpResponse::InternalServerError().json("Database error")),
+    }
+}
+
+async fn create_user(
+    request: web::Json<CreateUserRequest>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse> {
+    let password_hash = bcrypt::hash(&request.password, bcrypt::DEFAULT_COST)
+        .map_err(|_| actix_web::error::ErrorInternalServerError("Hashing error"))?;
+    
+    let user = sqlx::query!(
+        "INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, created_at",
+        request.username,
+        request.email,
+        password_hash
+    )
+    .fetch_one(pool.get_ref())
+    .await;
+    
+    match user {
+        Ok(row) => {
+            let user = User {
+                id: row.id,
+                username: row.username,
+                email: row.email,
+                created_at: row.created_at,
+            };
+            Ok(HttpResponse::Created().json(user))
+        }
+        Err(_) => Ok(HttpResponse::BadRequest().json("Failed to create user")),
+    }
+}
+
+2025-10-02 09:15:44 [INFO] Content management system update
+2025-10-02 09:15:45 [INFO] CMS version: 3.2.1 -> 3.2.2
+2025-10-02 09:15:46 [INFO] Security patches applied: 2
+2025-10-02 09:15:47 [INFO] Performance improvements: Database query optimization
+2025-10-02 09:15:48 [INFO] New features: Enhanced media library
+2025-10-02 09:15:49 [INFO] Update completed successfully
+
+# GraphQL Schema Definition
+type User {
+  id: ID!
+  username: String!
+  email: String!
+  firstName: String
+  lastName: String
+  avatar: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  posts: [Post!]!
+  comments: [Comment!]!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+  slug: String!
+  published: Boolean!
+  author: User!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  comments: [Comment!]!
+  tags: [Tag!]!
+}
+
+type Comment {
+  id: ID!
+  content: String!
+  author: User!
+  post: Post!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Tag {
+  id: ID!
+  name: String!
+  posts: [Post!]!
+}
+
+type Query {
+  users: [User!]!
+  user(id: ID!): User
+  posts(published: Boolean): [Post!]!
+  post(id: ID, slug: String): Post
+  comments(postId: ID!): [Comment!]!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+  updateUser(id: ID!, input: UpdateUserInput!): User!
+  deleteUser(id: ID!): Boolean!
+  createPost(input: CreatePostInput!): Post!
+  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  deletePost(id: ID!): Boolean!
+}
+
+input CreateUserInput {
+  username: String!
+  email: String!
+  password: String!
+  firstName: String
+  lastName: String
+}
+
+2025-10-02 10:00:22 [DEBUG] WebSocket connection statistics
+2025-10-02 10:00:23 [DEBUG] Active connections: 1,247
+2025-10-02 10:00:24 [DEBUG] Messages per second: 456
+2025-10-02 10:00:25 [DEBUG] Average connection duration: 18 minutes
+2025-10-02 10:00:26 [DEBUG] Connection errors: 3 (0.02%)
+2025-10-02 10:00:27 [DEBUG] WebSocket performance: Excellent
+
+# Elasticsearch Index Mapping
+{
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "standard",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "author": {
+        "type": "keyword"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "category": {
+        "type": "keyword"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "view_count": {
+        "type": "integer"
+      },
+      "location": {
+        "type": "geo_point"
+      }
+    }
+  },
+  "settings": {
+    "number_of_shards": 3,
+    "number_of_replicas": 1,
+    "analysis": {
+      "analyzer": {
+        "custom_analyzer": {
+          "type": "standard",
+          "stopwords": "_english_"
+        }
+      }
+    }
+  }
+}
+
+2025-10-02 11:30:55 [INFO] Message queue processing status
+2025-10-02 11:30:56 [INFO] Queue: user-notifications, Messages: 234 pending
+2025-10-02 11:30:57 [INFO] Queue: email-delivery, Messages: 67 pending  
+2025-10-02 11:30:58 [INFO] Queue: image-processing, Messages: 12 pending
+2025-10-02 11:30:59 [INFO] Processing rate: 145 messages/minute
+2025-10-02 11:31:00 [INFO] All queues within normal limits
+
+# Nginx Load Balancer Configuration
+upstream backend {
+    least_conn;
+    server app1.example.com:3000 weight=3;
+    server app2.example.com:3000 weight=3;
+    server app3.example.com:3000 weight=2;
+    server app4.example.com:3000 backup;
+}
+
+upstream api_backend {
+    ip_hash;
+    server api1.example.com:8080;
+    server api2.example.com:8080;
+    server api3.example.com:8080;
+}
+
+server {
+    listen 80;
+    server_name example.com www.example.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name example.com www.example.com;
+    
+    ssl_certificate /etc/ssl/certs/example.com.crt;
+    ssl_certificate_key /etc/ssl/private/example.com.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384;
+    
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Health check
+        health_check uri=/health;
+    }
+    
+    location /api/ {
+        proxy_pass http://api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        
+        # Rate limiting
+        limit_req zone=api burst=20 nodelay;
+    }
+}
+
+2025-10-02 12:15:33 [WARNING] High CPU usage detected
+2025-10-02 12:15:34 [WARNING] CPU usage: 89% (5min average)
+2025-10-02 12:15:35 [INFO] Initiating performance analysis
+2025-10-02 12:15:36 [INFO] Top processes identified
+2025-10-02 12:15:37 [INFO] Optimization recommendations generated
+2025-10-02 12:15:38 [INFO] CPU usage normalized to 67%
+
+END OF LOG FILE
+Total lines processed: 494
+Generated on: 2025-10-07 by automated system
