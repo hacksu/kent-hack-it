@@ -147,7 +147,11 @@ export function Challenges() {
 
             // Extract unique categories and difficulties for filter options
             const categories = [...new Set(data.map(challenge => challenge.category))].sort();
-            const difficulties = [...new Set(data.map(challenge => challenge.difficulty))].sort();
+            
+            // Sort difficulties by level order instead of alphabetically
+            const difficultyOrder = ['Simple', 'Easy', 'Medium', 'Hard', 'Extreme'];
+            const uniqueDifficulties = [...new Set(data.map(challenge => challenge.difficulty))];
+            const difficulties = difficultyOrder.filter(diff => uniqueDifficulties.includes(diff));
             
             // Create rating thresholds (4+ stars, 3+ stars, etc.)
             const ratings = ['4.0', '3.0', '2.0', '1.0', '0.0'];
