@@ -299,16 +299,19 @@ router.get('/get_solvers', async (req, res) => {
                 if (!id) continue;
     
                 if (!challengeSolvers.has(id)) {
+                    console.log(`[DEBUG] Adding challenge ID. . .`);
                     challengeSolvers.set(id, []);
                 }
     
                 challengeSolvers.get(id).push(user.username);
+                console.log(`  |___ ${username} solved challenge_id: ${id}`);
             }
         }
     
         for (const challenge of challenges) {
             const challenge_id = challenge._id?.toString();
             const solvers = challengeSolvers.get(challenge_id) || [];
+            console.log(`Solvers of Challenge: ${challenge.name} -> ${solvers}`);
             result.set(challenge.name, solvers);
         }
     
