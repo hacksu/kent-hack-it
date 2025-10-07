@@ -14,6 +14,7 @@ function AdminEventStatsTab() {
             const data = await response.json();
             if (data && data.acknowledge) {
                 setSolvers(data.solvers);
+                console.log(data.solvers);
             }
         } catch (err) {
             console.error('Failed to fetch solvers:', err);
