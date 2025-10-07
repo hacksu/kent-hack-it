@@ -274,3 +274,48 @@ h6 {
   background-color: #96ffb0; /* light gray */
   cursor: pointer;
 }
+
+/*.................. CHALLENGE HELP PAGE ...................*/
+/* Hero tweaks */
+.hero { 
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fb 100%);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+/* CLI box */
+.cli-box {
+  display: inline-flex;
+  align-items: center;
+  background: #0f1720;          /* dark terminal background */
+  color: #e6eef6;               /* light text */
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.45rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.08), inset 0 -1px 0 rgba(255,255,255,0.02);
+  min-width: 320px;
+}
+
+/* Small prompt char on left */
+.cli-prompt {
+  color: #9aa8b7;
+  margin-right: 0.6rem;
+  font-weight: 600;
+  user-select: none;
+}
+
+/* Command text */
+.cli-command {
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: transparent;
+  border: none;
+  color: #e6eef6;
+}
+
+/* Copy button small adjustments */
+.btn-outline-secondary {
+  height: 38px;
+  padding: 0.35rem 0.7rem;
+}

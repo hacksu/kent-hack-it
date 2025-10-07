@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
 import Navbar, { VerifyAuth } from '../components/navbar.js';
+import ChallengeHelp from './challenge_help.js'
 import { SanitizeDescription } from '../components/purification.js';
 
 export function Challenges() {
@@ -224,6 +225,7 @@ export function Challenges() {
                                 {/* Main Content */}
                                 <div className="col-12">
                                     <h2 className="mb-4">Challenges</h2>
+                                    <Link className="nav-link" to="/challenge_help">Challenge Help</Link>
                                 </div>
                             </div>
                             <div className="row">

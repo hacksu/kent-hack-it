@@ -4,6 +4,7 @@ import { Login } from './pages/login.js' // custom js that returns HTML
 import { Home } from './pages/home.js'
 import { Profile } from './pages/profile.js'
 import { Challenges } from './pages/challenges.js'
+import { ChallengeHelp } from './pages/challenge_help.js';
 import { AdminPanel } from './pages/admin_panel.js'
 import { Leaderboard } from './pages/leaderboard.js'
 import { RatingPage } from './pages/rate_challenge.js'
@@ -33,6 +34,7 @@ function App() {
                 <Route path="/leaderboard" element={<Leaderboard />} />
                 <Route path="/challenge" element={<ChallengeDetail />} />
                 <Route path="/rate-challenge" element={<RatingPage />} />
+                <Route path="/challenge_help" element={<ChallengeHelp />} />
                 <Route path="/kali-setup-guide" element={<KaliSetupGuide />} />
                 {/* Redirection route */}
                 <Route path="/admin" element={<Navigate to="/admin/panel" replace />} />
