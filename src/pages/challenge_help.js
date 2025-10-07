@@ -66,7 +66,7 @@ export function ChallengeHelp() {
                     </button>
                     </div>
 
-                    <p className="text-muted" style={{ maxWidth: 900, margin: "0 auto", color:'#494949ff' }}>
+                    <p className="text" style={{ maxWidth: 900, margin: "0 auto", color:'#494949ff' }}>
                     Don't get frustrated if you get stuck — there are lots of challenges to try.<br />
                     Ask for hints, search around, or try ChatGPT — we're all learning!
                     </p>
