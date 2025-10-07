@@ -190,7 +190,7 @@ function AdminChallengeUploadTab() {
                 `}
             </style>
 
-            <div className="container mt-2">
+            <div className="container mt-2" >
                 <h3 style={{ padding: '5px' }}>Current Uploads</h3>
                 <div className="row justify-content-center">
                     <ul className="list-group w-auto">
@@ -218,6 +218,7 @@ function AdminChallengeUploadTab() {
                             </li>
                         ))}
                     </ul>
+                    <div style={{ paddingBottom: '4rem' }}></div>
                 </div>
             </div>
         </>

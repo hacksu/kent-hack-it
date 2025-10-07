@@ -1,0 +1,9 @@
+# Secret Configuration File
+# This file should never be publicly accessible!
+
+api_key=super_secret_key_12345
+database_url=postgresql://admin:@localhost:5432/ctf_db 
+_found} (3/3)
+debug_mode=true
+
+# If you found this file, you've successfully discovered a the last flag chunk!

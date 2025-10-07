@@ -6,51 +6,30 @@ export function KaliSetupGuide() {
   return (
     <div className="App">
       <Navbar />
-      <div className="App-header" style={{ minHeight: '100vh', padding: '2rem 0' }}>
-        <div className="container-fluid">
-          <div className="row justify-content-center">
-            <div className="col-xl-8 col-lg-10">
+      <header className="App-header d-flex flex-column" style={{ minHeight: '100vh', padding: '1rem 0' }}>
+        
+        {/* Main Content Container - Flexible sizing */}
+        <div className="container-fluid px-4 flex-grow-1 d-flex flex-column justify-content-center">
+          <div className="row justify-content-center h-100">
+            <div className="col-xl-10 col-lg-11 d-flex flex-column">
             
             {/* Header */}
-            <div className="text-center mb-5">
-              <h1 className="display-4 fw-bold mb-3" style={{ color: '#ffffffff' }}>
+            <div className="text-center mb-4 mb-md-5 flex-shrink-0">
+              <h1 className="display-4 fw-bold mb-3" style={{ color: '#ffffffff', fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>
                 Kali Linux VM Setup Guide
               </h1>
-              <p className="lead text-muted">
+              <p className="lead text" style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', lineHeight: '1.6' }}>
                 Get ready for CTF competitions with a complete Kali Linux virtual machine setup
               </p>
             </div>
 
-            {/* Overview Card */}
-            <div className="card shadow-sm mb-4">
-              <div className="card-body">
-                <h3 className="card-title text-primary mb-3">What You'll Learn</h3>
-                <div className="row">
-                  <div className="col-md-6">
-                    <ul className="list-unstyled">
-                      <li><i className="bi bi-check-circle-fill text-success me-2"></i>Install VirtualBox or VMware</li>
-                      <li><i className="bi bi-check-circle-fill text-success me-2"></i>Download Kali Linux ISO</li>
-                      <li><i className="bi bi-check-circle-fill text-success me-2"></i>Create and configure VM</li>
-                    </ul>
-                  </div>
-                  <div className="col-md-6">
-                    <ul className="list-unstyled">
-                      <li><i className="bi bi-check-circle-fill text-success me-2"></i>Install essential CTF tools</li>
-                      <li><i className="bi bi-check-circle-fill text-success me-2"></i>Optimize performance</li>
-                      <li><i className="bi bi-check-circle-fill text-success me-2"></i>Security best practices</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Prerequisites */}
-            <div className="card shadow-sm mb-4">
+            <div className="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
               <div className="card-body">
-                <h3 className="card-title text-primary mb-3">Prerequisites</h3>
+                <h3 className="card-title text-primary mb-3 mb-md-4" style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)' }}>Prerequisites</h3>
                 <div className="alert alert-info">
-                  <h6 style={{ color: '#0d6efd' }}><i className="bi bi-info-circle me-2"></i>System Requirements</h6>
-                  <ul className="mb-0">
+                  <h6 style={{ color: '#0d6efd', fontSize: 'clamp(1rem, 2.2vw, 1.15rem)' }}><i className="bi bi-info-circle me-2"></i>System Requirements</h6>
+                  <ul className="mb-0" style={{ fontSize: 'clamp(0.9rem, 2vw, 1rem)', lineHeight: '1.6' }}>
                     <li><strong>RAM:</strong> At least 4GB (8GB+ recommended)</li>
                     <li><strong>Storage:</strong> 25GB+ free disk space</li>
                     <li><strong>CPU:</strong> 64-bit processor with virtualization support</li>
@@ -61,9 +40,9 @@ export function KaliSetupGuide() {
             </div>
 
             {/* Step 1 */}
-            <div className="card shadow-sm mb-4">
+            <div className="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
               <div className="card-body">
-                <h3 className="card-title text-primary mb-3">
+                <h3 className="card-title text-primary mb-3 mb-md-4" style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)' }}>
                   <span className="badge bg-primary me-2">1</span>
                   Choose and Install Virtualization Software
                 </h3>
@@ -103,9 +82,9 @@ export function KaliSetupGuide() {
             </div>
 
             {/* Step 2 */}
-            <div className="card shadow-sm mb-4">
+            <div className="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
               <div className="card-body">
-                <h3 className="card-title text-primary mb-3">
+                <h3 className="card-title text-primary mb-3 mb-md-4" style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)' }}>
                   <span className="badge bg-primary me-2">2</span>
                   Download Kali Linux
                 </h3>
@@ -132,9 +111,9 @@ export function KaliSetupGuide() {
             </div>
 
             {/* Step 3 */}
-            <div className="card shadow-sm mb-4">
+            <div className="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
               <div className="card-body">
-                <h3 className="card-title text-primary mb-3">
+                <h3 className="card-title text-primary mb-3 mb-md-4" style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)' }}>
                   <span className="badge bg-primary me-2">3</span>
                   Create Virtual Machine
                 </h3>
@@ -173,9 +152,9 @@ export function KaliSetupGuide() {
             </div>
 
             {/* Step 4 */}
-            <div className="card shadow-sm mb-4">
+            <div className="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
               <div className="card-body">
-                <h3 className="card-title text-primary mb-3">
+                <h3 className="card-title text-primary mb-3 mb-md-4" style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)' }}>
                   <span className="badge bg-primary me-2">4</span>
                   Install Kali Linux
                 </h3>
@@ -214,16 +193,15 @@ export function KaliSetupGuide() {
             </div>
 
             {/* Step 5 */}
-            <div className="card shadow-sm mb-4">
+            <div className="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
               <div className="card-body">
-                <h3 className="card-title text-primary mb-3">
+                <h3 className="card-title text-primary mb-3 mb-md-4" style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)' }}>
                   <span className="badge bg-primary me-2">5</span>
                   Post-Installation Setup
                 </h3>
                 
                 <h5 className="text-secondary mb-3">Essential First Steps:</h5>
                 <div className="row">
-                  <div className="col-md-6">
                     <div className="card bg-light mb-3">
                       <div className="card-body">
                         <h6 className="card-title">Update System</h6>
@@ -231,17 +209,6 @@ export function KaliSetupGuide() {
                           sudo apt update && sudo apt upgrade -y
                         </code>
                       </div>
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="card bg-light mb-3">
-                      <div className="card-body">
-                        <h6 className="card-title">Install Guest Additions</h6>
-                        <code className="small">
-                          sudo apt install virtualbox-guest-x11 -y
-                        </code>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -277,9 +244,9 @@ export function KaliSetupGuide() {
             </div>
 
             {/* Tips and Troubleshooting */}
-            <div className="card shadow-sm mb-4">
+            <div className="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
               <div className="card-body">
-                <h3 className="card-title text-primary mb-3">
+                <h3 className="card-title text-primary mb-3 mb-md-4" style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)' }}>
                   <i className="bi bi-lightbulb me-2"></i>
                   Tips & Troubleshooting
                 </h3>
@@ -321,9 +288,9 @@ export function KaliSetupGuide() {
             </div>
 
             {/* Footer */}
-            <div className="text-center mt-5">
-              <p className="text-muted" style={{ color: '#ffffff' }}>
-                Ready to compete? <a href="/" className="link-primary" style={{ color: '#00f725ff' }}>Return to KHI Home</a> 
+            <div className="text-center mt-4 mt-md-5 flex-shrink-0">
+              <p className="text" style={{ color: '#ffffff', fontSize: 'clamp(0.9rem, 2vw, 1.1rem)', lineHeight: '1.6' }}>
+                Ready to compete? <a href="/" className="link-primary" style={{ color: '#00f725ff' }}>Return to KHI Home </a> 
                 or <a href="/profile" className="link-primary" style={{ color: '#00f725ff' }}>Register for the CTF</a>
               </p>
             </div>
@@ -331,7 +298,11 @@ export function KaliSetupGuide() {
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Spacer for bottom */}
+        <div className="mb-auto"></div>
+
+      </header>
     </div>
   );
 }

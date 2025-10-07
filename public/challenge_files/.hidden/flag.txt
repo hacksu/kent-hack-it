@@ -1,0 +1,16 @@
+Database Backup - DO NOT DISTRIBUTE
+====================================
+Date: 2025-10-06
+Admin: hacksu_admin
+
+Users Table Dump:
+-----------------
+admin:config_ (2/3)
+user1:password123
+user2:qwerty
+
+
+admin doesn't look quite right - that's not a username
+
+
+how does google index websites?

@@ -164,7 +164,7 @@ export function RatingPage() {
                                                                             value={ratings[challenge.id] || "select rating"} // default rating if not set
                                                                             onChange={(e) => handleRatingChange(challenge.id, e.target.value)}
                                                                         >
-                                                                            {["select rating", 1, 2, 3, 4, 5].map((value) => (
+                                                                            {["select rating", "⭐ 1 - Poor", "⭐⭐ 2 - Fair", "⭐⭐⭐ 3 - Good", "⭐⭐⭐⭐ 4 - Very Good", "⭐⭐⭐⭐⭐ 5 - Excellent"].map((value) => (
                                                                                 <option key={value} value={value}>
                                                                                     {value}
                                                                                 </option>

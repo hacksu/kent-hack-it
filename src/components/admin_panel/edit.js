@@ -55,9 +55,11 @@ function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
         
         if (name === 'difficulty') {
             const pointsMap = {
+                'Simple': 50,
                 'Easy': 100,
                 'Medium': 200,
-                'Hard': 300
+                'Hard': 300,
+                'Extreme': 400
             };
             updatedData.points = pointsMap[value] || '';
         }
@@ -298,9 +300,11 @@ function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
                                 <option value="" disabled>
                                     Select difficulty
                                 </option>
+                                <option value="Simple">Simple</option>
                                 <option value="Easy">Easy</option>
                                 <option value="Medium">Medium</option>
                                 <option value="Hard">Hard</option>
+                                <option value="Extreme">Extreme</option>
                             </select>
                         </div>
 

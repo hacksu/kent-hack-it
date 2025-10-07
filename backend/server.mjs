@@ -17,6 +17,10 @@ import { MongoURI, UserCollection, HandleAccount } from "./db.mjs";
 import MongoStore from "connect-mongo";
 
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import sanitize from 'sanitize-filename';
 
 const app = express();
 /*
@@ -173,6 +177,46 @@ app.use("/admin/ctf", adminCtfRoutes); // admin actions against challenges
 app.use("/user", userRoutes);   // user actions
 app.use("/team", teamRoutes);   // team actions
 app.use("/info", infoRoutes);   // team actions
+
+// Serve challenge files for CTF challenges (directory browsing, etc.)
+app.get('/api/files/*', (req, res) => {
+    // Optional: Add authentication if you want to require login
+    // if (!req.isAuthenticated()) return res.status(401).send('Unauthorized!');
+    
+    try {
+        // Get the requested file path (everything after /files/)
+        const requestedPath = req.params[0]; // The * captures everything as params[0]
+        
+        // Sanitize the filename/path
+        const safePath = sanitize(requestedPath);
+        
+        // Build the full file path
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const challengeFilesDir = path.join(__dirname, '..', 'public', 'challenge_files');
+        const filePath = path.join(challengeFilesDir, safePath);
+
+        // Security: Ensure the file is within the challenge_files directory
+        if (!filePath.startsWith(challengeFilesDir)) {
+            console.log("Invalid file path - path traversal attempt:", requestedPath);
+            return res.status(400).send('Invalid file path.');
+        }
+
+        // Check if file exists
+        if (!existsSync(filePath)) {
+            console.log("Challenge file not found:", requestedPath);
+            return res.status(404).send('File not found.');
+        }
+
+        // Serve the file
+        console.log("Serving challenge file:", requestedPath);
+        res.sendFile(filePath);
+
+    } catch (error) {
+        console.error("Error serving challenge file:", error);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 // verify a user is authenticated
 app.get("/authenticated", (req, res) => {
