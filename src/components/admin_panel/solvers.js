@@ -127,15 +127,6 @@ function AdminEventStatsTab() {
                             Clear Filters
                         </button>
 
-                        {/* Filter Status */}
-                        {(filters.challengeFilter || filters.userFilter) && (
-                            <div className="mt-3">
-                                <small className="text-muted text-center d-block">
-                                    Showing {filteredSolvers().length} of {Object.keys(solvers).length} challenges
-                                </small>
-                            </div>
-                        )}
-
                         </div>
                     </div>
                 </div>
