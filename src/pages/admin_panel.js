@@ -192,7 +192,7 @@ export function AdminPanel() {
                                     </>
                                     
                                     <>
-                                        {activeTab === "Solvers" && (
+                                        {activeTab === "solvers" && (
                                             <AdminEventStatsTab />
                                         )}
                                     </>
