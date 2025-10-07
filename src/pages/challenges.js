@@ -421,7 +421,7 @@ export function Challenges() {
                                     <div 
                                         className="flex-grow-1"
                                         style={{
-                                            minHeight: '1400px', // Height for ~20 challenge cards (5 rows x 4 cards x ~280px)
+                                            minHeight: '1000px', // Reduced height for ~20 challenge cards
                                             position: 'relative'
                                         }}
                                     >
