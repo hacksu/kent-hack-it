@@ -2,7 +2,7 @@
 * **Description** The Flashes left a trail of numbers. Only those who can translate the spark of each digit into letters will uncover the secret.
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
-* **Difficulty:** Easy
+* **Difficulty:** Simple
 * **Flag:** khi{L0ve_4_Fl4sh3s}
 
 ## Steps

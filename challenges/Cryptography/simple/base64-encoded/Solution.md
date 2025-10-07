@@ -2,7 +2,7 @@
 * **Description** A message from the Golden Flashes was buried in strange symbols. Decode the base and uncover the truth they left behind.
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
-* **Difficulty:** Easy
+* **Difficulty:** Simple
 * **Flag:** khi{Fight_On_For_Victory}
 
 ## Steps

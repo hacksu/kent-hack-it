@@ -2,7 +2,7 @@
 * **Description** Hidden in a stream of ones and zeros, the Flashes’ code awaits.
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
-* **Difficulty:** Easy
+* **Difficulty:** Simple
 * **Flag:** khi{Black_Squirrel}
 
 ## Steps
