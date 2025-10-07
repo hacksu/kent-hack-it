@@ -24,6 +24,8 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile
+      args:
+        - T_URL=${HOMEPAGE_URL}
     environment:
       - DATABASE_URL=mongodb://${DB_USER}:${DB_PASS}@${DB_HOST}:27017/${DB_NAME}?authSource=admin
       - ORIGIN=http://0.0.0.0:80

@@ -26,6 +26,7 @@ async function CalculateCompletions(challenges) {
         for (const user of userData) {
             if (!user.completions) continue;
             for (const completion of user.completions) {
+                console.log(`[DEBUG] user-completion -> ${JSON.stringify(completion)}`);
                 const id = completion.id?.toString();
                 if (!id) continue;
                 completionCounts.set(id, (completionCounts.get(id) || 0) + 1);
@@ -37,7 +38,9 @@ async function CalculateCompletions(challenges) {
         for (let i = 0; i < challenges.length; ++i) {
             const challenge_id = challenges[i]._id?.toString() || null;
             const completionCount = completionCounts.get(challenge_id) || 0;
-            challenges[i].user_completions = challenge_id ? completionCount : 0;
+            console.log(`[DEBUG] completionCount -> ${completionCount}`);
+            challenges[i].user_completions = completionCount;
+            console.log(`[DEBUG] modified_challenge -> ${JSON.stringify(challenges[i])}`);
         }
     
         console.log("Finished!")
@@ -50,7 +53,7 @@ async function CalculateCompletions(challenges) {
 async function GetChallenges() {
     let challenges = await ChallengeCollection.find({}, {
         user_rates: 0, flag: 0
-    });
+    }).lean();
     return await CalculateCompletions(challenges);
 }
 

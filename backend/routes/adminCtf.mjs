@@ -299,21 +299,25 @@ router.get('/get_solvers', async (req, res) => {
                 if (!id) continue;
     
                 if (!challengeSolvers.has(id)) {
+                    console.log(`[DEBUG] Adding challenge ID. . .`);
                     challengeSolvers.set(id, []);
                 }
     
                 challengeSolvers.get(id).push(user.username);
+                console.log(`  |___ ${user.username} solved challenge_id: ${id}`);
             }
         }
     
         for (const challenge of challenges) {
             const challenge_id = challenge._id?.toString();
             const solvers = challengeSolvers.get(challenge_id) || [];
+            console.log(`Solvers of Challenge: ${challenge.name} -> ${solvers}`);
             result.set(challenge.name, solvers);
         }
     
         // result => ("challenge_name" : [username array])
-        return res.json({ acknowledge: true, "message": "Success!", solvers: result });
+        const solvers = Object.fromEntries(result); // need to change from a map to something JSON can handle
+        return res.json({ acknowledge: true, "message": "Success!", solvers: solvers });
     } catch (error) {
         console.log(error);
         return res.json({ acknowledge: false, "message": "Error getting solvers!" });
