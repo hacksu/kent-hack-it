@@ -1,5 +1,5 @@
 # Another Golden Shift?
-* **Description** This looks like a another challenge, but the same technique isn't going to work. Why are there multiple Golden Shifts?
+* **Description** This looks like a another challenge, but the key isn't as simple as the last. I wonder why are there multiple Golden Shifts?
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Easy
