@@ -150,7 +150,7 @@ export function Challenges() {
             const difficulties = [...new Set(data.map(challenge => challenge.difficulty))].sort();
             
             // Create rating thresholds (4+ stars, 3+ stars, etc.)
-            const ratings = ['4.0', '3.0', '2.0', '1.0'];
+            const ratings = ['4.0', '3.0', '2.0', '1.0', '0.0'];
             
             setAvailableCategories(categories);
             setAvailableDifficulties(difficulties);
@@ -387,7 +387,7 @@ export function Challenges() {
                                         <div className="mt-4">
                                             <hr className="mb-3" />
                                             <Link 
-                                                className="btn btn-info w-100 d-flex align-items-center justify-content-center gap-2" 
+                                                className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" 
                                                 to="/rate-challenge"
                                             >
                                                 <i className="fas fa-star"></i>
