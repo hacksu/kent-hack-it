@@ -35,7 +35,7 @@ function AdminEventStatsTab() {
                     
                     {/* Challenge Title */}
                     <h6 className="card-title mb-3 fw-bold text-center text-primary">
-                        {SanitizeDescription(null, challenge_name)}
+                        {SanitizeDescription(null, challenge_name)} - {usernames.length} solves
                     </h6>
 
                     {/* Usernames List */}
