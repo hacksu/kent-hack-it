@@ -6,10 +6,10 @@
 * **Flag:** khi{deck_of_the_golden_flash}
 
 ## Steps
-#### Step 1
+#### Step 1: Research the Cipher Method
 Research card-based encryption methods. This challenge uses the [Solitaire cipher](https://en.wikipedia.org/wiki/Solitaire_%28cipher%29) that was designed for manual calculation using only playing cards.
 
-#### Step 2
+#### Step 2: Set Up the Initial Deck Configuration
 Set up the initial deck configuration as found in the Kent Student Center. The deck uses Kent State themed values in bridge order:
 - Clubs     (♣):  1-13
 - Diamonds  (♦):  14-26  
@@ -20,11 +20,11 @@ Set up the initial deck configuration as found in the Kent Student Center. The d
 
 Start with a factory-fresh deck in standard bridge order: [1, 2, 3, ..., 52, 53, 54]
 
-#### Step 3
+#### Step 3: Prepare the Ciphertext
 The challenge provides ciphertext: `HBMIWELNINIYWMDAGSQR`
 Convert each letter to numbers using A=1 system (A=1, B=2, C=3, ..., Z=26).
 
-#### Step 4
+#### Step 4: Generate Keystream Using Solitaire Algorithm
 Generate keystream values using the Solitaire algorithm starting with the bridge-order deck. For each character needed, perform these steps:
 
 1. **Move Joker A (53)**: Move it one position down (wraps to position 2 if at bottom)
@@ -35,7 +35,7 @@ Generate keystream values using the Solitaire algorithm starting with the bridge
 
 With proper implementation, the keystream is: `[4, 23, 10, 24, 8, 25, 18, 6, 4, 7, 20, 13, 19, 8, 16, 21, 21, 18, 24, 10]`
 
-#### Step 5
+#### Step 5: Decrypt Using Subtraction Method
 Decrypt using the formula: `plaintext_value = ciphertext_value - keystream_value` (add 26 if result < 1)
 
 Examples:
@@ -45,6 +45,6 @@ Examples:
 - I(9) - 24 = -15 → -15 + 26 = 11 = K
 - W(23) - 8 = 15 = O
 
-#### Step 6
+#### Step 6: Format the Final Answer
 The complete decryption reveals: `DECKOFTHEGOLDENFLASH`
 Format as required: `khi{deck_of_the_golden_flash}`

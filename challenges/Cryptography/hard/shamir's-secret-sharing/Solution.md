@@ -6,10 +6,10 @@
 * **Flag:** khi{byzantine_resilient_self_stabilizing_systems}
 
 ## Steps
-#### Step 1
+#### Step 1: Examine the Cipher Data
 Examine the provided cipher.txt file. You'll find 10 fragment values (y-coordinates), a threshold requirement of 6 out of 10, and a prime modulus. You need to find the corresponding x-coordinates from Dr. Nesterenko's personal website.
 
-#### Step 2
+#### Step 2: Explore the Professor's Website
 Visit http://antares.cs.kent.edu/~mikhail/Personal/ and explore the website structure. Use the provided hint files to guide your search for 10 specific numbers hidden throughout the professor's personal website pages.
 
 #### Step 3 Part 1
@@ -37,11 +37,11 @@ Visit http://antares.cs.kent.edu/~mikhail/Personal/ and explore the website stru
 - From "Setting Up RAID": Find reference to "RAID 5" configuration → **5**
 - From "Bringing Helios to life": Find "upgraded to 10 UltraSPARC2 processors" → **10**
 
-#### Step 4
+#### Step 4: Match Numbers to Fragment Values
 Match your discovered numbers to the fragment values in cipher.txt. The discovered numbers (50, 67, 1820, 400, 34, 16, 124, 136, 5, 10) are the x-coordinates. The y-coordinates in cipher.txt are listed in ascending order by their corresponding x-coordinates. Sort your found x-coordinates in ascending order (5, 10, 16, 34, 50, 67, 124, 136, 400, 1820) and pair them with the y-coordinates in the same order.
 
-#### Step 5
+#### Step 5: Apply Shamir's Secret Sharing Reconstruction
 Apply Shamir's Secret Sharing reconstruction algorithm using any 6 of the 10 coordinate pairs (x,y). Use Lagrange interpolation to reconstruct the polynomial and evaluate it at x=0 to recover the original secret.
 
-#### Step 6
+#### Step 6: Convert to Final Flag
 Convert the reconstructed integer back to text to reveal the flag: `khi{byzantine_resilient_self_stabilizing_systems}`.

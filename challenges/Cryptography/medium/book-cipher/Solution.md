@@ -6,14 +6,14 @@
 * **Flag:** khi{isn't_reading_the_best}
 
 ## Steps
-#### Step 1
+#### Step 1: Identify the Cipher Type
 Recognize that you have both a book text file and a note with numbers. This indicates a [book cipher](https://en.wikipedia.org/wiki/Book_cipher), where specific words are located using coordinate references within the book.
 
-#### Step 2
+#### Step 2: Understand the Coordinate Format
 Examine the note format: `08:30:02:12_09:36:05:12_02:18:02:01_05:41:01:07`
 The hint `CHA:PAR:LIN:WOR` tells you the format is Chapter:Paragraph:Line:Word.
 
-#### Step 3
+#### Step 3: Decode Each Coordinate Set
 Decode each coordinate set by finding the corresponding word in the book:
 ```
 Coordinates     → Word
@@ -23,6 +23,6 @@ Coordinates     → Word
 05:41:01:07    → best
 ```
 
-#### Step 4
+#### Step 4: Assemble and Format the Flag
 Combine the decoded words to form the message: `isn't reading the best`
 Format as requested with the flag wrapper: `khi{isn't_reading_the_best}`

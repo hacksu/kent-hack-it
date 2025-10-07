@@ -6,14 +6,14 @@
 * **Flag:** khi{L0ve_4_Fl4sh3s}
 
 ## Steps
-#### Step 1
+#### Step 1: Identify ASCII Encoding
 Recognize that these decimal numbers likely represent ASCII values. ASCII (American Standard Code for Information Interchange) assigns numerical values to characters.
 
-#### Step 2
+#### Step 2: Convert Decimal to Characters
 Use an ASCII table or online converter to translate each decimal number to its corresponding character:
 - Look up each number in the ASCII table
 - Numbers 32-126 represent printable characters
 - Common ranges: 65-90 (A-Z), 97-122 (a-z), 48-57 (0-9)
 
-#### Step 3
+#### Step 3: Decode the Complete Message
 Convert the sequence of numbers to reveal the hidden message: `khi{L0ve_4_Fl4sh3s}`
