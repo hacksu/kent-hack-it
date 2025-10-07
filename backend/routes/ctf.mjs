@@ -31,13 +31,16 @@ async function CalculateCompletions(challenges) {
                 completionCounts.set(id, (completionCounts.get(id) || 0) + 1);
             }
         }
+
+        console.log("completionCounts -->")
+        console.log(completionCounts);
         
         console.log("Inserting new data. . .")
         // manual iteration needed to update the entires of the challenges array
         for (let i = 0; i < challenges.length; ++i) {
             const challenge_id = challenges[i]._id?.toString() || null;
             const completionCount = completionCounts.get(challenge_id) || 0;
-            challenges[i].user_completions = challenge_id ? completionCount : 0;
+            challenges[i].user_completions = completionCount;
         }
     
         console.log("Finished!")
