@@ -226,9 +226,9 @@ export function Challenges() {
                                     {/* Centered Title */}
                                     <h2 className="mb-0">Challenges</h2>
 
-                                    {/* Right-Aligned Link */}
+                                    {/* Left-Aligned Link with Padding */}
                                     <Link
-                                    className="nav-link fw-semibold text-primary position-absolute top-50 end-0 translate-middle-y"
+                                    className="nav-link fw-semibold text-primary position-absolute top-50 start-0 translate-middle-y ps-3"
                                     to="/challenge_help"
                                     >
                                     Challenge Help
