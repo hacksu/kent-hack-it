@@ -53,7 +53,7 @@ async function CalculateCompletions(challenges) {
 async function GetChallenges() {
     let challenges = await ChallengeCollection.find({}, {
         user_rates: 0, flag: 0
-    });
+    }).lean();
     return await CalculateCompletions(challenges);
 }
 
