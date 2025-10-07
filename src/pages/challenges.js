@@ -247,17 +247,6 @@ export function Challenges() {
                                         </div>
                                         <div className="collapse d-md-block" id="filterCollapse">
                                         
-                                        {/* Challenge Help Button */}
-                                        <div className="mb-3">
-                                            <Link 
-                                                className="btn btn-info w-100 d-flex align-items-center justify-content-center gap-2" 
-                                                to="/challenge_help"
-                                            >
-                                                <i className="fas fa-question-circle"></i>
-                                                Challenge Help
-                                            </Link>
-                                        </div>
-                                        
                                         {/* Search */}
                                         <div className="mb-3">
                                             <label className="form-label">Search</label>
@@ -400,9 +389,20 @@ export function Challenges() {
                                             Clear Filters
                                         </button>
 
-                                        {/* Rate Challenges Button */}
+                                        {/* Challenge Help Button */}
                                         <div className="mt-4">
                                             <hr className="mb-3" />
+                                            <Link 
+                                                className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" 
+                                                to="/challenge_help"
+                                            >
+                                                <i className="fas fa-question-circle"></i>
+                                                Challenge Help
+                                            </Link>
+                                        </div>
+
+                                        {/* Rate Challenges Button */}
+                                        <div className="mt-4">
                                             <Link 
                                                 className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" 
                                                 to="/rate-challenge"
@@ -410,9 +410,6 @@ export function Challenges() {
                                                 <i className="fas fa-star"></i>
                                                 Rate Challenges
                                             </Link>
-                                            <small className="text-muted d-block mt-2 text-center">
-                                                Rate completed challenges
-                                            </small>
                                         </div>
                                         </div>
                                     </div>
@@ -533,6 +530,8 @@ export function Challenges() {
                                 </div>
                             </div>
                         </div>
+                        {/* Bottom padding */}
+                        <div className="pb-5"></div>
                     </div>
                 </>
             ) : (
