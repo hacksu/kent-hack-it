@@ -228,7 +228,7 @@ export function Challenges() {
                             </div>
                         </div>
 
-                            <div className="row" style={{position: 'relative', paddingBottom: '120px'}}>
+                            <div className="row" style={{position: 'relative', minHeight: 'calc(100vh - 200px)'}}>
                                 {/* Filter Sidebar */}
                                 <div className="col-md-3 col-lg-2">
                                     <div className="card p-3 mb-4">
@@ -416,9 +416,15 @@ export function Challenges() {
                                 </div>
 
                                 {/* Main Content */}
-                                <div className="col-md-9 col-lg-10">
-                                    {/* Challenges Content Area */}
-                                    <div style={{marginBottom: '80px'}}>
+                                <div className="col-md-9 col-lg-10 d-flex flex-column">
+                                    {/* Challenges Content Area - Fixed Height Container */}
+                                    <div 
+                                        className="flex-grow-1"
+                                        style={{
+                                            minHeight: '1400px', // Height for ~20 challenge cards (5 rows x 4 cards x ~280px)
+                                            position: 'relative'
+                                        }}
+                                    >
                                         {currentChallenges().length > 0 ? (
                                             <div className="row">
                                                 {currentChallenges().map((challenge, idx) => (
@@ -502,44 +508,36 @@ export function Challenges() {
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="text-center py-5">
-                                                <h4 className="text-muted">No challenges found</h4>
-                                                <p className="text-muted">Try adjusting your filters to see more challenges.</p>
+                                            <div className="position-absolute w-100 h-100 d-flex align-items-center justify-content-center">
+                                                <div className="text-center">
+                                                    <h4 className="text-muted">No challenges found</h4>
+                                                    <p className="text-muted">Try adjusting your filters to see more challenges.</p>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
                                 </div>
                                 
-                                {/* Fixed Pagination - Positioned absolutely within the row container */}
-                                <div 
-                                    className="position-absolute w-100 d-flex justify-content-center"
-                                    style={{
-                                        bottom: '20px',
-                                        left: '0',
-                                        right: '0',
-                                        zIndex: 1000
-                                    }}
-                                >
-                                    <div className="bg-white border rounded px-4 py-3 shadow-sm">
-                                        <div className="d-flex justify-content-center align-items-center gap-4">
-                                            <button
-                                                className="btn btn-sm btn-primary"
-                                                onClick={prevPage}
-                                                disabled={currentPage === 1}
-                                            >
-                                                ← Prev
-                                            </button>
-                                            <span className="fw-semibold text-muted">
-                                                Page {currentPage} of {Math.ceil(challenges.length / challengesPerPage) || 1}
-                                            </span>
-                                            <button
-                                                className="btn btn-sm btn-primary"
-                                                onClick={nextPage}
-                                                disabled={indexOfLast >= challenges.length}
-                                            >
-                                                Next →
-                                            </button>
-                                        </div>
+                                {/* Fixed Pagination - Always at bottom of viewport area */}
+                                <div className="mt-3 py-3">
+                                    <div className="d-flex justify-content-center align-items-center gap-4">
+                                        <button
+                                            className="btn btn-sm btn-primary"
+                                            onClick={prevPage}
+                                            disabled={currentPage === 1}
+                                        >
+                                            ← Prev
+                                        </button>
+                                        <span className="fw-semibold text-muted">
+                                            Page {currentPage} of {Math.ceil(challenges.length / challengesPerPage) || 1}
+                                        </span>
+                                        <button
+                                            className="btn btn-sm btn-primary"
+                                            onClick={nextPage}
+                                            disabled={indexOfLast >= challenges.length}
+                                        >
+                                            Next →
+                                        </button>
                                     </div>
                                 </div>
                             </div>
