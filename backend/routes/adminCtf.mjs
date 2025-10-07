@@ -286,7 +286,9 @@ router.get('/get_solvers', async (req, res) => {
         let challenges = await ChallengeCollection.find({}, {
             user_rates: 0, flag: 0
         });
-        const userData = await UserCollection.find({}, { username: 1, completions: 1, _id: 0 });
+        
+        // do not capture admin entries, only grab those whose is_admin attribute is false
+        const userData = await UserCollection.find({ is_admin: false }, { username: 1, completions: 1, _id: 0 });
     
         const challengeSolvers = new Map();
         const result = new Map();

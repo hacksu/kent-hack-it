@@ -19,7 +19,9 @@ router.get("/challenges", async (req, res) => {
 async function CalculateCompletions(challenges) {
     try {
         console.log("Calculating Completion Counts. . .")
-        const userData = await UserCollection.find({}, { completions: 1, _id: 0 });
+
+        // do not capture admin entries, only grab those whose is_admin attribute is false
+        const userData = await UserCollection.find({ is_admin: false }, { completions: 1, _id: 0 });
         const completionCounts = new Map();
     
         console.log("Iterating over users. . .")
@@ -275,6 +277,12 @@ async function UpdateTeamCompletions(team_id) {
 
 router.post('/rate-challenge', async (req, res) => {
     if (!req.isAuthenticated()) return res.json(null);
+
+    // if the user is an admin ignore their request
+    if (IsAdmin(req)) {
+        console.log("Rating sent by Admin!");
+        return res.json(null);
+    }
     
     const data = req.body;
 
