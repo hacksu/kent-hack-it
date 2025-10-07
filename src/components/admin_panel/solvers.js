@@ -3,12 +3,17 @@ import { SanitizeDescription } from '../purification.js';
 
 function AdminEventStatsTab() {
     const [solvers, setSolvers] = useState([]);
+    const [challenges, setChallenges] = useState([]);
     const [filters, setFilters] = useState({
         challengeFilter: '',
-        userFilter: ''
+        userFilter: '',
+        difficultyFilter: '',
+        ratingFilter: ''
     });
     const [availableChallenges, setAvailableChallenges] = useState([]);
     const [availableUsers, setAvailableUsers] = useState([]);
+    const [availableDifficulties, setAvailableDifficulties] = useState([]);
+    const [availableRatings, setAvailableRatings] = useState([]);
 
     async function GetSolvers() {
         try {
@@ -23,12 +28,12 @@ function AdminEventStatsTab() {
                 console.log(data.solvers);
                 
                 // Extract unique challenges and users for dropdown options
-                const challenges = Object.keys(data.solvers).sort();
+                const challengeNames = Object.keys(data.solvers).sort();
                 const users = [...new Set(
                     Object.values(data.solvers).flat()
                 )].sort();
                 
-                setAvailableChallenges(challenges);
+                setAvailableChallenges(challengeNames);
                 setAvailableUsers(users);
             }
         } catch (err) {
@@ -36,11 +41,37 @@ function AdminEventStatsTab() {
         }
     }
 
+    async function GetChallenges() {
+        try {
+            const response = await fetch(`/api/ctf/challenges`);
+            const data = await response.json();
+            setChallenges(data);
+
+            // Extract unique difficulties and ratings
+            const difficultyOrder = ['Simple', 'Easy', 'Medium', 'Hard', 'Extreme'];
+            const uniqueDifficulties = [...new Set(data.map(challenge => challenge.difficulty))];
+            const difficulties = difficultyOrder.filter(diff => uniqueDifficulties.includes(diff));
+            
+            const ratings = ['4.0', '3.0', '2.0', '1.0', '0.0'];
+            
+            setAvailableDifficulties(difficulties);
+            setAvailableRatings(ratings);
+        } catch (err) {
+            console.error('Failed to fetch challenges:', err);
+        }
+    }
+
     useEffect(() => {
         GetSolvers();
+        GetChallenges();
     }, []);
 
-    // Filter solvers based on challenge name and username
+    // Helper function to get challenge details by name
+    const getChallengeByName = (challengeName) => {
+        return challenges.find(challenge => challenge.name === challengeName);
+    };
+
+    // Filter solvers based on challenge name, username, difficulty, and rating
     const filteredSolvers = () => {
         let filtered = Object.entries(solvers);
 
@@ -58,13 +89,32 @@ function AdminEventStatsTab() {
             );
         }
 
+        // Filter by difficulty
+        if (filters.difficultyFilter) {
+            filtered = filtered.filter(([challenge_name]) => {
+                const challenge = getChallengeByName(challenge_name);
+                return challenge && challenge.difficulty === filters.difficultyFilter;
+            });
+        }
+
+        // Filter by rating (minimum rating)
+        if (filters.ratingFilter) {
+            const ratingThreshold = parseFloat(filters.ratingFilter);
+            filtered = filtered.filter(([challenge_name]) => {
+                const challenge = getChallengeByName(challenge_name);
+                return challenge && challenge.rating >= ratingThreshold;
+            });
+        }
+
         return filtered;
     };
 
     const clearFilters = () => {
         setFilters({
             challengeFilter: '',
-            userFilter: ''
+            userFilter: '',
+            difficultyFilter: '',
+            ratingFilter: ''
         });
     };
 
@@ -115,6 +165,40 @@ function AdminEventStatsTab() {
                                 <option value="">All Users</option>
                                 {availableUsers.map(user => (
                                     <option key={user} value={user}>{user}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Difficulty Filter */}
+                        <div className="mb-3">
+                            <label className="form-label">Difficulty</label>
+                            <select
+                                className="form-select form-select-sm"
+                                value={filters.difficultyFilter}
+                                onChange={(e) => setFilters({...filters, difficultyFilter: e.target.value})}
+                            >
+                                <option value="">All Difficulties</option>
+                                {availableDifficulties.map(difficulty => (
+                                    <option key={difficulty} value={difficulty}>{difficulty}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Rating Filter */}
+                        <div className="mb-3">
+                            <label className="form-label">Minimum Rating</label>
+                            <select
+                                className="form-select form-select-sm"
+                                value={filters.ratingFilter}
+                                onChange={(e) => setFilters({...filters, ratingFilter: e.target.value})}
+                            >
+                                <option value="">All Ratings</option>
+                                {availableRatings.map(rating => (
+                                    <option key={rating} value={rating}>
+                                        {rating}+ ⭐ ({rating === '4.0' ? 'Excellent' : 
+                                                    rating === '3.0' ? 'Good' : 
+                                                    rating === '2.0' ? 'Fair' : 'Any'})
+                                    </option>
                                 ))}
                             </select>
                         </div>
@@ -175,11 +259,11 @@ function AdminEventStatsTab() {
                         <i className="bi bi-search text-muted" style={{fontSize: '3rem'}}></i>
                         <h4 className="text-muted mt-3">No challenges found</h4>
                         <p className="text-muted">
-                            {filters.challengeFilter || filters.userFilter 
+                            {filters.challengeFilter || filters.userFilter || filters.difficultyFilter || filters.ratingFilter 
                                 ? 'Try adjusting your filters to see more results.' 
                                 : 'No solver data available.'}
                         </p>
-                        {(filters.challengeFilter || filters.userFilter) && (
+                        {(filters.challengeFilter || filters.userFilter || filters.difficultyFilter || filters.ratingFilter) && (
                             <button 
                                 className="btn btn-outline-primary"
                                 onClick={clearFilters}

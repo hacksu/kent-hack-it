@@ -27,8 +27,8 @@ export function ChallengeHelp() {
 
                     <p className="lead mx-auto mb-3" style={{ maxWidth: 900 }}>
                     Some challenges offer remote endpoints such as{" "}
-                    <strong>rev.ctf.hacksu.com:2530</strong>.<br></br>
-                    To interact with this endpoint, use <em>netcat</em> (nc) from your Kali or other Unix shell.
+                    <strong>rev.ctf.hacksu.com:2530</strong>.<br />
+                    To interact with this endpoint, use <em>netcat</em> (nc) from your <a href="/kali-setup-guide" className="link-primary">Kali Linux</a> or other Unix shell.
                     </p>
 
                     {/* CLI command block */}
@@ -45,16 +45,18 @@ export function ChallengeHelp() {
                     </div>
 
                     <button
-                        className="btn btn-outline-secondary btn-sm"
+                        className="btn btn-secondary btn-sm"
                         onClick={() => {
                         const el = document.getElementById("nc-command");
                         if (!el) return;
+                        const btn = document.activeElement;
                         navigator.clipboard?.writeText(el.textContent || "")
                             .then(() => {
-                            const btn = document.querySelector(".btn-outline-secondary");
-                            if (!btn) return;
-                            btn.textContent = "Copied!";
-                            setTimeout(() => (btn.textContent = "Copy"), 1200);
+                            if (btn && btn.tagName === 'BUTTON') {
+                                const originalText = btn.textContent;
+                                btn.textContent = "Copied!";
+                                setTimeout(() => (btn.textContent = originalText), 1200);
+                            }
                             })
                             .catch(() => alert("Copy failed — select and copy manually."));
                         }}
@@ -65,7 +67,8 @@ export function ChallengeHelp() {
                     </div>
 
                     <p className="text-muted" style={{ maxWidth: 900, margin: "0 auto", color:'#494949ff' }}>
-                    Don't get frustrated if you get stuck — there are lots of challenges to try.<br></br>Ask for hints, search around, or try ChatGPT — we're all learning!
+                    Don't get frustrated if you get stuck — there are lots of challenges to try.<br />
+                    Ask for hints, search around, or try ChatGPT — we're all learning!
                     </p>
                 </div>
                 </header>

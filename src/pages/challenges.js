@@ -399,9 +399,6 @@ export function Challenges() {
                                                 <i className="fas fa-question-circle"></i>
                                                 Challenge Help
                                             </Link>
-                                            <small className="text-muted d-block mt-2 text-center">
-                                                Get help with challenges
-                                            </small>
                                         </div>
 
                                         {/* Rate Challenges Button */}
