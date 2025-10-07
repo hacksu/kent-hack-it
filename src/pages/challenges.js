@@ -416,116 +416,120 @@ export function Challenges() {
                                 </div>
 
                                 {/* Main Content */}
-                                <div className="col-md-9 col-lg-10">
-
-                                    {currentChallenges().length > 0 ? (
-                                        <div className="row">
-                                            {currentChallenges().map((challenge, idx) => (
-                                            <div
-                                                className="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-3"
-                                                key={idx}
-                                            >
-                                                <Link
-                                                    to={challenge.is_active ? `/challenge?id=${challenge._id}` : ""}
-                                                    className="text-decoration-none text-dark"
+                                <div className="col-md-9 col-lg-10 d-flex flex-column" style={{minHeight: '70vh'}}>
+                                    {/* Challenges Content Area */}
+                                    <div className="flex-grow-1">
+                                        {currentChallenges().length > 0 ? (
+                                            <div className="row">
+                                                {currentChallenges().map((challenge, idx) => (
+                                                <div
+                                                    className="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-3"
+                                                    key={idx}
                                                 >
-                                                    <div className={`card h-100 shadow-sm p-2 ${!challenge.is_active ? "opacity-50" : ""}`} style={{position: 'relative'}}>
-                                                        {/* Team completion indicator */}
-                                                        {teamData && (
-                                                            <div 
-                                                                className="position-absolute" 
-                                                                style={{
-                                                                    top: '8px',
-                                                                    right: '8px',
-                                                                    zIndex: 10,
-                                                                    width: '24px',
-                                                                    height: '24px'
-                                                                }}
-                                                                title={teamData.completions?.some(comp => comp.id === challenge._id) 
-                                                                    ? "Completed by your team" 
-                                                                    : "Not completed by your team"}
-                                                            >
-                                                                <img 
-                                                                    src={teamData.completions?.some(comp => comp.id === challenge._id) 
-                                                                        ? "/team_complete.png" 
-                                                                        : "/team_nocomplete.png"}
-                                                                    alt={teamData.completions?.some(comp => comp.id === challenge._id) 
-                                                                        ? "Team completed" 
-                                                                        : "Team not completed"}
+                                                    <Link
+                                                        to={challenge.is_active ? `/challenge?id=${challenge._id}` : ""}
+                                                        className="text-decoration-none text-dark"
+                                                    >
+                                                        <div className={`card h-100 shadow-sm p-2 ${!challenge.is_active ? "opacity-50" : ""}`} style={{position: 'relative'}}>
+                                                            {/* Team completion indicator */}
+                                                            {teamData && (
+                                                                <div 
+                                                                    className="position-absolute" 
                                                                     style={{
-                                                                        width: '100%',
-                                                                        height: '100%',
-                                                                        objectFit: 'contain'
+                                                                        top: '8px',
+                                                                        right: '8px',
+                                                                        zIndex: 10,
+                                                                        width: '24px',
+                                                                        height: '24px'
                                                                     }}
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        
-                                                        <div className="card-body p-2">
-                                                            {!challenge.is_active && (
-                                                                <>
-                                                                    <p>
-                                                                        Challenge is currently Out-of-Order and will be back online soon!
-                                                                    </p>
-                                                                </>
-                                                            )}
-                                                            <h6 className="card-title mb-1">{challenge.name}</h6>
-                                                            <small className="text-muted">
-                                                                {challenge.category} | Difficulty: {challenge.difficulty}
-                                                            </small>
-                                                            <div className="mb-1">
-                                                                <small className="text-info">
-                                                                    <i className="fas fa-user"></i> By: {challenge.written_by || "Unknown Author"}
-                                                                </small>
-                                                            </div>
-                                                            {challenge.description && (
-                                                                <div className="mb-2">
-                                                                    <p className="card-text small text-muted" style={{fontSize: '0.75rem'}}>
-                                                                        <SanitizeDescription description={challenge.description} maxLength={100} />
-                                                                    </p>
+                                                                    title={teamData.completions?.some(comp => comp.id === challenge._id) 
+                                                                        ? "Completed by your team" 
+                                                                        : "Not completed by your team"}
+                                                                >
+                                                                    <img 
+                                                                        src={teamData.completions?.some(comp => comp.id === challenge._id) 
+                                                                            ? "/team_complete.png" 
+                                                                            : "/team_nocomplete.png"}
+                                                                        alt={teamData.completions?.some(comp => comp.id === challenge._id) 
+                                                                            ? "Team completed" 
+                                                                            : "Team not completed"}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            height: '100%',
+                                                                            objectFit: 'contain'
+                                                                        }}
+                                                                    />
                                                                 </div>
                                                             )}
-                                                            <p className="card-text small mb-1">
-                                                                ⭐ {challenge.rating.toFixed(1)} / 5
-                                                            </p>
-                                                            <p className="card-text small">
-                                                                Points: {challenge.points}
-                                                            </p>
-                                                            <p className="card-text small">
-                                                                {challenge.user_completions} Solves
-                                                            </p>
+                                                            
+                                                            <div className="card-body p-2">
+                                                                {!challenge.is_active && (
+                                                                    <>
+                                                                        <p>
+                                                                            Challenge is currently Out-of-Order and will be back online soon!
+                                                                        </p>
+                                                                    </>
+                                                                )}
+                                                                <h6 className="card-title mb-1">{challenge.name}</h6>
+                                                                <small className="text-muted">
+                                                                    {challenge.category} | Difficulty: {challenge.difficulty}
+                                                                </small>
+                                                                <div className="mb-1">
+                                                                    <small className="text-info">
+                                                                        <i className="fas fa-user"></i> By: {challenge.written_by || "Unknown Author"}
+                                                                    </small>
+                                                                </div>
+                                                                {challenge.description && (
+                                                                    <div className="mb-2">
+                                                                        <p className="card-text small text-muted" style={{fontSize: '0.75rem'}}>
+                                                                            <SanitizeDescription description={challenge.description} maxLength={100} />
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                                <p className="card-text small mb-1">
+                                                                    ⭐ {challenge.rating.toFixed(1)} / 5
+                                                                </p>
+                                                                <p className="card-text small">
+                                                                    Points: {challenge.points}
+                                                                </p>
+                                                                <p className="card-text small">
+                                                                    {challenge.user_completions} Solves
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </Link>
+                                                    </Link>
+                                                </div>
+                                                ))}
                                             </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-5">
-                                            <h4 className="text-muted">No challenges found</h4>
-                                            <p className="text-muted">Try adjusting your filters to see more challenges.</p>
-                                        </div>
-                                    )}
+                                        ) : (
+                                            <div className="text-center py-5">
+                                                <h4 className="text-muted">No challenges found</h4>
+                                                <p className="text-muted">Try adjusting your filters to see more challenges.</p>
+                                            </div>
+                                        )}
+                                    </div>
 
-                                    {/* Pagination buttons at the bottom */}
-                                    <div className="d-flex justify-content-center gap-4 mt-4">
-                                        <button
-                                            className="btn btn-sm btn-primary"
-                                            onClick={prevPage}
-                                            disabled={currentPage === 1}
-                                        >
-                                            ← Prev
-                                        </button>
-                                        <span className="align-self-center">
-                                            Page {currentPage} of {Math.ceil(challenges.length / challengesPerPage) || 1}
-                                        </span>
-                                        <button
-                                            className="btn btn-sm btn-primary"
-                                            onClick={nextPage}
-                                            disabled={indexOfLast >= challenges.length}
-                                        >
-                                            Next →
-                                        </button>
+                                    {/* Fixed Pagination Area at Bottom */}
+                                    <div className="mt-auto py-4 border-top">
+                                        <div className="d-flex justify-content-center gap-4">
+                                            <button
+                                                className="btn btn-sm btn-primary"
+                                                onClick={prevPage}
+                                                disabled={currentPage === 1}
+                                            >
+                                                ← Prev
+                                            </button>
+                                            <span className="align-self-center">
+                                                Page {currentPage} of {Math.ceil(challenges.length / challengesPerPage) || 1}
+                                            </span>
+                                            <button
+                                                className="btn btn-sm btn-primary"
+                                                onClick={nextPage}
+                                                disabled={indexOfLast >= challenges.length}
+                                            >
+                                                Next →
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
