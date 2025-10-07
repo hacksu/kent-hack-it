@@ -28,7 +28,7 @@ function AdminEventStatsTab() {
     return (
         <div className="users-tab">
             <div className="row">
-                {solvers.map(([challenge_name, usernames]) => (
+                {Object.entries(solvers).map(([challenge_name, usernames]) => (
                     <div key={challenge_name} className="col-md-3 mb-3">
                         <div className="card shadow-sm border-0 h-100 rounded-3" style={{ fontSize: "0.9rem" }}>
                             <div className="card-body d-flex flex-column justify-content-between p-3">
@@ -40,7 +40,7 @@ function AdminEventStatsTab() {
 
                                 <div className="ms-1">
                                     <ul className="mb-0">
-                                        {usernames.map((username) => (
+                                        {usernames.map(username => (
                                             <li key={username}>{username}</li>
                                         ))}
                                     </ul>
