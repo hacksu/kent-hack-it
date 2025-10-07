@@ -228,7 +228,7 @@ export function Challenges() {
                             </div>
                         </div>
 
-                            <div className="row">
+                            <div className="row" style={{position: 'relative', paddingBottom: '120px'}}>
                                 {/* Filter Sidebar */}
                                 <div className="col-md-3 col-lg-2">
                                     <div className="card p-3 mb-4">
@@ -416,9 +416,9 @@ export function Challenges() {
                                 </div>
 
                                 {/* Main Content */}
-                                <div className="col-md-9 col-lg-10 d-flex flex-column" style={{minHeight: '70vh'}}>
+                                <div className="col-md-9 col-lg-10">
                                     {/* Challenges Content Area */}
-                                    <div className="flex-grow-1">
+                                    <div style={{marginBottom: '80px'}}>
                                         {currentChallenges().length > 0 ? (
                                             <div className="row">
                                                 {currentChallenges().map((challenge, idx) => (
@@ -508,10 +508,20 @@ export function Challenges() {
                                             </div>
                                         )}
                                     </div>
-
-                                    {/* Fixed Pagination Area at Bottom */}
-                                    <div className="mt-auto py-4 border-top">
-                                        <div className="d-flex justify-content-center gap-4">
+                                </div>
+                                
+                                {/* Fixed Pagination - Positioned absolutely within the row container */}
+                                <div 
+                                    className="position-absolute w-100 d-flex justify-content-center"
+                                    style={{
+                                        bottom: '20px',
+                                        left: '0',
+                                        right: '0',
+                                        zIndex: 1000
+                                    }}
+                                >
+                                    <div className="bg-white border rounded px-4 py-3 shadow-sm">
+                                        <div className="d-flex justify-content-center align-items-center gap-4">
                                             <button
                                                 className="btn btn-sm btn-primary"
                                                 onClick={prevPage}
@@ -519,7 +529,7 @@ export function Challenges() {
                                             >
                                                 ← Prev
                                             </button>
-                                            <span className="align-self-center">
+                                            <span className="fw-semibold text-muted">
                                                 Page {currentPage} of {Math.ceil(challenges.length / challengesPerPage) || 1}
                                             </span>
                                             <button
