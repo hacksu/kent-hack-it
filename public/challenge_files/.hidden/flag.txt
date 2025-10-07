@@ -5,6 +5,12 @@ Admin: hacksu_admin
 
 Users Table Dump:
 -----------------
-admin:KHI{admin_backup_discovered}
+admin:config_ (2/3)
 user1:password123
 user2:qwerty
+
+
+admin doesn't look quite right - that's not a username
+
+
+how does google index websites?

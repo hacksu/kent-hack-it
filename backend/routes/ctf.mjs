@@ -447,49 +447,4 @@ router.get('/download/:filename', (req, res, next) => {
     }
 });
 
-// Serve challenge archive files for CTF challenges (directory browsing, etc.)
-router.get('/files/*', (req, res) => {
-    // Optional: Add authentication if you want to require login
-    // if (!req.isAuthenticated()) return res.status(401).send('Unauthorized!');
-    
-    // Optional: Check if site is active
-    // if (!IsSiteActive(req, false)) {
-    //     return res.status(401).send('Site not active!');
-    // }
-
-    try {
-        // Get the requested file path (everything after /challenge_archives/)
-        const requestedPath = req.params[0]; // The * captures everything as params[0]
-        
-        // Sanitize the filename/path
-        const safePath = sanitize(requestedPath);
-        
-        // Build the full file path
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = path.dirname(__filename);
-        const challengeArchivesDir = path.join(__dirname, '..', '..', 'public', 'challenge_files');
-        const filePath = path.join(challengeArchivesDir, safePath);
-
-        // Security: Ensure the file is within the challenge_archives directory
-        if (!filePath.startsWith(challengeArchivesDir)) {
-            console.log("Invalid file path - path traversal attempt:", requestedPath);
-            return res.status(400).send('Invalid file path.');
-        }
-
-        // Check if file exists
-        if (!existsSync(filePath)) {
-            console.log("Challenge archive file not found:", requestedPath);
-            return res.status(404).send('File not found.');
-        }
-
-        // Serve the file
-        console.log("Serving challenge archive file:", requestedPath);
-        res.sendFile(filePath);
-
-    } catch (error) {
-        console.error("Error serving challenge archive:", error);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
 export default router;

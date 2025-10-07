@@ -1,0 +1,8 @@
+KHI{hidden_ (1/3)
+
+
+How might we hide data in terms of file/folder naming?
+
+
+
+*find the 'hidden' folder, then look for the data within*
