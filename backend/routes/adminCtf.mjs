@@ -316,7 +316,8 @@ router.get('/get_solvers', async (req, res) => {
         }
     
         // result => ("challenge_name" : [username array])
-        return res.json({ acknowledge: true, "message": "Success!", solvers: result });
+        const solvers = Object.fromEntries(result); // need to change from a map to something JSON can handle
+        return res.json({ acknowledge: true, "message": "Success!", solvers: solvers });
     } catch (error) {
         console.log(error);
         return res.json({ acknowledge: false, "message": "Error getting solvers!" });
