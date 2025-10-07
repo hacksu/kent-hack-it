@@ -222,10 +222,15 @@ export function Challenges() {
                         <div className="container-fluid mt-4">
 
                             <div className="row align-items-center mb-4">
-                                <div className="col-12 d-flex justify-content-between align-items-center">
-                                    {/* Main Content */}
+                                <div className="col-12 position-relative text-center">
+                                    {/* Centered Title */}
                                     <h2 className="mb-0">Challenges</h2>
-                                    <Link className="nav-link fw-semibold text-primary" to="/challenge_help">
+
+                                    {/* Right-Aligned Link */}
+                                    <Link
+                                    className="nav-link fw-semibold text-primary position-absolute top-50 end-0 translate-middle-y"
+                                    to="/challenge_help"
+                                    >
                                     Challenge Help
                                     </Link>
                                 </div>
