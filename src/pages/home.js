@@ -5,23 +5,39 @@ import '../App.css';
 
 export function Home() {
   const [timeLeft, setTimeLeft] = useState('');
+  const [countdownLabel, setCountdownLabel] = useState('Event Starts In:');
 
   useEffect(() => {
-    const targetDate = new Date('2025-10-14T19:00:00-04:00').getTime();
+    const startDate = new Date('2025-10-14T20:00:00-04:00').getTime(); // Changed to 8pm EST
+    const endDate = new Date('2025-10-21T20:00:00-04:00').getTime(); // End date: 10/21/2025, 8pm EST
     
     const updateCountdown = () => {
       const now = new Date().getTime();
-      const difference = targetDate - now;
+      const startDifference = startDate - now;
+      const endDifference = endDate - now;
       
-      if (difference > 0) {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+      if (startDifference > 0) {
+        // Event hasn't started yet - countdown to start
+        const days = Math.floor(startDifference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((startDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((startDifference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((startDifference % (1000 * 60)) / 1000);
         
         setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+        setCountdownLabel('Event Starts In:');
+      } else if (endDifference > 0) {
+        // Event has started but hasn't ended - countdown to end
+        const days = Math.floor(endDifference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((endDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((endDifference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((endDifference % (1000 * 60)) / 1000);
+        
+        setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+        setCountdownLabel('Event Ends In:');
       } else {
-        setTimeLeft('Event has started!');
+        // Event has ended
+        setTimeLeft('Event has ended!');
+        setCountdownLabel('');
       }
     };
 
@@ -52,7 +68,7 @@ export function Home() {
             </Link>
           </div>
           <div className="text-center mb-3">
-            <h4 className="mb-2" style={{ color: '#b7b7b7ff' }}>Event Starts In:</h4>
+            <h4 className="mb-2" style={{ color: '#b7b7b7ff' }}>{countdownLabel}</h4>
             <div className="countdown-timer p-2 rounded" style={{ 
               backgroundColor: '#f8f9fa', 
               border: '2px solid #007bff',
@@ -81,6 +97,12 @@ export function Home() {
                     KHI is a <a href="https://hacksu.com/" className="link-primary">HacKSU</a> sponsored 
                     Capture The Flag (CTF) competition, where Computer Science and Cyber Security enthusiasts can 
                     connect with others and compete together to tackle challenges built by the HacKSU club!
+
+                    <br></br>
+                    <br></br>
+                    $1000 in prizes will be awarded to the top handful of teams/individuals! You do not to be well versed in 
+                    cybersecurity to participate, as we have challenges for all skill levels. Whether you're a beginner or an expert,
+                    there's something for everyone. Join us for a week of fun, learning, and friendly competition!
                   </p>
 
                   <div className="row mt-3 mt-md-4">
