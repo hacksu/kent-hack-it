@@ -20,6 +20,7 @@ export function Challenges() {
         category: '',
         difficulty: '',
         rating: '',
+        author: '',
         searchText: '',
         showCompleted: false,
         showUncompleted: true,
@@ -30,6 +31,7 @@ export function Challenges() {
     const [availableCategories, setAvailableCategories] = useState([]);
     const [availableDifficulties, setAvailableDifficulties] = useState([]);
     const [availableRatings, setAvailableRatings] = useState([]);
+    const [availableAuthors, setAvailableAuthors] = useState([]);
 
     async function GetProfileDetails() {
         try {
@@ -105,6 +107,13 @@ export function Challenges() {
             );
         }
 
+        // Filter by author
+        if (filters.author) {
+            filteredData = filteredData.filter(challenge => 
+                challenge.written_by === filters.author
+            );
+        }
+
         // Filter by search text
         if (filters.searchText) {
             const searchTerm = filters.searchText.toLowerCase();
@@ -156,9 +165,13 @@ export function Challenges() {
             // Create rating thresholds (4+ stars, 3+ stars, etc.)
             const ratings = ['4.0', '3.0', '2.0', '1.0', '0.0'];
             
+            // Extract unique authors for filter options
+            const authors = [...new Set(data.map(challenge => challenge.written_by).filter(author => author))].sort();
+            
             setAvailableCategories(categories);
             setAvailableDifficulties(difficulties);
             setAvailableRatings(ratings);
+            setAvailableAuthors(authors);
 
             // Apply all filters
             const filteredData = ApplyFilters(data);
@@ -308,6 +321,21 @@ export function Challenges() {
                                             </select>
                                         </div>
 
+                                        {/* Author Filter */}
+                                        <div className="mb-3">
+                                            <label className="form-label">Author</label>
+                                            <select
+                                                className="form-select form-select-sm"
+                                                value={filters.author}
+                                                onChange={(e) => setFilters({...filters, author: e.target.value})}
+                                            >
+                                                <option value="">All Authors</option>
+                                                {availableAuthors.map(author => (
+                                                    <option key={author} value={author}>{author}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
                                         {/* Individual Completion Status */}
                                         <div className="mb-3">
                                             <label className="form-label">Individual Progress</label>
@@ -379,6 +407,7 @@ export function Challenges() {
                                                 category: '',
                                                 difficulty: '',
                                                 rating: '',
+                                                author: '',
                                                 searchText: '',
                                                 showCompleted: false,
                                                 showUncompleted: true,

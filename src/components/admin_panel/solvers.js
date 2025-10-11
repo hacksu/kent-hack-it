@@ -8,12 +8,14 @@ function AdminEventStatsTab() {
         challengeFilter: '',
         userFilter: '',
         difficultyFilter: '',
-        ratingFilter: ''
+        ratingFilter: '',
+        authorFilter: ''
     });
     const [availableChallenges, setAvailableChallenges] = useState([]);
     const [availableUsers, setAvailableUsers] = useState([]);
     const [availableDifficulties, setAvailableDifficulties] = useState([]);
     const [availableRatings, setAvailableRatings] = useState([]);
+    const [availableAuthors, setAvailableAuthors] = useState([]);
 
     async function GetSolvers() {
         try {
@@ -54,8 +56,12 @@ function AdminEventStatsTab() {
             
             const ratings = ['4.0', '3.0', '2.0', '1.0', '0.0'];
             
+            // Extract unique authors for filter options
+            const authors = [...new Set(data.map(challenge => challenge.written_by).filter(author => author))].sort();
+            
             setAvailableDifficulties(difficulties);
             setAvailableRatings(ratings);
+            setAvailableAuthors(authors);
         } catch (err) {
             console.error('Failed to fetch challenges:', err);
         }
@@ -106,6 +112,14 @@ function AdminEventStatsTab() {
             });
         }
 
+        // Filter by author
+        if (filters.authorFilter) {
+            filtered = filtered.filter(([challenge_name]) => {
+                const challenge = getChallengeByName(challenge_name);
+                return challenge && challenge.written_by === filters.authorFilter;
+            });
+        }
+
         return filtered;
     };
 
@@ -114,7 +128,8 @@ function AdminEventStatsTab() {
             challengeFilter: '',
             userFilter: '',
             difficultyFilter: '',
-            ratingFilter: ''
+            ratingFilter: '',
+            authorFilter: ''
         });
     };
 
@@ -199,6 +214,21 @@ function AdminEventStatsTab() {
                                                     rating === '3.0' ? 'Good' : 
                                                     rating === '2.0' ? 'Fair' : 'Any'})
                                     </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Author Filter */}
+                        <div className="mb-3">
+                            <label className="form-label">Author</label>
+                            <select
+                                className="form-select form-select-sm"
+                                value={filters.authorFilter}
+                                onChange={(e) => setFilters({...filters, authorFilter: e.target.value})}
+                            >
+                                <option value="">All Authors</option>
+                                {availableAuthors.map(author => (
+                                    <option key={author} value={author}>{author}</option>
                                 ))}
                             </select>
                         </div>

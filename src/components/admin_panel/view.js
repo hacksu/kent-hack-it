@@ -117,7 +117,12 @@ function AdminChallengeViewTab() {
             ) : (
                 <>
                     <div>
-                        <h5>Current Challenges</h5>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h5 className="mb-0">Current Challenges</h5>
+                            <span className="badge bg-primary fs-6">
+                                {challenges.length} Challenge{challenges.length !== 1 ? 's' : ''}
+                            </span>
+                        </div>
                         <ul className="row">
                             {challenges.map((challenge, idx) => (
                                 <div
