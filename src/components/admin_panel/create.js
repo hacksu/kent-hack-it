@@ -5,6 +5,9 @@ function AdminChallengeCreateTab() {
     const [files, setFiles] = useState([]);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
+    
+    // Disable challenge creation during event
+    const creationDisabled = true;
 
     const [newFormData, setNewFormData] = useState({
         name: '',
@@ -72,6 +75,12 @@ function AdminChallengeCreateTab() {
 
     const addChallenge = async (event) => {
         event.preventDefault();
+        
+        if (creationDisabled) {
+            alert("Challenge creation is currently disabled during the event.");
+            return;
+        }
+        
         let msgArea = document.getElementById('msg_popup');
 
         try {
@@ -115,8 +124,17 @@ function AdminChallengeCreateTab() {
 
     return (
         <>
+            {creationDisabled && (
+                <div className="container mt-4" style={{ maxWidth: '700px' }}>
+                    <div className="alert alert-warning text-center" role="alert">
+                        <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Challenge Creation Disabled:</strong> Creating new challenges is currently disabled during the event.
+                    </div>
+                </div>
+            )}
+            
             <div className="container mt-4" style={{ maxWidth: '700px' }}>
-                <div className="card shadow-sm border-0 rounded-3">
+                <div className={`card shadow-sm border-0 rounded-3 ${creationDisabled ? 'opacity-50' : ''}`}>
                     <div className="card-body p-4">
                         <h4 className="card-title text-center mb-4">Create a New Challenge</h4>
 
@@ -132,6 +150,7 @@ function AdminChallengeCreateTab() {
                                     onChange={handleNewChange}
                                     required
                                     placeholder="Enter challenge name"
+                                    disabled={creationDisabled}
                                 />
                             </div>
 
@@ -148,6 +167,7 @@ function AdminChallengeCreateTab() {
                                         resize: 'vertical',
                                     }}
                                     placeholder="Enter a short challenge description"
+                                    disabled={creationDisabled}
                                 />
                             </div>
 
@@ -162,6 +182,7 @@ function AdminChallengeCreateTab() {
                                     onChange={handleNewChange}
                                     required
                                     placeholder="Enter challenge author name"
+                                    disabled={creationDisabled}
                                 />
                             </div>
 
@@ -175,6 +196,7 @@ function AdminChallengeCreateTab() {
                                     type="button"
                                     className="btn btn-sm btn-outline-primary mb-2"
                                     onClick={() => setIsOpen(!isOpen)}
+                                    disabled={creationDisabled}
                                 >
                                     {isOpen ? "Hide Files" : "Show Files"}
                                 </button>
@@ -195,6 +217,7 @@ function AdminChallengeCreateTab() {
                                         className="form-check-input m-0"
                                         checked={newFormData.files.includes(file)}
                                         onChange={() => toggleFile(file)}
+                                        disabled={creationDisabled}
                                         />
                                         {file}
                                     </label>
@@ -214,6 +237,7 @@ function AdminChallengeCreateTab() {
                                         value={newFormData.category}
                                         onChange={handleNewChange}
                                         required
+                                        disabled={creationDisabled}
                                     >
                                         <option value="" disabled>Select Category</option>
                                         <option value="Web Exploitation">Web Exploitation</option>
@@ -234,6 +258,7 @@ function AdminChallengeCreateTab() {
                                         value={newFormData.difficulty}
                                         onChange={handleNewChange}
                                         required
+                                        disabled={creationDisabled}
                                     >
                                         <option value="" disabled>Select difficulty</option>
                                         <option value="Simple">Simple</option>
@@ -256,6 +281,7 @@ function AdminChallengeCreateTab() {
                                     onChange={handleNewChange}
                                     required
                                     placeholder="Enter flag"
+                                    disabled={creationDisabled}
                                 />
                             </div>
 
@@ -270,11 +296,16 @@ function AdminChallengeCreateTab() {
                                     readOnly
                                     style={{ maxWidth: '150px', backgroundColor: '#f8f9fa' }}
                                     placeholder="Select difficulty first"
+                                    disabled={creationDisabled}
                                 />
                             </div>
 
                             {/* Submit */}
-                            <button type="submit" className="btn btn-primary w-100">
+                            <button 
+                                type="submit" 
+                                className="btn btn-primary w-100"
+                                disabled={creationDisabled}
+                            >
                                 Submit Challenge
                             </button>
                         </form>
