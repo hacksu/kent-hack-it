@@ -7,7 +7,7 @@ function AdminChallengeUploadTab() {
     const fileInputRef = useRef(null);
     
     // Disable uploads during event
-    const uploadsDisabled = true;
+    const uploadsDisabled = false; // Set to true to disable uploads during event
 
     async function fetchUploads() {
         try {
