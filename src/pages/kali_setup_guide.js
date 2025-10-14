@@ -159,6 +159,12 @@ export function KaliSetupGuide() {
                                         Install Kali Linux
                                     </h3>
 
+                                    <div style={{ paddingBottom: '30px' }}>
+                                        <small>
+                                            If you prefer a visualizer approach you can follow this <a href="https://www.youtube.com/watch?v=sAMnXte56yY&t=346s">setup video</a>.
+                                        </small>
+                                    </div>
+
                                     <ol className="list-group list-group-numbered mb-4">
                                         <li className="list-group-item">
                                             Mount the Kali ISO to your VM's virtual CD drive
@@ -210,7 +216,7 @@ export function KaliSetupGuide() {
                                                 </code>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="card bg-light mb-3">
                                             <div className="card-body">
                                                 <h6 className="card-title">Install useful Tools</h6>
