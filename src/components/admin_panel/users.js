@@ -10,6 +10,9 @@ function AdminUsersTab() {
         user.username.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Count non-admin users
+    const nonAdminUserCount = users.filter(user => !user.is_admin).length;
+
     async function GetUsers() {
         try {
             const response = await fetch(`/api/admin/get_users`, {
@@ -67,6 +70,14 @@ function AdminUsersTab() {
 
     return (
         <div className="users-tab">
+            {/* Header with User Count */}
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="mb-0">Registered Users</h5>
+                <span className="badge bg-primary fs-6">
+                    {nonAdminUserCount} User{nonAdminUserCount !== 1 ? 's' : ''}
+                </span>
+            </div>
+
             {/* Search Bar */}
             <div className="mb-4">
                 <input
