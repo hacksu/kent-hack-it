@@ -5,6 +5,9 @@ function AdminChallengeUploadTab() {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [files, setFiles] = useState([]);
     const fileInputRef = useRef(null);
+    
+    // Disable uploads during event
+    const uploadsDisabled = true;
 
     async function fetchUploads() {
         try {
@@ -43,6 +46,11 @@ function AdminChallengeUploadTab() {
 
     const uploadFiles = async (e) => {
         e.preventDefault();
+
+        if (uploadsDisabled) {
+            alert("Uploads are currently disabled during the event.");
+            return;
+        }
 
         if (selectedFiles.length === 0) return alert("Please select at least one ZIP file.");
 
@@ -144,9 +152,17 @@ function AdminChallengeUploadTab() {
         <>
             <div className="container">
                 <p>Upload Compressed CTF Challenge Files (zip)</p>
+                
+                {uploadsDisabled && (
+                    <div className="alert alert-warning text-center mb-4" role="alert">
+                        <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Uploads Disabled:</strong> File uploads are currently disabled during the event.
+                    </div>
+                )}
+                
                 <div className="row justify-content-center">
                     <div className="col-md-6">
-                        <div className="card shadow">
+                        <div className={`card shadow ${uploadsDisabled ? 'opacity-50' : ''}`}>
                             <div className="card-body">
                                 <h3 className="card-title text-center mb-4">Upload Challenge</h3>
                                 <div id='msg_popup'></div>
@@ -159,6 +175,7 @@ function AdminChallengeUploadTab() {
                                             multiple
                                             onChange={handleFileChange}
                                             ref={fileInputRef}
+                                            disabled={uploadsDisabled}
                                         />
                                         {selectedFiles.length > 0 && (
                                             <small className="form-text text-muted mt-2">
@@ -167,7 +184,11 @@ function AdminChallengeUploadTab() {
                                         )}
                                     </div>
                                     <div className="d-grid">
-                                        <button type="submit" className="btn btn-primary" disabled={selectedFiles.length === 0}>
+                                        <button 
+                                            type="submit" 
+                                            className="btn btn-primary" 
+                                            disabled={uploadsDisabled || selectedFiles.length === 0}
+                                        >
                                             Upload {selectedFiles.length > 0 ? `${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}` : ''}
                                         </button>
                                     </div>
