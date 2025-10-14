@@ -226,96 +226,97 @@ export function KaliSetupGuide() {
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <h5 className="text-secondary mb-3">Essential CTF Tools:</h5>
-                                        <p>Kali comes with most tools pre-installed, but here are some additional ones:</p>
-                                        <div className="row">
-                                            <div className="col-md-4">
-                                                <ul className="list-unstyled">
-                                                    <li>🔍 <strong>Reconnaissance:</strong></li>
-                                                    <li>• nmap</li>
-                                                    <li>• gobuster</li>
-                                                    <li>• dirbuster</li>
-                                                </ul>
-                                            </div>
-                                            <div className="col-md-4">
-                                                <ul className="list-unstyled">
-                                                    <li>🛠️ <strong>Exploitation:</strong></li>
-                                                    <li>• metasploit</li>
-                                                    <li>• sqlmap</li>
-                                                    <li>• burp suite</li>
-                                                </ul>
-                                            </div>
-                                            <div className="col-md-4">
-                                                <ul className="list-unstyled">
-                                                    <li>🔐 <strong>Crypto/Forensics:</strong></li>
-                                                    <li>• john the ripper</li>
-                                                    <li>• hashcat</li>
-                                                    <li>• binwalk</li>
-                                                </ul>
-                                            </div>
+                                    <h5 className="text-secondary mb-3">Essential CTF Tools:</h5>
+                                    <p>Kali comes with most tools pre-installed, but here are some additional ones:</p>
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <ul className="list-unstyled">
+                                                <li>🔍 <strong>Reconnaissance:</strong></li>
+                                                <li>• nmap</li>
+                                                <li>• gobuster</li>
+                                                <li>• dirbuster</li>
+                                            </ul>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <ul className="list-unstyled">
+                                                <li>🛠️ <strong>Exploitation:</strong></li>
+                                                <li>• metasploit</li>
+                                                <li>• sqlmap</li>
+                                                <li>• burp suite</li>
+                                            </ul>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <ul className="list-unstyled">
+                                                <li>🔐 <strong>Crypto/Forensics:</strong></li>
+                                                <li>• john the ripper</li>
+                                                <li>• hashcat</li>
+                                                <li>• binwalk</li>
+                                            </ul>
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Tips and Troubleshooting */}
-                                <div className="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
-                                    <div className="card-body">
-                                        <h3 className="card-title text-primary mb-3 mb-md-4" style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)' }}>
-                                            <i className="bi bi-lightbulb me-2"></i>
-                                            Tips & Troubleshooting
-                                        </h3>
-
-                                        <div className="row">
-                                            <div className="col-md-6">
-                                                <h5 className="text-success">Performance Tips</h5>
-                                                <ul className="small">
-                                                    <li>Enable hardware acceleration</li>
-                                                    <li>Allocate sufficient RAM (8GB+)</li>
-                                                    <li>Use SSD storage if available</li>
-                                                    <li>Take snapshots before major changes</li>
-                                                    <li>Close unused applications</li>
-                                                </ul>
-                                            </div>
-                                            <div className="col-md-6">
-                                                <h5 className="text-warning">Common Issues</h5>
-                                                <ul className="small">
-                                                    <li><strong>Slow performance:</strong> Increase RAM/CPU</li>
-                                                    <li><strong>Screen resolution:</strong> Install guest additions</li>
-                                                    <li><strong>Network issues:</strong> Check NAT settings</li>
-                                                    <li><strong>USB not working:</strong> Enable USB controller</li>
-                                                    <li><strong>Audio problems:</strong> Check audio drivers</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Security Note */}
-                                <div className="alert alert-danger">
-                                    <h5 style={{ color: '#0d6efd' }}><i className="bi bi-shield-exclamation me-2"></i>Important Security Note</h5>
-                                    <p className="mb-0">
-                                        <strong>Only use Kali Linux in controlled environments!</strong> This distribution contains
-                                        powerful security tools that should only be used for educational purposes, authorized
-                                        penetration testing, or in your own lab environment. Never use these tools against
-                                        systems you don't own or don't have explicit permission to test.
-                                    </p>
-                                </div>
-
-                                {/* Footer */}
-                                <div className="text-center mt-4 mt-md-5 flex-shrink-0">
-                                    <p className="text" style={{ color: '#ffffff', fontSize: 'clamp(0.9rem, 2vw, 1.1rem)', lineHeight: '1.6' }}>
-                                        Ready to compete? <a href="/" className="link-primary" style={{ color: '#00f725ff' }}>Return to KHI Home </a>
-                                        or <a href="/profile" className="link-primary" style={{ color: '#00f725ff' }}>Register for the CTF</a>
-                                    </p>
-                                </div>
-
                             </div>
+
+                            {/* Tips and Troubleshooting */}
+                            <div className="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
+                                <div className="card-body">
+                                    <h3 className="card-title text-primary mb-3 mb-md-4" style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)' }}>
+                                        <i className="bi bi-lightbulb me-2"></i>
+                                        Tips & Troubleshooting
+                                    </h3>
+
+                                    <div className="row">
+                                        <div className="col-md-6">
+                                            <h5 className="text-success">Performance Tips</h5>
+                                            <ul className="small">
+                                                <li>Enable hardware acceleration</li>
+                                                <li>Allocate sufficient RAM (8GB+)</li>
+                                                <li>Use SSD storage if available</li>
+                                                <li>Take snapshots before major changes</li>
+                                                <li>Close unused applications</li>
+                                            </ul>
+                                        </div>
+                                        <div className="col-md-6">
+                                            <h5 className="text-warning">Common Issues</h5>
+                                            <ul className="small">
+                                                <li><strong>Slow performance:</strong> Increase RAM/CPU</li>
+                                                <li><strong>Screen resolution:</strong> Install guest additions</li>
+                                                <li><strong>Network issues:</strong> Check NAT settings</li>
+                                                <li><strong>USB not working:</strong> Enable USB controller</li>
+                                                <li><strong>Audio problems:</strong> Check audio drivers</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Security Note */}
+                            <div className="alert alert-danger">
+                                <h5 style={{ color: '#0d6efd' }}><i className="bi bi-shield-exclamation me-2"></i>Important Security Note</h5>
+                                <p className="mb-0">
+                                    <strong>Only use Kali Linux in controlled environments!</strong> This distribution contains
+                                    powerful security tools that should only be used for educational purposes, authorized
+                                    penetration testing, or in your own lab environment. Never use these tools against
+                                    systems you don't own or don't have explicit permission to test.
+                                </p>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="text-center mt-4 mt-md-5 flex-shrink-0">
+                                <p className="text" style={{ color: '#ffffff', fontSize: 'clamp(0.9rem, 2vw, 1.1rem)', lineHeight: '1.6' }}>
+                                    Ready to compete? <a href="/" className="link-primary" style={{ color: '#00f725ff' }}>Return to KHI Home </a>
+                                    or <a href="/profile" className="link-primary" style={{ color: '#00f725ff' }}>Register for the CTF</a>
+                                </p>
+                            </div>
+
                         </div>
                     </div>
+                </div>
 
-                    {/* Spacer for bottom */}
-                    <div className="mb-auto"></div>
+                {/* Spacer for bottom */}
+                <div className="mb-auto"></div>
 
             </header>
         </div>
