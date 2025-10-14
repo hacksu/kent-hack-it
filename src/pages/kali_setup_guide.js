@@ -209,21 +209,14 @@ export function KaliSetupGuide() {
                                                     sudo apt update && sudo apt upgrade -y
                                                 </code>
                                             </div>
-
-                                            <div className="card bg-light mb-3">
-                                                <div className="card-body">
-                                                    <h6 className="card-title">Install useful Tools</h6>
-                                                    <code className="small">
-                                                        sudo apt update && sudo apt install -y ghidra \
-                                                        gobuster \
-                                                        python3 \
-                                                        python3-venv \
-                                                        gcc \
-                                                        g++ \
-                                                        cmake \
-                                                        make
-                                                    </code>
-                                                </div>
+                                        </div>
+                                        
+                                        <div className="card bg-light mb-3">
+                                            <div className="card-body">
+                                                <h6 className="card-title">Install useful Tools</h6>
+                                                <code className="small">
+                                                    sudo apt update && sudo apt install -y ghidra gobuster python3 python3-venv gcc g++ cmake make
+                                                </code>
                                             </div>
                                         </div>
                                     </div>
