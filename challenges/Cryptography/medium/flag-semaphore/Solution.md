@@ -4,7 +4,7 @@
 * **Event:** Kent Hack It 2025
 * **Category:** Crypto
 * **Difficulty:** Medium
-* **Flag:** khi{decoded_semaphore_message}
+* **Flag:** khi{unstoppable_telegraph_operator}
 
 ## Steps
 ### Step 1: Identify the Encryption Method
