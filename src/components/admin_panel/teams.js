@@ -71,6 +71,39 @@ function AdminTeamsTab() {
         }
     };
 
+    const forceUpdateTeams = async () => {
+        let msgArea = document.getElementById('msg_popup');
+        try {
+            const response = await fetch(`/api/admin/ctf/force_update`, {
+                method: "GET",
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (!data) {
+                if (msgArea) {
+                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'> Error Occured! </p>");
+                }
+            }
+
+            if (data.acknowledge) {
+                if (msgArea) {
+                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                }
+            } else {
+                if (msgArea) {
+                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                }
+            }
+        } catch (error) {
+            console.error("Error sending request:", error);
+            if (msgArea) {
+                msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'> Error Occured! </p>");
+            }
+        }
+    };
+
     return (
         <div className="teams-tab">
             {/* Search Bar */}
@@ -82,6 +115,8 @@ function AdminTeamsTab() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
+
+                <button onClick={forceUpdateTeams}>Force Update</button>
             </div>
 
             {/* Team Cards */}

@@ -244,17 +244,17 @@ async function ToggleChallenge(data, adminUsername) {
             console.log("Challenge Entity Found!")
             const activeState = challengeEntity.is_active;
             console.log(`|__ active? ${activeState}`);
-    
+
             // invert status
             const action = await ChallengeCollection.updateOne(
-            { _id: SanitizeAlphaNumeric(data.challenge_id) },
-            {
-                $set: {
-                    "is_active": !activeState
-                }
-            })
+                { _id: SanitizeAlphaNumeric(data.challenge_id) },
+                {
+                    $set: {
+                        "is_active": !activeState
+                    }
+                })
             console.log(`action results | ${JSON.stringify(action)}`);
-    
+
             if (action.matchedCount === 1) {
                 console.log("Challenge Modified");
                 if (!activeState === false) {
@@ -286,37 +286,37 @@ router.get('/get_solvers', async (req, res) => {
         let challenges = await ChallengeCollection.find({}, {
             user_rates: 0, flag: 0
         });
-        
+
         // do not capture admin entries, only grab those whose is_admin attribute is false
         const userData = await UserCollection.find({ is_admin: false }, { username: 1, completions: 1, _id: 0 });
-    
+
         const challengeSolvers = new Map();
         const result = new Map();
-    
+
         for (const user of userData) {
             if (!user.completions) continue;
-    
+
             for (const completion of user.completions) {
                 const id = completion.id?.toString();
                 if (!id) continue;
-    
+
                 if (!challengeSolvers.has(id)) {
                     console.log(`[DEBUG] Adding challenge ID. . .`);
                     challengeSolvers.set(id, []);
                 }
-    
+
                 challengeSolvers.get(id).push(user.username);
                 console.log(`  |___ ${user.username} solved challenge_id: ${id}`);
             }
         }
-    
+
         for (const challenge of challenges) {
             const challenge_id = challenge._id?.toString();
             const solvers = challengeSolvers.get(challenge_id) || [];
             console.log(`Solvers of Challenge: ${challenge.name} -> ${solvers}`);
             result.set(challenge.name, solvers);
         }
-    
+
         // result => ("challenge_name" : [username array])
         const solvers = Object.fromEntries(result); // need to change from a map to something JSON can handle
         return res.json({ acknowledge: true, "message": "Success!", solvers: solvers });
@@ -325,6 +325,98 @@ router.get('/get_solvers', async (req, res) => {
         return res.json({ acknowledge: false, "message": "Error getting solvers!" });
     }
 })
+
+// Force update towards teams to properly show flag collection between members
+router.get('/force_update', async (req, res) => {
+    try {
+        console.log("[*] Attempting to update teams by force. . .")
+        return res.json(await ForceTeamUpdate());
+    } catch (err) {
+        console.error(`[-] Error: ${err}`);
+        return res.json({ acknowledge: false, "message": "Error Updating Teams!" });
+    }
+});
+async function ForceTeamUpdate() {
+    try {
+        const teams = await TeamCollection.find({}).lean();
+        for (const team of teams) {
+            const team_id = team._id.toString();
+
+            if (team_id === "None" || !team_id) continue;
+
+            let teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id) });
+
+            if (teamProfile) {
+                const mergedCompletions = [];  // Initialize as an array of objects
+                const teamMembers = teamProfile.members;
+                teamMembers.push(teamProfile.team_leader_id);
+
+                // remove entries within TeamCollections.completions that contain
+                // memberIds that are not contained in the teamMembers Array
+                await TeamCollection.updateOne(
+                    { _id: SanitizeAlphaNumeric(team_id) },
+                    {
+                        $pull: {
+                            completions: {
+                                memberId: { $nin: teamMembers }
+                            }
+                        }
+                    }
+                );
+
+                // reference update after a modification
+                teamProfile = await TeamCollection.findOne({ _id: SanitizeAlphaNumeric(team_id) });
+
+                for (const memberId of teamMembers) {
+                    const memberProfile = await UserCollection.findOne({ _id: SanitizeAlphaNumeric(memberId) });
+
+                    if (!memberProfile || !memberProfile.completions) {
+                        continue;
+                    }
+
+                    for (const data of Object.entries(memberProfile.completions)) {
+                        const [index, { id, time }] = data; // break down the entry
+
+                        const challengeProfile = await ChallengeCollection.findOne({ _id: SanitizeAlphaNumeric(id) })
+                        if (challengeProfile) {
+                            // Find if the challenge already exists in mergedCompletions
+                            const existingChallenge = mergedCompletions.find(completion => completion.id === id);
+
+                            // If challenge doesn't exist or the current timestamp is older, add/update the challenge
+                            if (!existingChallenge || time < existingChallenge.timestamp) {
+                                const newCompletion = { id: id, memberId: memberId, points: challengeProfile.points, timestamp: time };
+
+                                // Remove the existing challenge entry if it exists
+                                if (existingChallenge) {
+                                    const index = mergedCompletions.indexOf(existingChallenge);
+                                    mergedCompletions.splice(index, 1);
+                                }
+
+                                // Add the new challenge with the oldest timestamp
+                                mergedCompletions.push(newCompletion);
+                            }
+                        }
+                    }
+                }
+
+                // Update the team completions as an array
+                await TeamCollection.updateOne(
+                    { _id: SanitizeAlphaNumeric(team_id) },
+                    { $set: { completions: mergedCompletions } }
+                );
+
+                console.log("[+] Team completions updated successfully!");
+            } else {
+                console.log(`[-] Cannot find Team Record for: ${team_id}`);
+            }
+        }
+
+        return { acknowledge: true, "message": "Updated Teams!" };
+    } catch (err) {
+        console.error(`[-] Error: ${err}`);
+        return { acknowledge: false, "message": "Error Updating Teams!" }
+    }
+}
 
 //###############################################
 //              FILE UPLOADING
@@ -342,11 +434,11 @@ const uploadsDir = process.env.CHALLENGE_UPLOAD_DIR;
 
 async function GetUploads() {
     try {
-      const files = await fs.readdir(uploadsDir);
-      return files; // returns an array of file names
+        const files = await fs.readdir(uploadsDir);
+        return files; // returns an array of file names
     } catch (err) {
-      console.error('Error reading uploads directory:', err);
-      return [];
+        console.error('Error reading uploads directory:', err);
+        return [];
     }
 }
 
@@ -365,7 +457,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
         // Multer puts file info on req.file
         const file = req.file;
-        if (!file) return res.json({ "acknowledge":false, "message": 'No file uploaded' });
+        if (!file) return res.json({ "acknowledge": false, "message": 'No file uploaded' });
 
         console.log("Uploaded file MIME type:", file.mimetype);
         console.log("Original filename:", file.originalname);
@@ -373,12 +465,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         // different browsers may change the mimetype
         const allowedMimeTypes = ['application/zip', 'application/x-zip-compressed', 'multipart/x-zip'];
         if (!allowedMimeTypes.includes(file.mimetype) || !file.originalname.endsWith('.zip')) {
-            fs.unlink(file.path, () => {}); // Cleanup
+            fs.unlink(file.path, () => { }); // Cleanup
             return res.json({ acknowledge: false, message: 'Only .zip files are allowed' });
         }
 
         console.log("Admin uploading challenge ZIP file")
-        return res.json({ "acknowledge":true, "message": 'File Uploaded Successfully!' });
+        return res.json({ "acknowledge": true, "message": 'File Uploaded Successfully!' });
     } catch (err) {
         console.error(err);
         return res.json(null);
@@ -394,7 +486,7 @@ router.get('/get_uploads', async (req, res) => {
     try {
         console.log("Fetching listed Uploads")
         const files = await GetUploads();
-    
+
         console.log(files)
         return res.json(files);
     } catch (err) {
@@ -405,7 +497,7 @@ router.get('/get_uploads', async (req, res) => {
 
 router.post('/delete_file', async (req, res) => {
     const data = req.body;
-    
+
     if (!IsAdmin(req)) {
         console.log("Not an Admin!");
         return res.status(401).json(null);
@@ -420,10 +512,10 @@ router.post('/delete_file', async (req, res) => {
         try {
             console.log(`Attempting to Delete: ${filePath}`)
             await fs.unlink(filePath);
-            return res.json({ "acknowledge":true, "message": 'File Deleted Successfully!' });
+            return res.json({ "acknowledge": true, "message": 'File Deleted Successfully!' });
         } catch (err) {
             console.log(`Error Deleting: ${filePath}`)
-            return res.json({ "acknowledge":false, "message": 'Error Deleting File!' });
+            return res.json({ "acknowledge": false, "message": 'Error Deleting File!' });
         }
     } catch (err) {
         console.error(err)
