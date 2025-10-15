@@ -107,16 +107,21 @@ function AdminTeamsTab() {
     return (
         <div className="teams-tab">
             {/* Search Bar */}
-            <div className="mb-4">
+            <div className="mb-4 d-flex align-items-center gap-2">
                 <input
                     type="text"
-                    className="form-control"
+                    className="form-control flex-grow-1"
                     placeholder="Search Team by name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
 
-                <button onClick={forceUpdateTeams}>Force Update</button>
+                <button
+                    className="btn btn-primary"
+                    onClick={forceUpdateTeams}
+                >
+                    Force Update
+                </button>
             </div>
 
             {/* Team Cards */}
