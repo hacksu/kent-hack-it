@@ -2,15 +2,8 @@
 
 echo '[*] Writing Flag Files. . .'
 
-echo $FLAG1 > /home/programmer/flag.txt
-echo $FLAG2 > /home/programmer2/flag.txt
-
-echo '[*] Clearing ENV. . .'
-
-# clear from env so users cannot see flags
-# for other challenges
-unset FLAG1
-unset FLAG2
+echo 'khi{y0u_d3f3473d_MF4_br0}' > /home/programmer/flag.txt
+echo 'khi{du3s_pwn3d_by_ghidr4}' > /home/programmer2/flag.txt
 
 echo '[*] Preparing SOCATs. . .'
 

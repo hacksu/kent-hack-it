@@ -8,8 +8,8 @@
 
     public class Lyolan
     {
-        int[] EP = {11,1,3,24,22,86,78,64,25,2,6,3,13,7,5,15,65,10,12,24,88,26,4,27,78,92,14,90,5,21,45,54,15};
-        const string Xy = "cuwhelaoi";
+        int[] EP = {0,2,16,67,68,78,109,102,18,22,22,30,19,0,1,24,74,80,88,25,109,59,3,0,74,8,29,41,63,62,15,100,94};
+        const string Xy = "hvd37tBIbwejvb";
 
         private readonly byte[] key;
         private readonly byte[] iv;

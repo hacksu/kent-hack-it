@@ -5,9 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      - FLAG1="lorem_flag"
-      - FLAG2="lorem_flag"
     image: rev_handler:latest
     ports:
       - "2530:2530"
