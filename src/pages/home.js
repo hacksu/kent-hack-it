@@ -8,8 +8,9 @@ export function Home() {
   const [countdownLabel, setCountdownLabel] = useState('Event Starts In:');
 
   useEffect(() => {
-    const startDate = new Date('2025-10-14T20:00:00-04:00').getTime(); // Changed to 8pm EST
-    const endDate = new Date('2025-10-21T20:00:00-04:00').getTime(); // End date: 10/21/2025, 8pm EST
+    const clockTime = "21:00:00-04:00"; // 9pm EST
+    const startDate = new Date(`2025-10-14T${clockTime}`).getTime(); // Start date.....10/14/2025, 9pm EST
+    const endDate = new Date(`2025-10-21T${clockTime}`).getTime();   // End date.......10/21/2025, 9pm EST
     
     const updateCountdown = () => {
       const now = new Date().getTime();
