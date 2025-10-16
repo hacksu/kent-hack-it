@@ -329,6 +329,11 @@ router.get('/get_solvers', async (req, res) => {
 // Force update towards teams to properly show flag collection between members
 router.get('/force_update', async (req, res) => {
     try {
+        if (!IsAdmin(req)) {
+            console.log("Not an Admin!");
+            return res.status(401).json(null);
+        }
+        
         console.log("[*] Attempting to update teams by force. . .")
         return res.json(await ForceTeamUpdate());
     } catch (err) {

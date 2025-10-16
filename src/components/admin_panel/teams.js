@@ -30,43 +30,45 @@ function AdminTeamsTab() {
     }, []);
 
     async function removeTeam(id) {
-        let msgArea = document.getElementById('msg_popup');
-        try {
-            const response = await fetch(`/api/admin/remove_team`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(
-                    {
-                        "team_id": id,
+        if (window.confirm(`Are you sure you want to delete this team?`)) {
+            let msgArea = document.getElementById('msg_popup');
+            try {
+                const response = await fetch(`/api/admin/remove_team`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "team_id": id,
+                        }
+                    ),
+                    credentials: 'include'
+                });
+    
+                const data = await response.json();
+    
+                if (!data) {
+                    if (msgArea) {
+                        msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'> Error Occured! </p>");
                     }
-                ),
-                credentials: 'include'
-            });
-
-            const data = await response.json();
-
-            if (!data) {
+                }
+    
+                if (data.acknowledge) {
+                    if (msgArea) {
+                        msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                    }
+                    GetTeams();
+                } else {
+                    if (msgArea) {
+                        msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                    }
+                }
+            } catch (error) {
+                console.error("Error sending request:", error);
                 if (msgArea) {
                     msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'> Error Occured! </p>");
                 }
-            }
-
-            if (data.acknowledge) {
-                if (msgArea) {
-                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
-                }
-                GetTeams();
-            } else {
-                if (msgArea) {
-                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
-                }
-            }
-        } catch (error) {
-            console.error("Error sending request:", error);
-            if (msgArea) {
-                msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'> Error Occured! </p>");
             }
         }
     };

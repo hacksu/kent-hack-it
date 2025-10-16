@@ -24,38 +24,40 @@ function AdminView() {
     }, []);
 
     async function removeAdmin(username) {
-        let msgArea = document.getElementById('msg_popup');
-
-        try {
-            const response = await fetch(`/api/admin/remove_admin`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(
-                    {
-                        "username": username,
+        if (window.confirm(`Are you sure you want to delete this admin?`)) {
+            let msgArea = document.getElementById('msg_popup');
+    
+            try {
+                const response = await fetch(`/api/admin/remove_admin`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "username": username,
+                        }
+                    ),
+                    credentials: 'include'
+                });
+    
+                const data = await response.json();
+    
+                if (data && data.acknowledge) {
+                    if (msgArea) {
+                        msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
                     }
-                ),
-                credentials: 'include'
-            });
-
-            const data = await response.json();
-
-            if (data && data.acknowledge) {
-                if (msgArea) {
-                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                    GetAdmins()
+                } else {
+                    if (msgArea) {
+                        msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                    }
                 }
-                GetAdmins()
-            } else {
+            } catch (error) {
+                console.error("Error sending request:", error);
                 if (msgArea) {
-                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'> Error Occured! </p>");
                 }
-            }
-        } catch (error) {
-            console.error("Error sending request:", error);
-            if (msgArea) {
-                msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'> Error Occured! </p>");
             }
         }
     };
