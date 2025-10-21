@@ -87,10 +87,21 @@ async function GetChallengeInfo(challenge_id) {
 }
 
 router.post("/submit-flag", async (req, res) => {
-    const data = req.body;
-    console.log(`flag submission -> ${JSON.stringify(data)}`)
 
+    const clockTime = "21:00:00-04:00"; // 9pm EST
+    const endDate = new Date(`2025-10-21T${clockTime}`).getTime();   // End date.......10/21/2025, 9pm EST
+    const currentDate = Date.now();
+    
+    const data = req.body;
+    console.log(`flag submission -> ${JSON.stringify(data)}`);
+    
     try {
+        // do not accept flags after event end time
+        if (currentDate > endDate) {
+            console.log("[*] User attempted to submit flag after event has ended!")
+            return res.json({message: "Event has ended! We are no longer accepting flag submissions!"});
+        }
+
         console.log("[*] Attempting to check flag value. . .");
 
         if (!req.isAuthenticated()) return res.json(null);
@@ -98,7 +109,7 @@ router.post("/submit-flag", async (req, res) => {
         if (await IsSiteActive(req, false)) {
             const user_id = req.user._id.toString();
             if (!user_id) {
-                console.log("[-] Bad Flag Submission no user_id!");
+                console.error("[-] Bad Flag Submission no user_id!");
                 return res.json(null);
             }
 
@@ -108,11 +119,12 @@ router.post("/submit-flag", async (req, res) => {
             // null | { message }
             return res.json(checkFlag);
         } else {
+            console.error("Site is not active!")
             return res.json(null);
         }
     } catch (err) {
         console.error(err)
-        console.log("[-] Bad Flag Submission Request!");
+        console.error("[-] Bad Flag Submission Request!");
         return res.json(null);
     }
 });
@@ -124,7 +136,7 @@ async function ValidateFlag(challenge_id, flag_value, user_id) {
     const flag_hash = SanitizeString(Hash_SHA256(flag_value));
 
     if (flag_value === null || challenge_id === null) {
-        console.log("[-] Bad Parameters in ValidateFlag!");
+        console.error("[-] Bad Parameters in ValidateFlag!");
         return null;
     }
 
@@ -144,12 +156,14 @@ async function ValidateFlag(challenge_id, flag_value, user_id) {
             const currentCompletions = userProfile.completions;
             for (const claim of currentCompletions) {
                 if (claim.id === challenge_id) {
+                    console.log("Flag already claimed!")
                     return {
                         message: "Already Claimed this Flag!"
                     };
                 }
             }
         } else {
+            console.error("Cannot find user profile entry!")
             return {
                 message: "Error locating User Profile!"
             }
@@ -178,10 +192,12 @@ async function ValidateFlag(challenge_id, flag_value, user_id) {
             if (updateUser) {
                 const userProfile = await UserCollection.findById(user_id).lean();
                 await UpdateTeamCompletions(userProfile.team_id)
+                console.log("[+] Accepted Flag!");
                 return {
                     "message": "Correct Flag!"
                 }
             } else {
+                console.error("[-] Failed to update user!")
                 return {
                     "message": "Correct Flag! Error marking Completion!"
                 }
@@ -193,7 +209,7 @@ async function ValidateFlag(challenge_id, flag_value, user_id) {
             }
         }
     } else {
-        console.log("[-] Challenge ID could not be located!");
+        console.error("[-] Challenge ID could not be located!");
         return null;
     }
 }
