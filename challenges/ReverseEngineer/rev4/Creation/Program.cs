@@ -7,7 +7,7 @@ public class HelloWorld
         string a = "";
         string b = "";
 
-        Console.WriteLine("Enter pastebin url: ");
+        Console.WriteLine("Enter pastebin url (holding the flag): ");
         a = Console.ReadLine();
 
         Console.WriteLine("Enter XOR key: ");
