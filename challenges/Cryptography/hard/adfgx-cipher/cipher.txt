@@ -1,5 +1,12 @@
-G A G A A A A D G D A X G
-G F X A D F F D G A D G G
-D A X F F F H F X F F D G
-G X G D G A L F F X G D G
-A F X F D A S A A G F X A
+D G   G G
+F G F F G
+F X F G G
+A X G A G
+A A D X A
+A D X A D
+F A X X F
+A F H L S
+F A F F G
+D F D D G
+G A G A G
+A X A F A

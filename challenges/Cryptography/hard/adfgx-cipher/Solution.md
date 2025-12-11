@@ -5,6 +5,8 @@
 * **Difficulty:** Hard
 * **Flag:** khi{congratulations_you_are_awaken}
 
+
+\/ \/ \/ wrong-ish \/ \/ \/
 ## Steps
 
 ## Steps
