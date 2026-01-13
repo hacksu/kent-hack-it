@@ -10,6 +10,11 @@ server {
         return 404;
     }
 
+    # block access to /backend/* from front-end
+    location ~ /backend {
+        return 404;
+    }
+
     # block access to react package json files
     location ~ ^/package(\.lock)?\.json$ {
         return 404;
