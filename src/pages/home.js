@@ -9,16 +9,33 @@ export function Home() {
 
   useEffect(() => {
     const clockTime = "21:00:00-04:00"; // 9pm EST
-    const startDate = new Date(`2025-10-14T${clockTime}`).getTime(); // Start date.....10/14/2025, 9pm EST
-    const endDate = new Date(`2025-10-21T${clockTime}`).getTime();   // End date.......10/21/2025, 9pm EST
+    
+    // Determine event year dynamically
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed (0 = January, 9 = October)
+    
+    const eventYear = currentYear;
+    const lastEventYear = eventYear - 1;
+    const nextEventYear = eventYear + 1;
+    
+    const startDate = new Date(`${eventYear}-10-14T${clockTime}`).getTime();
+    const endDate = new Date(`${eventYear}-10-21T${clockTime}`).getTime();
     
     const updateCountdown = () => {
       const now = new Date().getTime();
+      const nowDate = new Date();
+      const currentMonth = nowDate.getMonth(); // 0-indexed (0 = January, 9 = October)
+      
       const startDifference = startDate - now;
       const endDifference = endDate - now;
       
-      if (startDifference > 0) {
-        // Event hasn't started yet - countdown to start
+      // If we're not in September yet (months 0-7), show "last year ended" message
+      if (currentMonth < 8 && startDifference > 0) {
+        setTimeLeft(`Our ${lastEventYear} Event has ended!`);
+        setCountdownLabel(`Stay Tuned for Details About ${eventYear}!`);
+      } else if (startDifference > 0) {
+        // We're in September/October and event hasn't started yet - countdown to start
         const days = Math.floor(startDifference / (1000 * 60 * 60 * 24));
         const hours = Math.floor((startDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((startDifference % (1000 * 60 * 60)) / (1000 * 60));
@@ -36,9 +53,9 @@ export function Home() {
         setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
         setCountdownLabel('Event Ends In:');
       } else {
-        // Event has ended
-        setTimeLeft('Event has ended!');
-        setCountdownLabel('');
+        // Event has ended - show this year's event ended, stay tuned for next year
+        setTimeLeft(`Our ${eventYear} Event has ended!`);
+        setCountdownLabel(`Stay Tuned for Details About ${nextEventYear}!`);
       }
     };
 
@@ -101,9 +118,22 @@ export function Home() {
 
                     <br></br>
                     <br></br>
-                    $1000 in prizes will be awarded to the top handful of teams/individuals! You do not to be well versed in 
-                    cybersecurity to participate, as we have challenges for all skill levels. Whether you're a beginner or an expert,
-                    there's something for everyone. Join us for a week of fun, learning, and friendly competition!
+                    Whether you're a beginner looking to learn or an experienced hacker aiming to test your skills,
+                    KHI offers a variety of challenges that cater to all skill levels. Join us for an exciting week 
+                    of problem-solving, teamwork, and fun!
+
+                    <br></br>
+                    <br></br>
+                    Our {(() => {
+                      const now = new Date();
+                      const currentYear = now.getFullYear();
+                      const currentMonth = now.getMonth();
+                      return currentMonth < 9 ? currentYear : currentYear + 1;
+                    })()} Event will take place in {(() => {
+                      const now = new Date();
+                      const currentMonth = now.getMonth();
+                      return currentMonth < 9 ? 'this' : 'next';
+                    })()} October, more details to come soon!
                   </p>
 
                   <div className="row mt-3 mt-md-4">
