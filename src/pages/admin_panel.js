@@ -9,6 +9,7 @@ import AdminChallengeCreateTab from '../components/admin_panel/create.js'
 import AdminChallengeViewTab from '../components/admin_panel/view.js'
 import AdminChallengeUploadTab from '../components/admin_panel/upload.js'
 import AdminEventStatsTab from '../components/admin_panel/solvers.js'
+import AdminTagsTab from '../components/admin_panel/tags.js'
 
 import '../App.css';
 
@@ -170,6 +171,15 @@ export function AdminPanel() {
                                             Upload
                                         </button>
                                     </li>
+                                    <li className="nav-item">
+                                        <button
+                                            className={`nav-link ${activeTab === "tags" ? "active" : ""}`}
+                                            style={{ fontSize: "1.5rem", padding: "0.25rem 0.5rem" }}
+                                            onClick={() => ChangeTab("tags")}
+                                        >
+                                            Tags
+                                        </button>
+                                    </li>
                                 </ul>
 
                                 <div className="tab-content mt-4">
@@ -212,6 +222,12 @@ export function AdminPanel() {
                                     <>
                                         {activeTab === "upload" && (
                                             <AdminChallengeUploadTab />
+                                        )}
+                                    </>
+
+                                    <>
+                                        {activeTab === "tags" && (
+                                            <AdminTagsTab />
                                         )}
                                     </>
                                 </div>

@@ -5,6 +5,8 @@ function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
     const [files, setFiles] = useState([]);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
+    const [availableYears, setAvailableYears] = useState([]);
+    const [customYear, setCustomYear] = useState(false);
 
     async function fetchUploads() {
         try {
@@ -77,6 +79,10 @@ function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
             const data = await response.json();
             if (data) {
                 const challenge = data.find(c => c._id === target_challenge_id);
+
+                // Extract unique years from all challenges
+                const years = [...new Set(data.map(c => c.year).filter(y => y))].sort((a, b) => b - a);
+                setAvailableYears(years);
 
                 setUpdateFormData(prev => ({
                     ...prev,
@@ -233,18 +239,57 @@ function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
 
                         {/* Year */}
                         <div className="mb-4">
-                            <label className="form-label fw-semibold">Year</label>
-                            <input
-                                type="number"
-                                className="form-control"
-                                name="year"
-                                value={updateFormData.year}
-                                onChange={handleUpdateChange}
-                                required
-                                placeholder="Enter event year (e.g., 2026)"
-                                min="2000"
-                                max="2100"
-                            />
+                            <label className="form-label fw-semibold">Year Tag</label>
+                            {!customYear ? (
+                                <>
+                                    <div className="input-group">
+                                        <select
+                                            className="form-select"
+                                            name="year"
+                                            value={updateFormData.year}
+                                            onChange={handleUpdateChange}
+                                            required
+                                        >
+                                            <option value="">Select Year</option>
+                                            {availableYears.map(year => (
+                                                <option key={year} value={year}>{year}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-secondary"
+                                            onClick={() => setCustomYear(true)}
+                                        >
+                                            <i className="bi bi-plus-circle me-1"></i> New Year
+                                        </button>
+                                    </div>
+                                    <small className="text-muted">Select from existing years or add a new one</small>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="input-group">
+                                        <input
+                                            type="number"
+                                            className="form-control"
+                                            name="year"
+                                            value={updateFormData.year}
+                                            onChange={handleUpdateChange}
+                                            required
+                                            placeholder="Enter new year (e.g., 2027)"
+                                            min="2000"
+                                            max="2100"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-secondary"
+                                            onClick={() => setCustomYear(false)}
+                                        >
+                                            <i className="bi bi-arrow-left me-1"></i> Select Existing
+                                        </button>
+                                    </div>
+                                    <small className="text-muted">Enter a new year to add to the tag pool</small>
+                                </>
+                            )}
                         </div>
 
                         {/* Challenge Links */}
