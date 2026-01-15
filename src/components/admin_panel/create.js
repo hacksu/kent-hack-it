@@ -17,7 +17,8 @@ function AdminChallengeCreateTab() {
         written_by: '',
         flag: '',
         points: '',
-        files: []
+        files: [],
+        year: new Date().getFullYear()
     });
 
     const handleNewChange = e => {
@@ -98,6 +99,7 @@ function AdminChallengeCreateTab() {
                     "flag": newFormData.flag,
                     "points": newFormData.points,
                     "files": newFormData.files,
+                    "year": newFormData.year,
                 }),
                 credentials: 'include'  // ensures cookies are sent
             });
@@ -182,6 +184,23 @@ function AdminChallengeCreateTab() {
                                     onChange={handleNewChange}
                                     required
                                     placeholder="Enter challenge author name"
+                                    disabled={creationDisabled}
+                                />
+                            </div>
+
+                            {/* Year */}
+                            <div className="mb-3">
+                                <label className="form-label fw-semibold">Year</label>
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    name="year"
+                                    value={newFormData.year}
+                                    onChange={handleNewChange}
+                                    required
+                                    placeholder="Enter event year (e.g., 2026)"
+                                    min="2000"
+                                    max="2100"
                                     disabled={creationDisabled}
                                 />
                             </div>

@@ -53,7 +53,9 @@ async function CalculateCompletions(challenges) {
     }
 }
 async function GetChallenges() {
-    let challenges = await ChallengeCollection.find({}, {
+    let challenges = await ChallengeCollection.find({
+        is_archived: { $ne: true } // Exclude archived challenges
+    }, {
         user_rates: 0, flag: 0
     }).lean();
     return await CalculateCompletions(challenges);
@@ -71,7 +73,10 @@ router.post("/challenge", async (req, res) => {
 });
 async function GetChallengeInfo(challenge_id) {
     challenge_id = SanitizeAlphaNumeric(challenge_id)
-    const challengeProfile = await ChallengeCollection.findOne({ _id: challenge_id })
+    const challengeProfile = await ChallengeCollection.findOne({ 
+        _id: challenge_id,
+        is_archived: { $ne: true } // Exclude archived challenges
+    })
     if (challengeProfile) {
         return {
             "name": challengeProfile.name,
@@ -142,7 +147,8 @@ async function ValidateFlag(challenge_id, flag_value, user_id) {
 
     // find the challenge object based off the id
     const chall = await ChallengeCollection.findOne({
-        _id: SanitizeAlphaNumeric(challenge_id)
+        _id: SanitizeAlphaNumeric(challenge_id),
+        is_archived: { $ne: true } // Exclude archived challenges
     })
     if (chall) {
         // check if the user has already claimed the flag:

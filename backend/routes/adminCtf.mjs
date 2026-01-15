@@ -53,7 +53,8 @@ async function CreateChallenge(data) {
         "written_by": STRING,
         "flag": STRING,
         "files": ARRAY_OF_STRINGS,
-        "points": NUMBER
+        "points": NUMBER,
+        "year": NUMBER (optional, defaults to current year)
     }
     */
 
@@ -75,6 +76,7 @@ async function CreateChallenge(data) {
         "user_rates": [],
         "hlinks": data.files,
         "rating": Number(0),
+        "year": data.year ? Number(data.year) : new Date().getFullYear(),
     })
 
     if (action) {
@@ -184,25 +186,32 @@ async function UpdateChallenge(data) {
         "written_by": STRING,
         "flag": STRING,
         "files": ARRAY_OF_STRINGS,
-        "points": NUMBER
+        "points": NUMBER,
+        "year": NUMBER (optional)
     }
     */
 
+    const updateFields = {
+        "challenge_id": SanitizeAlphaNumeric(data.challenge_id),
+        "name": data.name,
+        "description": data.description,
+        "category": data.category,
+        "difficulty": data.difficulty,
+        "written_by": data.written_by || "Unknown Author",
+        "flag": data.flag,
+        "hlinks": data.files,
+        "points": Number(data.points),
+    };
+
+    // Only update year if provided
+    if (data.year !== undefined) {
+        updateFields.year = Number(data.year);
+    }
+
     const action = await ChallengeCollection.updateOne(
         { _id: SanitizeAlphaNumeric(data.challenge_id) },
-        {
-            $set: {
-                "challenge_id": SanitizeAlphaNumeric(data.challenge_id),
-                "name": data.name,
-                "description": data.description,
-                "category": data.category,
-                "difficulty": data.difficulty,
-                "written_by": data.written_by || "Unknown Author",
-                "flag": data.flag,
-                "hlinks": data.files,
-                "points": Number(data.points),
-            }
-        })
+        { $set: updateFields }
+    )
 
     if (action.matchedCount === 1) {
         console.log("Found Challenge and Updated Details")
@@ -273,6 +282,70 @@ async function ToggleChallenge(data, adminUsername) {
     } catch (error) {
         console.log(error);
         return { acknowledge: false, "message": "Error Toggling Challenge!" }
+    }
+}
+
+router.post('/toggle_archive', async (req, res) => {
+    const data = req.body;
+
+    if (!IsAdmin(req)) {
+        console.log("Not an Admin!");
+        return res.status(401).json(null);
+    }
+
+    try {
+        if (!req.isAuthenticated())
+            return res.json(null);
+
+        console.log("Admin Attempting to Toggle Archive Status: " + data.challenge_id)
+        const action = await ToggleArchive(data, req.user.username);
+
+        // { acknowledge, message }
+        return res.json(action);
+    } catch (err) {
+        console.error(err)
+        return res.json(null);
+    }
+});
+async function ToggleArchive(data, adminUsername) {
+    try {
+        const challengeEntity = await ChallengeCollection.findOne({
+            _id: SanitizeAlphaNumeric(data.challenge_id)
+        });
+
+        if (challengeEntity) {
+            console.log("Challenge Entity Found!")
+            const archivedState = challengeEntity.is_archived || false;
+            console.log(`|__ archived? ${archivedState}`);
+
+            // invert archive status
+            const action = await ChallengeCollection.updateOne(
+                { _id: SanitizeAlphaNumeric(data.challenge_id) },
+                {
+                    $set: {
+                        "is_archived": !archivedState
+                    }
+                })
+            console.log(`action results | ${JSON.stringify(action)}`);
+
+            if (action.matchedCount === 1) {
+                console.log("Challenge Archive Status Modified");
+                if (!archivedState === true) {
+                    return { acknowledge: true, "message": "Challenge Archived!" }
+                } else {
+                    return { acknowledge: true, "message": "Challenge Unarchived!" }
+                }
+            } else {
+                console.log("No entities modified!")
+                return { acknowledge: false, "message": "Error Toggling Archive Status!" }
+            }
+        } else {
+            console.log("Bad initial search!")
+            return { acknowledge: false, "message": "Error Toggling Archive Status!" }
+        }
+    } catch (error) {
+        console.log(error);
+        return { acknowledge: false, "message": "Error Toggling Archive Status!" }
     }
 }
 

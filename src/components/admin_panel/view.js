@@ -99,6 +99,40 @@ function AdminChallengeViewTab() {
         }
     }
 
+    async function ToggleArchive(challenge_id) {
+        let msgArea = document.getElementById('msg_popup');
+        try {
+            const response = await fetch(`/api/admin/ctf/toggle_archive`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    "challenge_id": challenge_id
+                }),
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (data && data.acknowledge) {
+                if (msgArea) {
+                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: green; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                }
+                FetchChallenges();
+            } else {
+                if (msgArea) {
+                    msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'>" + data.message + "</p>");
+                }
+            }
+        } catch (error) {
+            console.error("Error sending request:", error);
+            if (msgArea) {
+                msgArea.innerHTML = SanitizeDescription(msgArea, "<p style='color: red; background: white; padding: 4px 10px; border-radius: 9999px; display: inline-block;'> Error Occured! </p>");
+            }
+        }
+    }
+
     // Function to go back to view from edit
     const goBackToView = () => {
         setActiveTab("");
@@ -134,7 +168,18 @@ function AdminChallengeViewTab() {
                                                 >
                                                     {challenge.is_active ? "Disable" : "Enable"}
                                                 </button>
+                                                <button
+                                                    className={`btn ${challenge.is_archived ? "btn-outline-success" : "btn-outline-warning"}`}
+                                                    onClick={() => ToggleArchive(challenge._id)}
+                                                >
+                                                    {challenge.is_archived ? "Unarchive" : "Archive"}
+                                                </button>
                                             </div>
+                                            {challenge.is_archived && (
+                                                <div className="alert alert-warning mt-2 mb-0 py-1 px-2 small" role="alert">
+                                                    <i className="bi bi-archive-fill me-1"></i> Archived
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="card-body p-2">
@@ -151,6 +196,14 @@ function AdminChallengeViewTab() {
                                                     <i className="fas fa-user"></i> By: {challenge.written_by || "Unknown Author"}
                                                 </small>
                                             </div>
+
+                                            {challenge.year && (
+                                                <div className="mb-1">
+                                                    <small className="text-secondary">
+                                                        <i className="bi bi-calendar-event"></i> Year: {challenge.year}
+                                                    </small>
+                                                </div>
+                                            )}
 
                                             <p
                                                 style={{

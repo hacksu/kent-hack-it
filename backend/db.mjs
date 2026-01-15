@@ -91,7 +91,9 @@ const ChallengeSchema = new mongoose.Schema({
     points: Number,
     flag: String,      // KHI{...}
     hlinks: { type: Array, default: [] }, // [ "https://example.com", ... ] array of strings
-    is_active: { type: Boolean, default: true }
+    is_active: { type: Boolean, default: true },
+    is_archived: { type: Boolean, default: false }, // Archived challenges are hidden from users but kept in system
+    year: { type: Number, default: new Date().getFullYear() } // Event year (e.g., 2025, 2026)
 });
 export const ChallengeCollection = mongoose.model(
     'Challenges',

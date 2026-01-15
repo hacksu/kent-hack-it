@@ -44,7 +44,8 @@ function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
         written_by: '',
         flag: '',
         points: '',
-        files: []
+        files: [],
+        year: new Date().getFullYear()
     });
 
     const handleUpdateChange = e => {
@@ -109,6 +110,10 @@ function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
                     ...prev,
                     'files': challenge.hlinks || [] // incase there are no hlinks we can default to empty array
                 }));
+                setUpdateFormData(prev => ({
+                    ...prev,
+                    'year': challenge.year || new Date().getFullYear()
+                }));
             }
         } catch (err) {
             console.error('Failed to fetch challenges:', err);
@@ -140,6 +145,7 @@ function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
                     "flag": updateFormData.flag,
                     "points": updateFormData.points,
                     "files": updateFormData.files,
+                    "year": updateFormData.year,
                 }),
                 credentials: 'include'  // ensures cookies are sent
             });
@@ -222,6 +228,22 @@ function AdminChallengeEditTab({ target_challenge_id, onUpdateSuccess }) {
                                 onChange={handleUpdateChange}
                                 required
                                 placeholder="Enter challenge author name"
+                            />
+                        </div>
+
+                        {/* Year */}
+                        <div className="mb-4">
+                            <label className="form-label fw-semibold">Year</label>
+                            <input
+                                type="number"
+                                className="form-control"
+                                name="year"
+                                value={updateFormData.year}
+                                onChange={handleUpdateChange}
+                                required
+                                placeholder="Enter event year (e.g., 2026)"
+                                min="2000"
+                                max="2100"
                             />
                         </div>
 
