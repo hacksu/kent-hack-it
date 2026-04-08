@@ -1,22 +1,26 @@
-/node_modules
-/.pnp
-.pnp.js
+node_modules
 
-/coverage
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
 /build
-/docker/resumes
 
-backend/challenge_archives/*.zip
-
+# OS
 .DS_Store
+Thumbs.db
+
+# Env
 .env
 .env.*
-/docker/.env
+!.env.example
+!.env.test
 
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
 
-*.ps1
-*.bat
-*.sh
+.vscode/
+*.conf
