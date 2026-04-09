@@ -1,16 +1,25 @@
 <script lang="ts">
-    import { browser } from '$app/environment';
-
-	import favicon from '$lib/assets/favicon.ico';
-	import logo from '$lib/assets/2026_KHI_Logo_Transparent.png';
-    import apple_touch_icon from '$lib/assets/logo192.png';
-
     import 'bootstrap/dist/css/bootstrap.min.css';
 
+    import { authClient } from "$lib/client";
+    import { goto } from "$app/navigation"
+	
+    import favicon from '$lib/assets/favicon.ico';
+	import logo from '$lib/assets/2026_KHI_Logo_Transparent.png';
+    import apple_touch_icon from '$lib/assets/logo192.png';
+    
+    import { browser } from '$app/environment';
     // only apply the boostrap js in the browser
     if (browser) {
         import('bootstrap/dist/js/bootstrap.bundle.min.js');
     }
+
+    async function handleLogout() {
+        await authClient.signOut();
+        goto("/auth/login");
+    }
+
+    const session = authClient.useSession();
 
 	let { children } = $props();
 </script>
@@ -55,6 +64,13 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/">Home</a>
                 </li>
+
+                {#if $session.data?.user.role === "admin"}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Admin</a>
+                    </li>
+                {/if}
+
                 <li class="nav-item">
                     <a class="nav-link" href="/compete">Compete</a>
                 </li>
@@ -68,9 +84,18 @@
                     <a class="nav-link" href="/discord" target="_blank" rel="noopener noreferrer">Community</a>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="/login">Login</a>
-                </li>
+                {#if $session.data}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/profile">Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link btn btn-link" onclick={handleLogout}>Logout</button>
+                    </li>
+                {:else}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/login">Login</a>
+                    </li>
+                {/if}
             </ul>
         </div>
     </div>

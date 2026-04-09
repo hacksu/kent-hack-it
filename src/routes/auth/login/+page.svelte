@@ -1,6 +1,6 @@
 <script lang="ts">
     import { authClient } from "$lib/client";
-    const { data } = $props();
+    const { data } = $props(); // fetch data returned from respective .server.ts file
 
     function buttonStyle(color:string) {
         return `
