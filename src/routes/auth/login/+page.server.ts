@@ -29,7 +29,7 @@ const PROVIDERS: Provider[] = [
 export const load: PageServerLoad = async ({ request }) => {
     const session = await auth.api.getSession(request);
     if (session) {
-        throw redirect(301, "/profile");
+        throw redirect(301, "/compete");
     }
 
     return { providers: PROVIDERS };
