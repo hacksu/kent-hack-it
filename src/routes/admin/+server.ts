@@ -3,22 +3,26 @@ import { ToggleChallenge, DeleteChallenge } from '$lib/database/db';
 import { json } from '@sveltejs/kit';
 
 async function toggleChallenge(id: string, is_active: boolean) {
-    await ToggleChallenge(id, is_active);
-
-    return json({ success: 'true' }, { status: 200 });
+    if ( await ToggleChallenge(id, is_active) ) {
+        return json({ success: true , status: 200 });
+    } else {
+        return json({ success: false , status: 200 });
+    }
 }
 
 async function deleteChallenge(id: string) {
-    await DeleteChallenge(id);
-
-    return json({ success: 'true' }, { status: 200 });
+    if ( await DeleteChallenge(id) ) {
+        return json({ success: true , status: 200 });
+    } else {
+        return json({ success: false , status: 200 });
+    }
 }
 
 export const POST = async (event) => {
     // check user authorizations
     const authCheck = await isAdmin(event.request);
     if (authCheck.status !== 200) {
-        return json({ error: 'Unauthorized' }, { status: 401 });
+        return json({ success: false, error: 'Unauthorized' , status: 401 });
     }
 
     const data = await event.request.json();
@@ -28,7 +32,7 @@ export const POST = async (event) => {
 
     // action required
     if (!data?.action) {
-        return json({ error: 'Unauthorized' }, { status: 401 });
+        return json({ success: false, error: 'Unauthorized' , status: 401 });
     }
 
     if (data.action === 'toggle') {
@@ -39,7 +43,7 @@ export const POST = async (event) => {
         handler = await deleteChallenge(data.id);
     } else {
         // unknown action
-        return json({ error: 'Server Error' }, { status: 500 });
+        return json({ success: false, error: 'Unknown action' , status: 500 });
     }
 
     return handler;

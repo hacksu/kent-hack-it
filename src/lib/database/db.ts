@@ -57,10 +57,10 @@ export async function AddChallenge(data: ChallengeForm) {
     try {
         const [row] = await db.insert(schema.challenges).values(data).returning();
         console.log(`[*] AddChallenge -> inserted ${row.id}`);
-        return row;
+        return true;
     } catch (error) {
         console.error('Failed to insert challenge:', error);
-        throw error;
+        return false;
     }
 }
 
@@ -70,10 +70,10 @@ export async function UpdateChallenge(data: ChallengeForm, id) {
                         .set(data)
                         .where(eq(schema.challenges.id, id)).returning();
         console.log(`[*] UpdateChallenge -> updated ${row.id}`);
-        return row;
+        return true;
     } catch (error) {
         console.error('Failed to update challenge:', error);
-        throw error;
+        return false;
     }
 }
 
@@ -94,10 +94,12 @@ export async function GetChallenges(grab_mode: number = 0) {
             return await db.select()
                 .from(schema.challenges)
                 .where(eq(schema.challenges.is_gym, true));
+        } else {
+            return undefined;
         }
     } catch (error) {
         console.error('Failed to insert challenge:', error);
-        throw error;
+        return undefined;
     }
 }
 
@@ -116,10 +118,10 @@ export async function ToggleChallenge(id, set_enabled: boolean) {
                         .where(eq(schema.challenges.id, id));
 
         console.log(`[*] ToggleChallenge -> ${id} [${ set_enabled ? "ACTIVE" : "DISABLED" }]`);
-        return row;
+        return true;
     } catch (error) {
         console.error('Failed to toggle challenge:', error);
-        throw error;
+        return false;
     }
 }
 
@@ -136,9 +138,9 @@ export async function DeleteChallenge(id) {
             .returning();
 
         console.log(`[*] DeleteChallenge -> deleted ${row.id}`);
-        return row;
+        return true;
     } catch (error) {
         console.error('Failed to delete challenge:', error);
-        throw error;
+        return false;
     }
 }

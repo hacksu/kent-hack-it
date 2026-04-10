@@ -1,33 +1,41 @@
 <script lang="ts">
     import { invalidateAll } from '$app/navigation';
     import type { ChallengeData } from '$lib/database/db';
-    
-    // defining the destructuring
-    const { challenges } : {
-        challenges: ChallengeData[]
-    } = $props();
 
-    async function toggleChallenge(id, is_active: boolean) {
-        await fetch('/admin', {
+    let result = $state(undefined);
+    function clearResult() {
+        result = undefined;
+    }
+
+    async function toggleChallenge(id, name, is_active: boolean) {
+        const req = await fetch('/admin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'toggle', id, is_active })
         });
 
+        result = await req.json();
+        result.message = `"${name}" has been ${ is_active ? "enabled" : "disabled" }`;
+
         // re-run the load in +page.server.ts updating the challenges collection
         await invalidateAll();
+        setTimeout(clearResult, 5000);
     }
 
     async function deleteChallenge(id, name) {
         if (window.confirm(`Are you sure you want to DELETE the challenge "${name}"?`)) {
-            await fetch('/admin', {
+            const req = await fetch('/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'delete', id })
             });
+
+            result = await req.json();
+            result.message = `"${name}" has been deleted`;
             
             // re-run the load in +page.server.ts updating the challenges collection
             await invalidateAll();
+            setTimeout(clearResult, 5000);
         }
     }
     
@@ -36,6 +44,8 @@
     let originalData: ChallengeData|undefined = $state(undefined);
     function openPanel(entry: ChallengeData) { originalData = entry; showEditPanel = true; }
     function exitPanel() { showEditPanel = false; }
+
+    const { challenges, form } = $props();
 </script>
 
 <!-- START OF PANEL -->
@@ -45,7 +55,12 @@
         <div>
             <button onclick={exitPanel} style="padding: 5px;">Close</button>
 
-            <ChallengeForm title="Edit Challenge" action_target="?/edit_challenge" challenge={originalData} />
+            <ChallengeForm
+                title="Edit Challenge"
+                action_target="?/edit_challenge"
+                challenge={originalData}
+                result={form}
+            />
         </div>
     </div>
 {/if}
@@ -53,6 +68,28 @@
 <!-- END OF PANEL -->
 
 <div>
+    <!-- button fetch -->
+    {#if result?.success}
+        <div class="view-feedback">
+            <div class="view-alert">{result.message}</div>
+        </div>
+    {:else if result?.error}
+        <div class="view-feedback">
+            <div class="view-alert view-err">{result.error}</div>
+        </div>
+    {/if}
+
+    <!-- form feedback -->
+    {#if form?.result?.success}
+        <div class="view-feedback">
+            <div class="view-alert">{form.result.message}</div>
+        </div>
+    {:else if form?.result?.error}
+        <div class="view-feedback">
+            <div class="view-alert view-err">{form.result.error}</div>
+        </div>
+    {/if}
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Current Challenges</h5>
         <span class="badge bg-primary fs-6">
@@ -71,7 +108,7 @@
                         <div class="d-flex justify-content-between pt-2">
                             <button
                                 class={`btn ${challenge.is_active ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                                onclick={() => { toggleChallenge(challenge.id, !challenge.is_active) }}
+                                onclick={() => { toggleChallenge(challenge.id, challenge.name, !challenge.is_active) }}
                             >
                                 {challenge.is_active ? 'Disable' : 'Enable'}
                             </button>

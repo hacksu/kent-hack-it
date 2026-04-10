@@ -1,4 +1,4 @@
-import { redirect } from '@sveltejs/kit';
+import { redirect, fail } from '@sveltejs/kit';
 import { isAdmin } from '$lib/server/auth'
 import { AddChallenge, GetChallenges, UpdateChallenge } from "$lib/database/db";
 
@@ -30,82 +30,72 @@ const PointValues = {
 export const actions = {
     // special form named-target
 	add_challenge: async ({ cookies, request }) => {
-        // validate authentication
         const authCheck = await isAdmin(request);
-        if (authCheck.status !== 200) return;
+        if (authCheck.status !== 200)
+            throw redirect(303, '/auth/login');
 
         const form = await request.formData();
-        let formData = Object.fromEntries(form.entries());
+        let formData = Object.fromEntries(form.entries()) as Record<string, string>;
 
-        // validate the data is present
-        if (!formData.name) return;
-        if (!formData.description) return;
-        if (!formData.written_by) return;
-        if (!formData.category) return;
-        if (!formData.difficulty) return;
-        if (!formData.flag) return;
+        if (!formData.name || !formData.description || !formData.written_by || 
+            !formData.category || !formData.difficulty || !formData.flag)
+            return fail(400, { error: 'Missing required data' });
 
-        // update the points value based on the server-accepted point look-up
-        const pointsKey = formData.difficulty.valueOf().toString().toLowerCase();
-        const points = PointValues[pointsKey as keyof typeof PointValues];
-        if (!points) return;
+        const points = PointValues[formData.difficulty.toLowerCase() as keyof typeof PointValues];
+        if (!points)
+            return fail(400, { error: 'Invalid difficulty value' });
 
         try {
-            // write new challenge into db
-            console.log("[!] Admin is writing to the database");
-            
             const data: ChallengeForm = {
-                name: formData.name.valueOf().toString(),
-                description: formData.description.valueOf().toString(),
-                written_by: formData.written_by.valueOf().toString(),
-                category: formData.category.valueOf().toString(),
-                difficulty: formData.difficulty.valueOf().toString(),
-                flag: formData.flag.valueOf().toString(),
+                name: formData.name,
+                description: formData.description,
+                written_by: formData.written_by,
+                category: formData.category,
+                difficulty: formData.difficulty,
+                flag: formData.flag,
                 points,
             };
+
             await AddChallenge(data);
+            return { success: true, message: 'Challenge added!' };
         } catch (e) {
             console.error(`[-] Add_Challenge -> ${e}`);
+            return fail(500, { error: 'An error occurred while adding the challenge' });
         }
-	},
-    edit_challenge: async ({ cookies, request }) => {
-        // validate authentication
+    },
+    edit_challenge: async ({ request }) => {
         const authCheck = await isAdmin(request);
-        if (authCheck.status !== 200) return;
+        if (authCheck.status !== 200)
+            throw redirect(303, '/auth/login');
 
         const form = await request.formData();
-        let formData = Object.fromEntries(form.entries());
+        const formData = Object.fromEntries(form.entries()) as Record<string, string>;
 
-        // validate the data is present
-        if (!formData.id) return;
-        if (!formData.name) return;
-        if (!formData.description) return;
-        if (!formData.written_by) return;
-        if (!formData.category) return;
-        if (!formData.difficulty) return;
-        if (!formData.flag) return;
+        if (!formData.id || !formData.name || !formData.description ||
+            !formData.written_by || !formData.category || !formData.difficulty || !formData.flag)
+            return fail(400, { error: 'Missing required data' });
 
-        // update the points value based on the server-accepted point look-up
-        const pointsKey = formData.difficulty.valueOf().toString().toLowerCase();
-        const points = PointValues[pointsKey as keyof typeof PointValues];
-        if (!points) return;
+        const points = PointValues[formData.difficulty.toLowerCase() as keyof typeof PointValues];
+        if (!points)
+            return fail(400, { error: 'Invalid difficulty value' });
 
         try {
-            // write new challenge into db
             console.log("[!] Admin is modifying a challenge");
-            
-            const data: ChallengeForm = {
-                name: formData.name.valueOf().toString(),
-                description: formData.description.valueOf().toString(),
-                written_by: formData.written_by.valueOf().toString(),
-                category: formData.category.valueOf().toString(),
-                difficulty: formData.difficulty.valueOf().toString(),
-                flag: formData.flag.valueOf().toString(),
+
+            await UpdateChallenge({
+                name: formData.name,
+                description: formData.description,
+                written_by: formData.written_by,
+                category: formData.category,
+                difficulty: formData.difficulty,
+                flag: formData.flag,
                 points,
-            };
-            await UpdateChallenge(data, formData.id.valueOf().toString());
+            }, formData.id);
+
+            return { success: true, message: 'Challenge updated!' };
         } catch (e) {
             console.error(`[-] Edit_Challenge -> ${e}`);
+            return fail(500, { error: 'An error occurred while updating the challenge' });
         }
-	},
+    },
 };

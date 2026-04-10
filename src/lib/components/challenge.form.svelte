@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { enhance } from "$app/forms";
     import type { ChallengeData } from "$lib/database/db";
 
     let files = [];
@@ -7,10 +8,11 @@
     
     let selectedFiles = [];
 
-    const { title, action_target, challenge } : {
+    const { title, action_target, challenge, result } : {
         title: string,
         action_target: string,
-        challenge: ChallengeData|undefined
+        challenge: ChallengeData | undefined,
+        result: { error?: string, success?: boolean, message?: string } | null
     } = $props();
     
 </script>
@@ -20,7 +22,7 @@
         <div class="card-body p-4">
             <h4 class="card-title text-center mb-4">{title}</h4>
 
-            <form method="POST" action={action_target}>
+            <form method="POST" action={action_target} use:enhance>
                 <!-- Challenge Name -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Challenge Name</label>

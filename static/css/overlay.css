@@ -12,3 +12,26 @@
 
     background-color: rgba(255, 255, 255, 0.74);
 }
+
+.view-feedback {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.view-alert {
+    background-color: rgba(240, 248, 255, 0.195);
+
+    padding: 10px;
+    max-width: 600px;
+    
+    border-color: rgb(62, 215, 103);
+    border-radius: 5px;
+    border-style: solid;
+
+    color: white;
+}
+
+.view-err {
+    border-color: rgb(215, 80, 62);
+}
