@@ -1,12 +1,56 @@
 <script lang="ts">
-    let activeTab = "";
-    const challenges = [];
-    const editId = "";
+    import { invalidateAll } from '$app/navigation';
+    import type { ChallengeData } from '$lib/database/db';
+    
+    // defining the destructuring
+    const { challenges } : {
+        challenges: ChallengeData[]
+    } = $props();
+
+    async function toggleChallenge(id, is_active: boolean) {
+        await fetch('/admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'toggle', id, is_active })
+        });
+
+        // re-run the load in +page.server.ts updating the challenges collection
+        await invalidateAll();
+    }
+
+    async function deleteChallenge(id, name) {
+        if (window.confirm(`Are you sure you want to DELETE the challenge "${name}"?`)) {
+            await fetch('/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', id })
+            });
+            
+            // re-run the load in +page.server.ts updating the challenges collection
+            await invalidateAll();
+        }
+    }
+    
+    import ChallengeForm from '$lib/components/challenge.form.svelte';
+    let showEditPanel = $state(false);
+    let originalData: ChallengeData|undefined = $state(undefined);
+    function openPanel(entry: ChallengeData) { originalData = entry; showEditPanel = true; }
+    function exitPanel() { showEditPanel = false; }
 </script>
 
-<!--
-    @todo - edit panel connected to this panel
--->
+<!-- START OF PANEL -->
+
+{#if showEditPanel}
+    <div class="edit-overlay">
+        <div>
+            <button onclick={exitPanel} style="padding: 5px;">Close</button>
+
+            <ChallengeForm title="Edit Challenge" action_target="?/edit_challenge" challenge={originalData} />
+        </div>
+    </div>
+{/if}
+
+<!-- END OF PANEL -->
 
 <div>
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -17,7 +61,7 @@
     </div>
 
     <ul class="row">
-        {#each challenges as challenge, idx}
+        {#each challenges as challenge}
             <div class="col-12 col-sm-6 col-md-3 col-lg-3 mb-3" 
                  style="max-width: 400px;">
                 <div class="card h-100 shadow-sm p-2">
@@ -27,7 +71,7 @@
                         <div class="d-flex justify-content-between pt-2">
                             <button
                                 class={`btn ${challenge.is_active ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                                onclick={() => {}}
+                                onclick={() => { toggleChallenge(challenge.id, !challenge.is_active) }}
                             >
                                 {challenge.is_active ? 'Disable' : 'Enable'}
                             </button>
@@ -54,7 +98,7 @@
                         </p>
 
                         <p class="card-text small mb-1" style="font-size:1.25rem;">
-                            ⭐ {challenge.rating.toFixed(1)} / 5
+                            ⭐ {Number(challenge.rating).toFixed(1)} / 5
                         </p>
 
                         <p class="card-text small" style="font-size:1.25rem;">
@@ -65,11 +109,11 @@
                     <!-- Edit / Delete -->
                     <div class="container">
                         <div class="d-flex justify-content-between pt-2">
-                            <button class="btn btn-outline-info" onclick={() => {}}>
+                            <button class="btn btn-outline-info" onclick={() => { openPanel(challenge) }}>
                                 <i class="bi bi-pencil me-2"></i> Edit
                             </button>
 
-                            <button class="btn btn-outline-danger" onclick={() => {}}>
+                            <button class="btn btn-outline-danger" onclick={() => { deleteChallenge(challenge.id, challenge.name) }}>
                                 <i class="bi bi-trash me-2"></i> Delete
                             </button>
                         </div>

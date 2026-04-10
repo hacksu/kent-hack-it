@@ -80,3 +80,30 @@ export const auth = betterAuth({
         }
     }
 });
+
+type ServerSolution = {
+    status: number,
+    message: string
+};
+/**
+ * performs a server-side check if the user is an admin
+ * 
+ * @param event named-form actione event
+ * @returns 
+ */
+export async function isAdmin(request: Request): Promise<ServerSolution> {
+    try {
+        const session = await auth.api.getSession({
+            headers: request.headers
+        });
+    
+        if (session?.user.role === 'admin') {
+            console.log("[+] User is an Admin");
+            return { "status": 200, "message": "Authorized" };
+        }
+    } catch {
+        console.log("[-] Unauthorized attempt");
+        return { "status": 401, "message": "Forbidden" };
+    }
+    return { "status": 401, "message": "Forbidden" };
+}

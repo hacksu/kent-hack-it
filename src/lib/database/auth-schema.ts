@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, serial, numeric, integer } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -92,3 +92,22 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+// KHI EXCLUSIVES
+export const challenges = pgTable("challenges", {
+    id: serial("id").primaryKey(),
+
+    name: text("name").unique().notNull(),
+    description: text("description").notNull(),
+    category: text("category").notNull(),
+    difficulty: text("difficulty").notNull(),
+    written_by: text("written_by").default("Unknown Author"),
+    flag: text("flag").unique().notNull(),
+    points: integer("points").notNull(),            // computed server-side
+
+    user_rates: integer("user_rates").array().default([]),
+    rating: numeric("rating", { precision: 3, scale: 2 }).default("0"),
+    hlinks: text("hlinks").array().default([]),
+    is_active: boolean("is_active").default(true),  // used to close a challenge from players to perform maintanence
+    is_gym: boolean("is_gym").default(false),       // used to defined what is an event challenge and post-event challenge
+});

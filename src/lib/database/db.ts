@@ -1,5 +1,9 @@
 import postgres from "postgres";
+
 import { drizzle } from "drizzle-orm/postgres-js";
+import { eq } from "drizzle-orm";
+
+import * as schema from "./auth-schema";
 import { env } from "$env/dynamic/private"; // dynamic allows the .env file to be read at runtime
 
 const sql = postgres({
@@ -17,3 +21,124 @@ const sql = postgres({
         - force feed psql the generated .sql file
 */
 export const db = drizzle(sql);
+
+export interface ChallengeForm {
+    name: string,
+    description: string,
+    written_by: string,
+    category: string,
+    difficulty: string,
+    flag: string,
+    points: number
+};
+
+export interface ChallengeData {
+    id: number;
+    name: string;
+    description: string;
+    category: string;
+    difficulty: string;
+    written_by: string | null;
+    flag: string;
+    points: number;
+    user_rates: number[] | null;
+    rating: string | null;
+    hlinks: string[] | null;
+    is_active: boolean | null;
+    is_gym: boolean | null;
+};
+
+/**
+ * Insert challenge data into the challenges table (register new challenge)
+ * 
+ * @param data
+ */
+export async function AddChallenge(data: ChallengeForm) {
+    try {
+        const [row] = await db.insert(schema.challenges).values(data).returning();
+        console.log(`[*] AddChallenge -> inserted ${row.id}`);
+        return row;
+    } catch (error) {
+        console.error('Failed to insert challenge:', error);
+        throw error;
+    }
+}
+
+export async function UpdateChallenge(data: ChallengeForm, id) {
+    try {
+        const [row] = await db.update(schema.challenges)
+                        .set(data)
+                        .where(eq(schema.challenges.id, id)).returning();
+        console.log(`[*] UpdateChallenge -> updated ${row.id}`);
+        return row;
+    } catch (error) {
+        console.error('Failed to update challenge:', error);
+        throw error;
+    }
+}
+
+/**
+ * Return all challenges based on mode integer
+ * @param grab_mode `0 - all, 1 - event only, 2 - gym only`
+ */
+export async function GetChallenges(grab_mode: number = 0) {
+    try {
+        if (grab_mode === 0) {
+            return await db.select()
+                .from(schema.challenges);
+        } else if (grab_mode === 1) {
+            return await db.select()
+                .from(schema.challenges)
+                .where(eq(schema.challenges.is_gym, false));
+        } else if (grab_mode === 2) {
+            return await db.select()
+                .from(schema.challenges)
+                .where(eq(schema.challenges.is_gym, true));
+        }
+    } catch (error) {
+        console.error('Failed to insert challenge:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update a challenge entry based on id and toggle
+ * its is_active attribute
+ * 
+ * @param id
+ * @param set_enabled
+ * @returns 
+ */
+export async function ToggleChallenge(id, set_enabled: boolean) {
+    try {
+        const [row] = await db.update(schema.challenges)
+                        .set({ is_active: set_enabled })
+                        .where(eq(schema.challenges.id, id));
+
+        console.log(`[*] ToggleChallenge -> ${id} [${ set_enabled ? "ACTIVE" : "DISABLED" }]`);
+        return row;
+    } catch (error) {
+        console.error('Failed to toggle challenge:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete a challenge with a given id
+ * 
+ * @param id 
+ * @returns 
+ */
+export async function DeleteChallenge(id) {
+    try {
+        const [row] = await db.delete(schema.challenges)
+            .where(eq(schema.challenges.id, id))
+            .returning();
+
+        console.log(`[*] DeleteChallenge -> deleted ${row.id}`);
+        return row;
+    } catch (error) {
+        console.error('Failed to delete challenge:', error);
+        throw error;
+    }
+}

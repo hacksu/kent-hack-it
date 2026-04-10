@@ -7,11 +7,15 @@
     import ChallengeCreate from './d.create.svelte';
     import FileUploadTab from './d.upload.svelte';
 
-    let activeTab = $state("users");
-
-    function setTab(tab:string) {
-        activeTab = tab;
+    // control over refresh to persist the focused tab
+    import { page } from '$app/state';
+    import { goto } from '$app/navigation';
+    let activeTab = $derived(page.url.searchParams.get('tab') ?? 'users');
+    function setTab(tab: string) {
+        goto(`?tab=${tab}`, { replaceState: true, keepFocus: true, noScroll: true });
     }
+
+    const { data } = $props();
 </script>
 
 <main>
@@ -103,7 +107,7 @@
             {:else if activeTab === "solvers"}
                 <SolversTab />
             {:else if activeTab === "view"}
-                <ChallengeView />
+                <ChallengeView challenges={ data.challenges } />
             {:else if activeTab === "create"}
                 <ChallengeCreate />
             {:else if activeTab === "upload"}
