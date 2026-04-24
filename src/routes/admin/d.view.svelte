@@ -7,7 +7,7 @@
         result = undefined;
     }
 
-    async function toggleChallenge(id, name, is_active: boolean) {
+    async function toggleChallenge(id: string, name: string, is_active: boolean) {
         const req = await fetch('/admin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -22,7 +22,7 @@
         setTimeout(clearResult, 5000);
     }
 
-    async function deleteChallenge(id, name) {
+    async function deleteChallenge(id: string, name: string) {
         if (window.confirm(`Are you sure you want to DELETE the challenge "${name}"?`)) {
             const req = await fetch('/admin', {
                 method: 'POST',
@@ -59,6 +59,15 @@
                 title="Edit Challenge"
                 action_target="?/edit_challenge"
                 challenge={originalData}
+                onSubmit={(data: { success: boolean, message: string }|undefined) => {
+                    showEditPanel = false;
+                    if (data) {
+                        result = data;
+                    } else {
+                        result = { error: 'An error occurred' };
+                    }
+                    setTimeout(clearResult, 5000);
+                }}
                 result={form}
             />
         </div>

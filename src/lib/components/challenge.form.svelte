@@ -5,16 +5,15 @@
     let files = [];
     let isOpen = false;
     let creationDisabled = false;
-    
     let selectedFiles = [];
 
-    const { title, action_target, challenge, result } : {
+    const { title, action_target, challenge, result, onSubmit } : {
         title: string,
         action_target: string,
         challenge: ChallengeData | undefined,
+        onSubmit?: (data: { success: boolean, message: string }|undefined) => void,
         result: { error?: string, success?: boolean, message?: string } | null
     } = $props();
-    
 </script>
 
 <div class="container mt-4" style="max-width: 700px;">
@@ -22,7 +21,15 @@
         <div class="card-body p-4">
             <h4 class="card-title text-center mb-4">{title}</h4>
 
-            <form method="POST" action={action_target} use:enhance>
+            <!-- use:enhance allows us to track the result from the form POST -->
+            <form method="POST" action={action_target} use:enhance={() => {
+                return async ({ result, update }) => {
+                    await update();
+                    if (result.type === 'success') {
+                        onSubmit?.(result.data);
+                    }
+                };
+            }}>
                 <!-- Challenge Name -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Challenge Name</label>
