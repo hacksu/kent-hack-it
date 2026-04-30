@@ -2,6 +2,7 @@ import { isAdmin } from '$lib/server/auth';
 import {
     ToggleChallenge, DeleteChallenge,
     DeleteAdmin,
+    DeleteUser,
 } from '$lib/database/db';
 import { json } from '@sveltejs/kit';
 
@@ -23,6 +24,14 @@ async function deleteChallenge(id: string) {
 
 async function deleteAdmin(id: string) {
     if ( await DeleteAdmin(id) ) {
+        return json({ success: true , status: 200 });
+    } else {
+        return json({ success: false , status: 200 });
+    }
+}
+
+async function deleteUser(id: string) {
+    if ( await DeleteUser(id) ) {
         return json({ success: true , status: 200 });
     } else {
         return json({ success: false , status: 200 });
@@ -65,6 +74,13 @@ export const POST = async (event) => {
     } else if (data.context === 'admin') {
         if (data.action === 'delete') {
             handler = await deleteAdmin(data.id);
+        } else {
+            // unknown action
+            return json({ success: false, error: 'Unknown action' , status: 500 });
+        }
+    } else if (data.context === 'user') {
+        if (data.action === 'delete') {
+            handler = await deleteUser(data.id);
         } else {
             // unknown action
             return json({ success: false, error: 'Unknown action' , status: 500 });

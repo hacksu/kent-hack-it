@@ -46,6 +46,14 @@ export const auth = betterAuth({
             scope: ["guilds.members.read"],
             clientId: env.DISCORD_CLIENT_ID as string,
             clientSecret: env.DISCORD_CLIENT_SECRET as string
+        },
+        github: {
+            clientId: env.GITHUB_CLIENT_ID as string,
+            clientSecret: env.GITHUB_CLIENT_SECRET as string,
+        },
+        google: {
+            clientId: env.GOOGLE_CLIENT_ID as string,
+            clientSecret: env.GOOGLE_CLIENT_SECRET as string,
         }
     },
     session: {

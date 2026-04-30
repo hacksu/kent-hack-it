@@ -194,3 +194,53 @@ export async function DeleteAdmin(id) {
         return false;
     }
 }
+
+/**
+ * Returns a list of CTF players
+ * 
+ * @returns 
+ */
+export async function GetUsers() {
+    try {
+        return await db.select()
+                .from(schema.user)
+                .where(eq(schema.user.role, "user"));
+    } catch (error) {
+        console.error('Failed to get users:', error);
+        return false;
+    }
+}
+
+/**
+ * Delete a CTF Player with the respective id
+ * 
+ * @param id 
+ * @returns 
+ */
+export async function DeleteUser(id) {
+    try {
+        // remove user entry
+        const [user_data] = await db.delete(schema.user)
+            .where(eq(schema.user.id, id))
+            .returning();
+
+        // remove account entry
+        const [acc_data] = await db.delete(schema.account)
+            .where(eq(schema.account.userId, id))
+            .returning();
+        // remove session entry
+        const [sess_data] = await db.delete(schema.session)
+            .where(eq(schema.session.userId, id))
+            .returning();
+
+        console.log('[+] Deleted CTF Player');
+
+        const all_data = [user_data, acc_data, sess_data];
+        console.log(all_data);
+
+        return true;
+    } catch (error) {
+        console.error('Failed to delete CTF Player:', error);
+        return false;
+    }
+}

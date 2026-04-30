@@ -1,18 +1,61 @@
 <script lang="ts">
-    const users = [];
-    let searchTerm = "";
+    import { invalidateAll } from '$app/navigation';
 
-    const nonAdminUserCount = users.filter(user => !user.is_admin).length;
-    const filteredUsers = users.filter(user =>
-        user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    let result: {
+        success?:boolean,
+        error?:string,
+        message?:string
+    } | undefined = $state(undefined);
+
+    function clearResult() {
+        result = undefined;
+    }
+
+    async function deleteUser(id: string, name: string) {
+        if (window.confirm(`Are you sure you want to DELETE this player "${name}"?`)) {
+            const req = await fetch('/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ context: 'user', action: 'delete', id })
+            });
+
+            result = await req.json();
+            result.message = `"${name}" has been deleted`;
+            
+            // re-run the load in +page.server.ts updating the challenges collection
+            await invalidateAll();
+            setTimeout(clearResult, 5000);
+        }
+    }
+
+    const { users } = $props();
+
+    // whenever searchTerm is modified filterUsers will be recomputed
+    let searchTerm = $state("");
+    const filteredUsers = $derived(
+        users.filter(user => {
+            return user.name.toLowerCase().includes(searchTerm.toLowerCase());
+        })
     );
 </script>
 
 <div class="users-tab">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Registered Users</h5>
+        <h5 class="mb-0">Registered Players</h5>
+
+        <!-- button fetch -->
+        {#if result?.success}
+            <div class="view-feedback">
+                <div class="view-alert">{result.message}</div>
+            </div>
+        {:else if result?.error}
+            <div class="view-feedback">
+                <div class="view-alert view-err">{result.error}</div>
+            </div>
+        {/if}
+
         <span class="badge bg-primary fs-6">
-            {nonAdminUserCount} User{nonAdminUserCount !== 1 ? 's' : ''}
+            {users.length} Player{users.length !== 1 ? 's' : ''}
         </span>
     </div>
 
@@ -20,9 +63,8 @@
         <input
             type="text"
             class="form-control"
-            placeholder="Search users by username..."
-            value={searchTerm}
-            oninput={() => {}}
+            placeholder="Search players by username..."
+            bind:value={searchTerm}
         />
     </div>
 
@@ -38,13 +80,13 @@
                         <!-- Top: Avatar + Username -->
                         <div class="d-flex align-items-center mb-2">
                             <img
-                                src={user.avatarUrl}
-                                alt="{user.username}'s avatar"
+                                src={user.image}
+                                alt="{user.name}'s avatar"
                                 class="rounded-circle me-2 shadow-sm"
                                 style="width: 45px; height: 45px; object-fit: cover;"
                             />
                             <h6 class="card-title mb-0 fw-bold" style="font-size: 1rem;">
-                                {user.username}
+                                {user.name}
                             </h6>
                         </div>
 
@@ -62,7 +104,7 @@
                         <div class="mt-2">
                             <button
                                 class="btn btn-sm btn-outline-danger w-100"
-                                onclick={() => {}}
+                                onclick={() => { deleteUser(user.id, user.name) }}
                             >
                                 <i class="bi bi-trash me-1"></i> Remove
                             </button>

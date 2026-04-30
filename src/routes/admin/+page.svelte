@@ -99,7 +99,7 @@
 
             <div class="tab-content mt-4">
             {#if activeTab === "users"}
-                <UsersTab />
+                <UsersTab users={ data.players } />
             {:else if activeTab === "teams"}
                 <TeamsTab />
             {:else if activeTab === "admins"}

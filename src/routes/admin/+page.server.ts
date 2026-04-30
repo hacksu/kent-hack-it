@@ -3,12 +3,13 @@ import { isAdmin } from '$lib/server/auth'
 import {
     AddChallenge, GetChallenges, UpdateChallenge,
     GetAdmins,
+    GetUsers,
 } from "$lib/database/db";
 
 // importing interface alias
 import type { ChallengeForm } from "$lib/database/db";
 
-// sent to +page.server => data. (user,challenges,admins, ...)
+// sent to +page.svelte => data. (user,challenges,admins, ...)
 export const load = async ({ parent }) => {
     // goes to +layout.server.ts and fetches the user state
     const { user } = await parent();
@@ -19,8 +20,9 @@ export const load = async ({ parent }) => {
 
     let challenges = await GetChallenges();
     let admins = await GetAdmins();
+    let players = await GetUsers();
 
-    return { user, challenges, admins }
+    return { user, challenges, admins, players }
 };
 
 const PointValues = {
