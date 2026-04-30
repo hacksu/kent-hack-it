@@ -62,6 +62,8 @@ export const actions = {
 
         const form = await request.formData();
         let formData = Object.fromEntries(form.entries()) as Record<string, string>;
+        
+        const attached_files = form.getAll("attached_files") as string[];
 
         if (!formData.name || !formData.description || !formData.written_by || 
             !formData.category || !formData.difficulty || !formData.flag)
@@ -80,6 +82,7 @@ export const actions = {
                 difficulty: formData.difficulty,
                 flag: formData.flag,
                 points,
+                hlinks: attached_files
             };
 
             await AddChallenge(data);
@@ -96,6 +99,8 @@ export const actions = {
 
         const form = await request.formData();
         const formData = Object.fromEntries(form.entries()) as Record<string, string>;
+
+        const attached_files = form.getAll("attached_files") as string[];
 
         if (!formData.id || !formData.name || !formData.description ||
             !formData.written_by || !formData.category || !formData.difficulty || !formData.flag)
@@ -116,6 +121,7 @@ export const actions = {
                 difficulty: formData.difficulty,
                 flag: formData.flag,
                 points,
+                hlinks: attached_files
             }, formData.id);
 
             return { success: true, message: 'Challenge updated!' };

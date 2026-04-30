@@ -50,7 +50,7 @@
     function openPanel(entry: ChallengeData) { originalData = entry; showEditPanel = true; }
     function exitPanel() { showEditPanel = false; }
 
-    const { challenges, form } = $props();
+    const { uploaded_files, challenges, form } = $props();
 </script>
 
 <!-- START OF PANEL -->
@@ -74,6 +74,7 @@
                     setTimeout(clearResult, 5000);
                 }}
                 result={form}
+                uploaded_files={uploaded_files}
             />
         </div>
     </div>

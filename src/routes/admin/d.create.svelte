@@ -11,7 +11,7 @@
         elem?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     
-    const { form } = $props();
+    const { uploaded_files, form } = $props();
 </script>
 
 <div id="feedback-display">
@@ -40,4 +40,5 @@
         setTimeout(clearResult, 5000);
     }}
     result={form}
+    uploaded_files={uploaded_files}
 />

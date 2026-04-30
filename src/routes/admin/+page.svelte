@@ -107,9 +107,9 @@
             {:else if activeTab === "solvers"}
                 <SolversTab />
             {:else if activeTab === "view"}
-                <ChallengeView challenges={ data.challenges } />
+                <ChallengeView uploaded_files={ data.files } challenges={ data.challenges } />
             {:else if activeTab === "create"}
-                <ChallengeCreate />
+                <ChallengeCreate uploaded_files={ data.files } />
             {:else if activeTab === "upload"}
                 <FileUploadTab uploaded_files={ data.files } />
             {/if}

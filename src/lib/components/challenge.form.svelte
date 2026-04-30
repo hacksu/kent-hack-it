@@ -2,18 +2,18 @@
     import { enhance } from "$app/forms";
     import type { ChallengeData } from "$lib/database/db";
 
-    let files = [];
-    let isOpen = false;
-    let creationDisabled = false;
-    let selectedFiles = [];
-
-    const { title, action_target, challenge, result, onSubmit } : {
+    let isOpen = $state<boolean>(false);
+    let creationDisabled = $state<boolean>(false);
+        
+    const { title, action_target, challenge, result, onSubmit, uploaded_files } : {
         title: string,
         action_target: string,
         challenge: ChallengeData | undefined,
         onSubmit?: (data: { success: boolean, message: string }|undefined) => void,
-        result: { error?: string, success?: boolean, message?: string } | null
+        result: { error?: string, success?: boolean, message?: string } | null,
+        uploaded_files: any
     } = $props();
+    let selectedFiles = $state<string[]>(challenge?.hlinks || []);
 </script>
 
 <div class="container mt-4" style="max-width: 700px;">
@@ -81,11 +81,11 @@
 
                     {#if isOpen}
                     <div class="border rounded p-2 d-flex flex-wrap gap-2">
-                        {#if files.length === 0}
+                        {#if uploaded_files.length === 0}
                             <p class="text-muted mb-0">No files uploaded</p>
                         {/if}
 
-                        {#each files as file}
+                        {#each uploaded_files as file}
                             <label
                                 for={`file-${file}`}
                                 class="d-flex align-items-center gap-1 small border rounded px-2 py-1 hover-highlight"
@@ -93,6 +93,9 @@
                                 <input
                                     type="checkbox"
                                     id={`file-${file}`}
+                                    name="attached_files"
+                                    value={file}
+                                    bind:group={selectedFiles}
                                     class="form-check-input m-0"
                                 />
                                 {file}

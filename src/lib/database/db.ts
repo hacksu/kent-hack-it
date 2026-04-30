@@ -29,7 +29,8 @@ export interface ChallengeForm {
     category: string,
     difficulty: string,
     flag: string,
-    points: number
+    points: number,
+    hlinks: string[] | null;
 };
 
 export interface ChallengeData {
