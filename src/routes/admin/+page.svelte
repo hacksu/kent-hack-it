@@ -111,7 +111,7 @@
             {:else if activeTab === "create"}
                 <ChallengeCreate />
             {:else if activeTab === "upload"}
-                <FileUploadTab />
+                <FileUploadTab uploaded_files={ data.files } />
             {/if}
             </div>
         </div>

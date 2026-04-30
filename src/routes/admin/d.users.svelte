@@ -1,15 +1,13 @@
 <script lang="ts">
     import { invalidateAll } from '$app/navigation';
 
-    let result: {
-        success?:boolean,
-        error?:string,
-        message?:string
-    } | undefined = $state(undefined);
-
     function clearResult() {
-        result = undefined;
+        error = warning = success = "";
     }
+
+    let error = $state("");
+    let warning = $state("");
+    let success = $state("");
 
     async function deleteUser(id: string, name: string) {
         if (window.confirm(`Are you sure you want to DELETE this player "${name}"?`)) {
@@ -19,10 +17,17 @@
                 body: JSON.stringify({ context: 'user', action: 'delete', id })
             });
 
-            result = await req.json();
-            result.message = `"${name}" has been deleted`;
+            const response = await req.json();
+            if (response) {
+                if (response.success) {
+                    success = `Successfully removed ${name}`;
+                } else {
+                    error = `Failed to remove ${name}`;
+                }
+            } else {
+               error = "Error Occurred";
+            }
             
-            // re-run the load in +page.server.ts updating the challenges collection
             await invalidateAll();
             setTimeout(clearResult, 5000);
         }
@@ -44,14 +49,14 @@
         <h5 class="mb-0">Registered Players</h5>
 
         <!-- button fetch -->
-        {#if result?.success}
-            <div class="view-feedback">
-                <div class="view-alert">{result.message}</div>
-            </div>
-        {:else if result?.error}
-            <div class="view-feedback">
-                <div class="view-alert view-err">{result.error}</div>
-            </div>
+        {#if error}
+            <div class="alert alert-danger">{error}</div>
+        {/if}
+        {#if success}
+            <div class="alert alert-success">{success}</div>
+        {/if}
+        {#if warning}
+            <div class="alert alert-warning">{warning}</div>
         {/if}
 
         <span class="badge bg-primary fs-6">

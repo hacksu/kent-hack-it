@@ -38,6 +38,26 @@ async function deleteUser(id: string) {
     }
 }
 
+import { rm } from "fs/promises";
+import { join, basename } from "path";
+async function deleteArchive(file: string) {
+    const filename = basename(file);
+    const uploadDir = join(process.cwd(), "uploads");
+    const filepath = join(uploadDir, filename);
+
+    // check for path traversal
+    if (!filepath.startsWith(uploadDir)) {
+        return json({ success: false , status: 403 });
+    }
+
+    try {
+        await rm(filepath);
+        return json({ success: true , status: 200 });
+    } catch {
+        return json({ success: false , status: 500 });
+    }
+}
+
 export const POST = async (event) => {
     // check user authorizations
     const authCheck = await isAdmin(event.request);
@@ -85,7 +105,14 @@ export const POST = async (event) => {
             // unknown action
             return json({ success: false, error: 'Unknown action' , status: 500 });
         }
-    } else {
+    } else if (data.context === 'file') {
+        if (data.action === 'delete') {
+            handler = await deleteArchive(data.file);
+        } else {
+            // unknown action
+            return json({ success: false, error: 'Unknown action' , status: 500 });
+        }
+    }  else {
         // unknown context
         return json({ success: false, error: 'Unknown context' , status: 500 });
     }
