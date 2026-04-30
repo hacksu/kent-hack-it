@@ -3,6 +3,7 @@ import {
     ToggleChallenge, DeleteChallenge,
     DeleteAdmin,
     DeleteUser,
+    UnlinkArchive,
 } from '$lib/database/db';
 import { json } from '@sveltejs/kit';
 

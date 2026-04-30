@@ -1,12 +1,12 @@
 import postgres from "postgres";
 
 import { drizzle } from "drizzle-orm/postgres-js";
-import { eq } from "drizzle-orm";
+import { eq, arrayContains } from "drizzle-orm";
 
 import * as schema from "./auth-schema";
 import { env } from "$env/dynamic/private"; // dynamic allows the .env file to be read at runtime
 
-const sql = postgres({
+const PSQL = postgres({
     host: env.PG_HOST,
     port: Number(env.PG_PORT),
     user: env.PG_USER,
@@ -20,7 +20,7 @@ const sql = postgres({
         - npx drizzle-kit generate
         - force feed psql the generated .sql file
 */
-export const db = drizzle(sql);
+export const db = drizzle(PSQL);
 
 export interface ChallengeForm {
     name: string,
@@ -242,6 +242,29 @@ export async function DeleteUser(id) {
         return true;
     } catch (error) {
         console.error('Failed to delete CTF Player:', error);
+        return false;
+    }
+}
+
+export async function UnlinkArchive(file: string) {
+    try {
+        // fetch all challenges that reference "file" in their hlinks array
+        const challenges = await db.select()
+            .from(schema.challenges)
+            .where(arrayContains(schema.challenges.hlinks, [file]));
+
+        // unlink file from all collected challenges
+        for (const challenge of challenges) {
+            const updatedLinks = (challenge.hlinks ?? []).filter(f => f !== file);
+            await db.update(schema.challenges)
+                .set({ hlinks: updatedLinks })
+                .where(eq(schema.challenges.id, challenge.id));
+        }
+
+        console.log(`[+] File "${file}" unlinked from ${challenges.length} challenge(s)`);
+        return true;
+    } catch (error) {
+        console.error('Failed to unlink file from challenges:', error);
         return false;
     }
 }
