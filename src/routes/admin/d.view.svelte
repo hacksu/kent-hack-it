@@ -2,7 +2,12 @@
     import { invalidateAll } from '$app/navigation';
     import type { ChallengeData } from '$lib/database/db';
 
-    let result = $state(undefined);
+    let result: {
+        success?:boolean,
+        error?:string,
+        message?:string
+    } | undefined = $state(undefined);
+
     function clearResult() {
         result = undefined;
     }
@@ -11,7 +16,7 @@
         const req = await fetch('/admin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'toggle', id, is_active })
+            body: JSON.stringify({ context: 'challenge', action: 'toggle', id, is_active })
         });
 
         result = await req.json();
@@ -27,7 +32,7 @@
             const req = await fetch('/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'delete', id })
+                body: JSON.stringify({ context: 'challenge', action: 'delete', id })
             });
 
             result = await req.json();

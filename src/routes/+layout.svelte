@@ -84,7 +84,7 @@
                     <a class="nav-link" href="/discord" target="_blank" rel="noopener noreferrer">Community</a>
                 </li>
 
-                {#if $session.data}
+                {#if $session.data?.user}
                     <li class="nav-item">
                         <a class="nav-link" href="/profile">Profile</a>
                     </li>

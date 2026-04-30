@@ -1,10 +1,14 @@
 import { redirect, fail } from '@sveltejs/kit';
 import { isAdmin } from '$lib/server/auth'
-import { AddChallenge, GetChallenges, UpdateChallenge } from "$lib/database/db";
+import {
+    AddChallenge, GetChallenges, UpdateChallenge,
+    GetAdmins,
+} from "$lib/database/db";
 
 // importing interface alias
 import type { ChallengeForm } from "$lib/database/db";
 
+// sent to +page.server => data. (user,challenges,admins, ...)
 export const load = async ({ parent }) => {
     // goes to +layout.server.ts and fetches the user state
     const { user } = await parent();
@@ -14,8 +18,9 @@ export const load = async ({ parent }) => {
     if (user.role !== 'admin') throw redirect(303, '/');
 
     let challenges = await GetChallenges();
+    let admins = await GetAdmins();
 
-    return { user, challenges }
+    return { user, challenges, admins }
 };
 
 const PointValues = {

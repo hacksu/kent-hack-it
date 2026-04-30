@@ -1,10 +1,50 @@
-<script>
-    const admins = [];
+<script lang="ts">
+    import { invalidateAll } from '$app/navigation';
+
+    let result: {
+        success?:boolean,
+        error?:string,
+        message?:string
+    } | undefined = $state(undefined);
+
+    function clearResult() {
+        result = undefined;
+    }
+
+    async function deleteAdmin(id: string, name: string) {
+        if (window.confirm(`Are you sure you want to DELETE this admin "${name}"?`)) {
+            const req = await fetch('/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ context: 'admin', action: 'delete', id })
+            });
+
+            result = await req.json();
+            result.message = `"${name}" has been deleted`;
+            
+            // re-run the load in +page.server.ts updating the challenges collection
+            await invalidateAll();
+            setTimeout(clearResult, 5000);
+        }
+    }
+
+    const { admins } = $props();
 </script>
 
 <div class="container mt-4 d-flex justify-content-center align-items-center">
     <div class="row w-100 justify-content-center">
         <h4>Current Admins</h4>
+
+        <!-- button fetch -->
+        {#if result?.success}
+            <div class="view-feedback">
+                <div class="view-alert">{result.message}</div>
+            </div>
+        {:else if result?.error}
+            <div class="view-feedback">
+                <div class="view-alert view-err">{result.error}</div>
+            </div>
+        {/if}
 
         <ul class="list-group w-auto">
             {#each admins as admin, index (index)}
@@ -15,18 +55,24 @@
                     <!-- Avatar + Username -->
                     <div class="d-flex align-items-center flex-grow-1">
                         <img
-                            src={admin.avatarUrl}
-                            alt="{admin.username}'s avatar"
+                            src={admin.image}
+                            alt="{admin.name}'s avatar"
                             class="rounded-circle me-3"
                             style="width: 40px; height: 40px; object-fit: cover;"
                         />
-                        <span class="fw-semibold text-dark">{admin.username}</span>
+                        <span class="fw-semibold text-dark">{admin.name}</span>
                     </div>
 
                     <!-- Delete Button -->
+                     
+                    <!--
+                        when admins are removed
+                        the logout button does
+                        not update to show login
+                    -->
                     <button
                         class="btn btn-sm btn-outline-danger ms-3"
-                        onClick={() => {}}
+                        onclick={() => { deleteAdmin(admin.id, admin.name) }}
                     >
                         <i class="bi bi-trash"></i> Delete
                     </button>

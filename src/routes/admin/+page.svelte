@@ -103,7 +103,7 @@
             {:else if activeTab === "teams"}
                 <TeamsTab />
             {:else if activeTab === "admins"}
-                <AdminsTab />
+                <AdminsTab admins={ data.admins } />
             {:else if activeTab === "solvers"}
                 <SolversTab />
             {:else if activeTab === "view"}

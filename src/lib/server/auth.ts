@@ -65,16 +65,16 @@ export const auth = betterAuth({
                         .where(eq(schema.account.userId, session.userId))
                         .limit(1);
 
-                    if (!account?.accessToken) return { data: session };
+                    const isAdmin = account?.accessToken
+                        ? await checkDiscordRole(account.accessToken)
+                        : false;
 
-                    const isAdmin = await checkDiscordRole(account.accessToken);
                     const role = isAdmin ? 'admin' : 'user';
-
                     await db.update(schema.user)
                         .set({ role })
                         .where(eq(schema.user.id, session.userId));
 
-                    return { data: session };
+                    return { data: { ...session, role } };
                 }
             }
         }

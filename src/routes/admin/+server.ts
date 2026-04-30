@@ -1,5 +1,8 @@
 import { isAdmin } from '$lib/server/auth';
-import { ToggleChallenge, DeleteChallenge } from '$lib/database/db';
+import {
+    ToggleChallenge, DeleteChallenge,
+    DeleteAdmin,
+} from '$lib/database/db';
 import { json } from '@sveltejs/kit';
 
 async function toggleChallenge(id: string, is_active: boolean) {
@@ -18,6 +21,14 @@ async function deleteChallenge(id: string) {
     }
 }
 
+async function deleteAdmin(id: string) {
+    if ( await DeleteAdmin(id) ) {
+        return json({ success: true , status: 200 });
+    } else {
+        return json({ success: false , status: 200 });
+    }
+}
+
 export const POST = async (event) => {
     // check user authorizations
     const authCheck = await isAdmin(event.request);
@@ -30,20 +41,37 @@ export const POST = async (event) => {
 
     console.log(data);
 
-    // action required
-    if (!data?.action) {
-        return json({ success: false, error: 'Unauthorized' , status: 401 });
+    // context required
+    if (!data?.context) {
+        return json({ success: false, error: 'Invalid Data' , status: 401 });
     }
 
-    if (data.action === 'toggle') {
-        // method is invoked and the return is saved to be passed
-        // into the ret stmt below
-        handler = await toggleChallenge(data.id, data.is_active);
-    } else if (data.action === 'delete') {
-        handler = await deleteChallenge(data.id);
+    // action required
+    if (!data?.action) {
+        return json({ success: false, error: 'Invalid Data' , status: 401 });
+    }
+
+    if (data.context === 'challenge') {
+        if (data.action === 'toggle') {
+            // method is invoked and the return is saved to be passed
+            // into the ret stmt below
+            handler = await toggleChallenge(data.id, data.is_active);
+        } else if (data.action === 'delete') {
+            handler = await deleteChallenge(data.id);
+        } else {
+            // unknown action
+            return json({ success: false, error: 'Unknown action' , status: 500 });
+        }
+    } else if (data.context === 'admin') {
+        if (data.action === 'delete') {
+            handler = await deleteAdmin(data.id);
+        } else {
+            // unknown action
+            return json({ success: false, error: 'Unknown action' , status: 500 });
+        }
     } else {
-        // unknown action
-        return json({ success: false, error: 'Unknown action' , status: 500 });
+        // unknown context
+        return json({ success: false, error: 'Unknown context' , status: 500 });
     }
 
     return handler;
