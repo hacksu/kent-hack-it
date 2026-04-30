@@ -20,6 +20,15 @@
     }
 
     const session = authClient.useSession();
+    let profDropOpen = $state(false);
+    let profDropElem = $state(null);
+    let profHovered = $state(false);
+
+    function handleClickOutside(e) {
+        if (profDropElem && !profDropElem.contains(e.target)) {
+            profDropOpen = false;
+        }
+    }
 
 	let { children } = $props();
 </script>
@@ -36,6 +45,8 @@
 
     <title>Kent Hack It</title>
 </svelte:head>
+
+<svelte:window onclick={handleClickOutside} />
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
@@ -85,11 +96,29 @@
                 </li>
 
                 {#if $session.data?.user}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/profile">Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link btn btn-link" onclick={handleLogout}>Logout</button>
+                    <li class="nav-item" style="position: relative;" bind:this={profDropElem}>
+                        <button
+                            class="nav-link btn btn-link"
+                            onclick={() => profDropOpen = !profDropOpen}
+                        >
+                            {$session.data?.user.name} ▾
+                        </button>
+
+                        {#if profDropOpen}
+                            <ul class="dropdown-menu show" style="position: absolute; right: 0; top: 100%;">
+                                <li>
+                                    <button
+                                        class="dropdown-item"
+                                        style="background-color: {profHovered ? '#dce8f5' : 'aliceblue'};"
+                                        onmouseenter={() => profHovered = true}
+                                        onmouseleave={() => profHovered = false}
+                                        onclick={handleLogout}
+                                    >
+                                        Logout
+                                    </button>
+                                </li>
+                            </ul>
+                        {/if}
                     </li>
                 {:else}
                     <li class="nav-item">
