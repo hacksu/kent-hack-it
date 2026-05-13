@@ -1,6 +1,15 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index, serial, numeric, integer } from "drizzle-orm/pg-core";
+import {
+    pgTable, text, timestamp, boolean,
+    index, serial, numeric, integer,
+    jsonb
+} from "drizzle-orm/pg-core";
 
+// pair element that holds a reference to the challenge and when it was claimed
+export type ClaimEntry = {
+    challenge_id: number;
+    claimed_at: string; // ISO date string
+};
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -16,6 +25,7 @@ export const user = pgTable("user", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
+  claims: jsonb("claims").$type<ClaimEntry[]>().default([]),
 });
 
 export const session = pgTable(

@@ -1,5 +1,7 @@
 <script lang="ts">
     import { invalidateAll } from '$app/navigation';
+    
+    import Feedback from '$lib/components/feedback.svelte';
 
     function clearResult() {
         error = warning = success = "";
@@ -49,15 +51,7 @@
         <h5 class="mb-0">Registered Players</h5>
 
         <!-- button fetch -->
-        {#if error}
-            <div class="alert alert-danger">{error}</div>
-        {/if}
-        {#if success}
-            <div class="alert alert-success">{success}</div>
-        {/if}
-        {#if warning}
-            <div class="alert alert-warning">{warning}</div>
-        {/if}
+        <Feedback success={success} warning={warning} error={error}  />
 
         <span class="badge bg-primary fs-6">
             {users.length} Player{users.length !== 1 ? 's' : ''}

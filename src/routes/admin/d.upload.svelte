@@ -1,6 +1,8 @@
 <script lang="ts">
     import { enhance } from "$app/forms";
     import { invalidateAll } from '$app/navigation';
+    
+    import Feedback from '$lib/components/feedback.svelte';
 
     let selectedFiles = $state<File[]>([]);
     let fileInput = $state<HTMLInputElement | null>(null);
@@ -86,15 +88,7 @@
                     <h3 class="card-title text-center mb-4">Upload Challenge</h3>
 
                     <!-- button fetch -->
-                    {#if error}
-                        <div class="alert alert-danger">{error}</div>
-                    {/if}
-                    {#if success}
-                        <div class="alert alert-success">{success}</div>
-                    {/if}
-                    {#if warning}
-                        <div class="alert alert-warning">{warning}</div>
-                    {/if}
+                    <Feedback success={success} warning={warning} error={error}  />
 
                     <form
                         method="POST"

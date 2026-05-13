@@ -13,6 +13,30 @@
     background-color: rgba(255, 255, 255, 0.74);
 }
 
+.challenge-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    overflow-y: auto;
+}
+
+.challenge-overlay > div {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    width: 100%;
+    max-width: 550px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
 .view-feedback {
     display: flex;
     justify-content: center;

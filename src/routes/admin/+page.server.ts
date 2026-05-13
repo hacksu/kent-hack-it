@@ -32,7 +32,7 @@ export const load = async ({ parent }) => {
     if (!user) throw redirect(303, '/auth/login');
     if (user.role !== 'admin') throw redirect(303, '/');
 
-    let challenges = await GetChallenges();
+    let challenges = await GetChallenges(true);
     let admins = await GetAdmins();
     let players = await GetUsers();
     let files = await GetArchives();

@@ -1,13 +1,23 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { enhance } from "$app/forms";
+    import { invalidateAll } from '$app/navigation';
+
+    import Feedback from '$lib/components/feedback.svelte';
+
+    import { type ViewableChallengeData } from '$lib/database/db.js';
+
+    function clearResult() {
+        error = warning = success = "";
+    }
+    let error = $state("");
+    let warning = $state("");
+    let success = $state("");
+
+    const { data } = $props();
 
     let challenges: any[] = $state([]);
     let currentPage = $state(1);
     const challengesPerPage = 20;
-
-    let profileData: any = $state(null);
-    let teamData: any = $state(null);
-    let joinedTeamName = $state('');
 
     let availableCategories: string[] = $state([]);
     let availableDifficulties: string[] = $state([]);
@@ -25,37 +35,6 @@
         showTeamCompleted: false,
         showTeamUncompleted: true
     });
-
-    async function getProfileDetails() {
-        try {
-            const response = await fetch('/api/user/info', {
-                method: 'GET',
-                credentials: 'include'
-            });
-            const data = await response.json();
-            if (data === null) {
-                joinedTeamName = 'None';
-            } else {
-                joinedTeamName = data.team;
-                profileData = data;
-            }
-        } catch (error) {
-            console.error('Error sending request:', error);
-        }
-    }
-
-    async function getTeamDetails() {
-        try {
-            const response = await fetch('/api/team/info', {
-                method: 'GET',
-                credentials: 'include'
-            });
-            const data = await response.json();
-            teamData = data;
-        } catch (error) {
-            console.error('Error sending request:', error);
-        }
-    }
 
     function applyFilters(data: any[]) {
         let filtered = [...data];
@@ -81,46 +60,32 @@
                 (c.written_by && c.written_by.toLowerCase().includes(term))
             );
         }
-        if (!filters.showCompleted || !filters.showUncompleted) {
-            const userCompletions = profileData?.completions || [];
-            filtered = filtered.filter(c => {
-                const done = userCompletions.some((comp: any) => comp.id === c._id);
-                return (filters.showCompleted && done) || (filters.showUncompleted && !done);
-            });
-        }
-        if (!filters.showTeamCompleted || !filters.showTeamUncompleted) {
-            const teamCompletions = teamData?.completions || [];
-            filtered = filtered.filter(c => {
-                const done = teamCompletions.some((comp: any) => comp.id === c._id);
-                return (filters.showTeamCompleted && done) || (filters.showTeamUncompleted && !done);
-            });
-        }
 
         return filtered;
     }
 
     async function fetchChallenges() {
         try {
-            const response = await fetch('/api/ctf/challenges');
-            const data = await response.json();
+            if (!data.challenges) return;
 
-            const categories = [...new Set<string>(data.map((c: any) => c.category))].sort();
+            const categories = [...new Set<string>(data.challenges.map((c: any) => c.category))].sort();
             const difficultyOrder = ['Simple', 'Easy', 'Medium', 'Hard', 'Extreme'];
-            const unique = [...new Set<string>(data.map((c: any) => c.difficulty))];
+            const unique = [...new Set<string>(data.challenges.map((c: any) => c.difficulty))];
             const difficulties = difficultyOrder.filter(d => unique.includes(d));
             const ratings = ['4.0', '3.0', '2.0', '1.0', '0.0'];
-            const authors = [...new Set<string>(data.map((c: any) => c.written_by).filter(Boolean))].sort();
+            const authors = [...new Set<string>(data.challenges.map((c: any) => c.written_by).filter(Boolean))].sort();
 
             availableCategories = categories;
             availableDifficulties = difficulties;
             availableRatings = ratings;
             availableAuthors = authors;
 
-            challenges = applyFilters(data);
+            challenges = applyFilters(data.challenges);
         } catch (err) {
             console.error('Failed to fetch challenges:', err);
         }
     }
+    fetchChallenges();
 
     function clearFilters() {
         filters = {
@@ -155,23 +120,125 @@
         currentPage = 1;
     });
 
-    // Refetch when profileData, teamData, or filters change
-    $effect(() => {
-        profileData; teamData; filters;
-        fetchChallenges();
-    });
+    let showPanel = $state<boolean>(false);
+    let challengeInfo = $state<ViewableChallengeData|undefined>(undefined);
+    async function viewChallenge(cid: string|number) {
+        // console.log(`Viewing cid -> ${cid}`);
+        const data: any|undefined = currentChallenges.find(challenge => Number(challenge.id) === Number(cid));
+        // console.log(`Data Fetched -> ${JSON.stringify(data)}`);
 
-    // Fetch team when joinedTeamName changes
-    $effect(() => {
-        if (joinedTeamName && joinedTeamName !== 'None') {
-            getTeamDetails();
-        }
-    });
+        showPanel = (data !== undefined) ? true : false;
+        challengeInfo = data;
+    }
 
-    onMount(async () => {
-        await getProfileDetails();
-    });
 </script>
+
+<svelte:head>
+    <link rel="stylesheet" href="/css/overlay.css">
+</svelte:head>
+
+<!-- START OF PANEL -->
+{#if showPanel}
+    <div class="challenge-overlay" role="presentation" onclick={() => showPanel = false}>
+        <div>
+            {#if challengeInfo}
+                <Feedback success={success} warning={warning} error={error}  />
+
+                <div role="presentation" class="card shadow" style="min-width: 400px; max-width: 550px;"
+                    onclick={(e) => e.stopPropagation()}
+                >
+                    <!-- Header banner -->
+                    <div class="card-header d-flex justify-content-between align-items-start"
+                        style="background: linear-gradient(135deg, #61a7e8, #3a80c2); color: white;">
+                        <div>
+                            <h5 class="mb-1">{challengeInfo.name}</h5>
+                            <p class="mb-1" style="font-size: 12px">Created By: {challengeInfo.written_by}</p>
+                            <span class="badge bg-secondary me-1">{challengeInfo.category}</span>
+                            <span class="badge {
+                                challengeInfo.difficulty === 'Extreme' ? 'bg-danger' :
+                                challengeInfo.difficulty === 'Hard' ? 'bg-warning text-dark' :
+                                challengeInfo.difficulty === 'Medium' ? 'bg-info text-dark' :
+                                challengeInfo.difficulty === 'Easy' ? 'bg-success' : 'bg-light text-dark'
+                            }">{challengeInfo.difficulty}</span>
+                        </div>
+                        <button class="btn btn-sm btn-close btn-close-white" onclick={() => showPanel = false}></button>
+                    </div>
+
+                   <div class="card-body p-2">
+                        {#if !challengeInfo.is_active}
+                            <p>Challenge is currently Out-of-Order and will be back online soon!</p>
+                        {/if}
+
+                        {#if challengeInfo.description}
+                            <div class="mb-2">
+                                <p class="card-text small text-muted" style="font-size: 0.75rem">
+                                    {challengeInfo.description}
+                                </p>
+                            </div>
+                        {/if}
+                        
+                        <p class="card-text small mb-1">⭐ {Number(challengeInfo.rating).toFixed(1)} / 5</p>
+                        <p class="card-text small">Points: {challengeInfo.points}</p>
+                        <!--
+                            <p class="card-text small">{challengeInfo.user_completions} Solves</p>
+                        -->
+                    </div>
+
+                    <!-- Footer action -->
+                    <div class="card-footer d-grid">
+                        <form method="POST" action="?/submit_flag" use:enhance={() => {
+                            return async ({ result, update }) => {
+                                await update();
+                                console.log(result.data);
+
+                                if (result.type === 'success') {
+                                    if (result.data.success) {
+                                        success = result.data?.message;
+                                    } else {
+                                        error = result.data?.message;
+                                    }
+                                } else {
+                                    error = 'Error Occurred!';
+                                }
+
+                                await invalidateAll();
+                                setTimeout(clearResult, 5000);
+                            };
+                        }}>
+                            <input type="hidden" name="cid" value={challengeInfo.id} />
+                            <div class="input-group mt-2">
+                                <input
+                                    name="flag_value"
+                                    type="text"
+                                    class="form-control"
+                                    placeholder="Enter Flag"
+                                    required
+                                />
+                                <button type="submit" class="btn btn-primary">
+                                    Submit
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                </div>
+            {:else}
+                <div class="card h-100 shadow-sm p-2" style="position: relative">
+                    <div class="card-body p-2">
+                        <div class="view-feedback">
+                            <div class="view-alert view-err">
+                                Error getting challenge info.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {/if}
+
+        </div>
+    </div>
+{/if}
+
+<!-- END OF PANEL -->
 
 <main >
     <div class="container-fluid mt-4">
@@ -277,25 +344,6 @@
                             </div>
                         </div>
 
-                        <!-- Team Completion -->
-                        {#if teamData}
-                            <div class="mb-3">
-                                <label class="form-label">Team Progress</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="showTeamCompleted" bind:checked={filters.showTeamCompleted} />
-                                    <label class="form-check-label" for="showTeamCompleted">
-                                        Team Completed
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="showTeamUncompleted" bind:checked={filters.showTeamUncompleted} />
-                                    <label class="form-check-label" for="showTeamUncompleted">
-                                        Team Uncompleted
-                                    </label>
-                                </div>
-                            </div>
-                        {/if}
-
                         <button class="btn btn-sm btn-outline-secondary w-100 mb-3" onclick={clearFilters}>
                             Clear Filters
                         </button>
@@ -322,27 +370,14 @@
                 <div class="flex-grow-1" style="min-height: 1075px; position: relative">
                     {#if currentChallenges.length > 0}
                         <div class="row">
-                            {#each currentChallenges as challenge, idx (challenge._id ?? idx)}
+                            {#each currentChallenges as challenge, idx (challenge.id ?? idx)}
                                 <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-3">
-                                    <a
-                                        href={challenge.is_active ? `/challenge?id=${challenge._id}` : undefined}
+                                    <button
                                         class="text-decoration-none text-dark"
+                                        style="border: none; background-color: #00000000;"
+                                        onclick={ () => { viewChallenge(challenge.id) } }
                                     >
                                         <div class="card h-100 shadow-sm p-2 {!challenge.is_active ? 'opacity-50' : ''}" style="position: relative">
-
-                                            {#if teamData}
-                                                <div
-                                                    class="position-absolute"
-                                                    style="top: 8px; right: 8px; z-index: 10; width: 24px; height: 24px"
-                                                    title={teamData.completions?.some((c: any) => c.id === challenge._id) ? 'Completed by your team' : 'Not completed by your team'}
-                                                >
-                                                    <img
-                                                        src={teamData.completions?.some((c: any) => c.id === challenge._id) ? '/team_complete.png' : '/team_nocomplete.png'}
-                                                        alt={teamData.completions?.some((c: any) => c.id === challenge._id) ? 'Team completed' : 'Team not completed'}
-                                                        style="width: 100%; height: 100%; object-fit: contain"
-                                                    />
-                                                </div>
-                                            {/if}
 
                                             <div class="card-body p-2">
                                                 {#if !challenge.is_active}
@@ -360,16 +395,16 @@
                                                 {#if challenge.description}
                                                     <div class="mb-2">
                                                         <p class="card-text small text-muted" style="font-size: 0.75rem">
-                                                            <SanitizeDescription description={challenge.description} maxLength={100} />
+                                                            {challenge.description}
                                                         </p>
                                                     </div>
                                                 {/if}
-                                                <p class="card-text small mb-1">⭐ {challenge.rating.toFixed(1)} / 5</p>
+                                                <p class="card-text small mb-1">⭐ {Number(challenge.rating).toFixed(1)} / 5</p>
                                                 <p class="card-text small">Points: {challenge.points}</p>
                                                 <p class="card-text small">{challenge.user_completions} Solves</p>
                                             </div>
                                         </div>
-                                    </a>
+                                    </button>
                                 </div>
                             {/each}
                         </div>
