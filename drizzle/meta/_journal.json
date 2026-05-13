@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1775704150279,
-      "tag": "0000_fixed_eddie_brock",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1775777586035,
-      "tag": "0001_futuristic_skreet",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1775779084679,
-      "tag": "0002_ambitious_steel_serpent",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1777516922352,
-      "tag": "0003_handy_mauler",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1777660232107,
-      "tag": "0004_eminent_puppet_master",
+      "when": 1778711862859,
+      "tag": "0000_organic_rachel_grey",
       "breakpoints": true
     }
   ]
