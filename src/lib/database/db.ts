@@ -120,20 +120,22 @@ export async function UpdateChallenge(data: ChallengeForm, id) {
  */
 export async function GetChallenges(is_admin: boolean, grab_mode: number = 0) {
     try {
-        if (grab_mode === 0) {
-            return await db.select( !is_admin ? publicChallengeData : {} )
-                .from(schema.challenges);
-        } else if (grab_mode === 1) {
-            return await db.select( !is_admin ? publicChallengeData : {})
-                .from(schema.challenges)
-                .where(eq(schema.challenges.is_gym, false));
-        } else if (grab_mode === 2) {
-            return await db.select( !is_admin ? publicChallengeData : {})
-                .from(schema.challenges)
-                .where(eq(schema.challenges.is_gym, true));
-        } else {
-            return undefined;
-        }
+        const selection = is_admin ? undefined : publicChallengeData;
+
+        const q = (where?: any) => {
+            const base = selection
+                ? db.select(selection).from(schema.challenges)
+                : db.select().from(schema.challenges);
+            return where ? base.where(where) : base;
+        };
+
+        // grab all
+        if (grab_mode === 0) return await q();
+        // grab only event
+        if (grab_mode === 1) return await q(eq(schema.challenges.is_gym, false));
+        // grab only gym
+        if (grab_mode === 2) return await q(eq(schema.challenges.is_gym, true));
+        return undefined;
     } catch (error) {
         console.error('Failed to insert challenge:', error);
         return undefined;
