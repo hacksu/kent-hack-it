@@ -1,7 +1,7 @@
 import { auth, isAdmin } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 
-import { GetChallenges, CheckFlag } from "$lib/database/db";
+import { GetProgress, GetChallenges, CheckFlag } from "$lib/database/db";
 
 export const load = async ({ parent }) => {
     // goes to +layout.server.ts and fetches the user state
@@ -12,8 +12,10 @@ export const load = async ({ parent }) => {
 
     const challenges = await GetChallenges(false);
 
+    const progressBars = await GetProgress(user.id);
+
     return {
-        user, challenges
+        user, challenges, progressBars
     }
 };
 

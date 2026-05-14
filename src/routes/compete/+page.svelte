@@ -3,6 +3,7 @@
     import { invalidateAll } from '$app/navigation';
 
     import Feedback from '$lib/components/feedback.svelte';
+    import Stats from '$lib/components/stats.svelte'
 
     import { type ViewableChallengeData } from '$lib/database/db.js';
 
@@ -244,6 +245,8 @@
     <div class="container-fluid mt-4">
 
         <div class="row align-items-center mb-4">
+            <Stats progressBars={ data.progressBars } />
+
             <div class="col-12 text-center">
                 <h2 class="mb-0">Challenges</h2>
             </div>
@@ -367,7 +370,7 @@
 
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10 d-flex flex-column">
-                <div class="flex-grow-1" style="min-height: 1075px; position: relative">
+                <div class="flex-grow-1" style="position: relative">
                     {#if currentChallenges.length > 0}
                         <div class="row">
                             {#each currentChallenges as challenge, idx (challenge.id ?? idx)}

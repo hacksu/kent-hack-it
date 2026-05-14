@@ -426,3 +426,44 @@ export async function CheckFlag(uid, cid, flag_value): Promise<{ success: boolea
         return { success: false, message: 'Error Occurred' };
     }
 }
+
+import { type Stat } from "$lib/mtypes";
+export async function GetProgress(uid: string): Promise<Stat[]> {
+    try {
+
+    } catch (e) {
+        console.error("[-] Error", e);
+    }
+    const [data] = await db.select({ claims: schema.user.claims })
+                    .from(schema.user)
+                    .where(eq(schema.user.id, uid)).limit(1);
+
+    const c_data = await db.select({ name: schema.challenges.name })
+                    .from(schema.challenges);
+    const evt_data = await db.select({ id: schema.challenges.id, name: schema.challenges.name })
+                        .from(schema.challenges)
+                        .where(eq(schema.challenges.is_gym, false));
+
+    // show progress between both event and gym challenges
+    const totalProg: Stat = {
+        label: 'Total',
+        value: data.claims?.length || 0,
+        total: c_data.length
+    }
+
+    // show event progress
+    const eventClaims = data.claims?.filter(c => evt_data.some(e => {
+        return String(e.id) === String(c.challenge_id);
+    }));
+    const eventProg: Stat = {
+        label: 'Event',
+        value: eventClaims?.length || 0,
+        total: evt_data.length,
+        color: '#72b35f'
+    }
+
+    return [
+        totalProg,
+        eventProg
+    ]
+}
