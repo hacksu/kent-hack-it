@@ -61,8 +61,7 @@ async function deleteArchive(file: string) {
 
 export const POST = async (event) => {
     // check user authorizations
-    const authCheck = await isAdmin(event.request);
-    if (authCheck.status !== 200) {
+    if (await isAdmin(event.request)) {
         return json({ success: false, error: 'Unauthorized' , status: 401 });
     }
 
