@@ -1,4 +1,4 @@
-import { auth } from '$lib/server/auth';
+import { auth, isAdmin } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 
 import { GetChallenges, CheckFlag } from "$lib/database/db";
@@ -30,6 +30,11 @@ export const actions = {
             return redirect(301, "/auth/login");
         }
 
+        // admins cannot score flags : srry <3
+        if (await isAdmin(request)) {
+            return { success: false, message: 'Admins cannot participate!' };
+        }
+
         const form = await request.formData();
         let formData = Object.fromEntries(form.entries()) as Record<string, string>;
 
@@ -44,11 +49,7 @@ export const actions = {
         console.log(`[${uid}] Checking Flag (${cid}) -> ${flag_value}`);
 
         try {
-            return ( await CheckFlag(uid, cid, flag_value) ) ? {
-                success: true, message: 'Correct Flag!'
-            } : {
-                success: false, message: 'Incorrect Flag!'
-            };
+            return await CheckFlag(uid, cid, flag_value);
         } catch (e) {
             console.error(`[-] Submit Flag -> ${e}`);
             return fail(500, { error: 'An error occurred while adding the challenge' });

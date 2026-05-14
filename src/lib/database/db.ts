@@ -338,6 +338,16 @@ export async function UnlinkArchive(file: string) {
  */
 async function addClaim(uid, cid): Promise<boolean> {
     try {
+        // duplicate claim insert protection
+        const [data] = await db.select({ claims: schema.user.claims })
+                    .from(schema.user)
+                    .where(eq(schema.user.id, uid)).limit(1);
+        for (const claim of data.claims || []) {
+            if (claim.challenge_id === cid) {
+                return true;
+            }
+        }
+
         await db.update(schema.user)
             .set({
                 claims: sql`coalesce(${schema.user.claims}, '[]'::jsonb) || ${JSON.stringify([{
@@ -361,23 +371,17 @@ async function addClaim(uid, cid): Promise<boolean> {
  * @param flag_value 
  * @returns 
  */
-export async function CheckFlag(uid, cid, flag_value) {
+export async function CheckFlag(uid, cid, flag_value): Promise<{ success: boolean, message: string }> {
     try {
-        // determine if the player has captured this flag already
-        
-        // @todo - test for SQLI
-        const result = await db.select()
-            .from(schema.user)
-            .where(
-                and(
-                    eq(schema.user.role, "user"), // admins cannot claim flags
-                    sql`${schema.user.id} = ${uid} AND EXISTS (
-                        SELECT 1 FROM jsonb_array_elements(${schema.user.claims}) AS claim
-                        WHERE (claim->>'challenge_id')::int = ${cid}
-                    )`
-                )
-            )
-            .limit(1);
+        // fetch users flag claims to determine if they already captured this flag
+        const [data] = await db.select({ claims: schema.user.claims })
+                    .from(schema.user)
+                    .where(eq(schema.user.id, uid)).limit(1);
+        for (const claim of data.claims || []) {
+            if (claim.challenge_id === cid) {
+                return { success: true, message: 'Already Claimed!' };
+            }
+        }
         
 
         // check flag validiity
@@ -396,11 +400,12 @@ export async function CheckFlag(uid, cid, flag_value) {
         if (claimed) {
             const has_appended = await addClaim(uid, cid);
             console.log(`[*] Appended Claim Status: ${has_appended}`);
+            return { success: true, message: 'Correct Flag!' };
+        } else {
+            return { success: false, message: 'Incorrect Flag!' };
         }
-
-        return claimed;
     } catch (error) {
         console.error('Error occurred checking flag:', error);
-        return false;
+        return { success: false, message: 'Error Occurred' };
     }
 }

@@ -161,7 +161,7 @@
                                 challengeInfo.difficulty === 'Easy' ? 'bg-success' : 'bg-light text-dark'
                             }">{challengeInfo.difficulty}</span>
                         </div>
-                        <button class="btn btn-sm btn-close btn-close-white" onclick={() => showPanel = false}></button>
+                        <button title="Close Panel" class="btn btn-sm btn-close btn-close-white" onclick={() => showPanel = false}></button>
                     </div>
 
                    <div class="card-body p-2">
