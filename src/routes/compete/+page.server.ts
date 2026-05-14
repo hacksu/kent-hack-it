@@ -32,6 +32,7 @@ export const actions = {
 
         // admins cannot score flags : srry <3
         if (await isAdmin(request)) {
+            console.log("[*] Admin tried claiming a flag!");
             return { success: false, message: 'Admins cannot participate!' };
         }
 

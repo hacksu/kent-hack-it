@@ -192,6 +192,23 @@ export async function DeleteChallenge(id) {
             .where(eq(schema.challenges.id, id))
             .returning();
 
+        // remove the flag claim from all players if needed
+        await db.update(schema.user)
+            .set({
+                claims: sql`(
+                SELECT jsonb_agg(claim)
+                FROM jsonb_array_elements(${schema.user.claims}) AS claim
+                WHERE (claim->>'challenge_id') != ${id}::text
+                )`
+            })
+            .where(
+                sql`EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(${schema.user.claims}) AS claim
+                WHERE (claim->>'challenge_id') = ${id}::text
+                )`
+            );
+
         console.log(`[*] DeleteChallenge -> deleted ${row.id}`);
         return true;
     } catch (error) {
