@@ -1,44 +1,55 @@
-<script>
-  import { onMount } from "svelte";
+<script lang="ts">
+    import { onMount } from "svelte";
 
-  // Countdown timer
-  let timeLeft = "Loading...";
-  let countdownLabel = "Event starts in:";
+    const { data } = $props();
 
-  // Set your target date (example: October 1st, 2026)
-  const targetDate = new Date(new Date().getFullYear(), 9, 1).getTime();
+    // Countdown timer
+    let timeLeft = $state("Loading...");
+    let countdownLabel = $state("Event starts in:");
 
-  let timer;
+    let timer: NodeJS.Timeout|undefined = undefined;
+    let showTimer = $state(true);
 
-  function updateCountdown() {
-    const now = new Date().getTime();
-    const distance = targetDate - now;
+    function updateCountdown() {
+        const now = new Date().getTime();
+        const start = new Date(data.eventStartDate).getTime();
+        const end = new Date(data.eventEndDate).getTime();
 
-    if (distance < 0) {
-      timeLeft = "Event started!";
-      clearInterval(timer);
-      return;
+        if (now < start) {
+            countdownLabel = "Event starts in:";
+            const distance = start - now;
+            const days    = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours   = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            timeLeft = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        } else if (now >= start && now < end) {
+            countdownLabel = "Event ends in:";
+            const distance = end - now;
+            const days    = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours   = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            timeLeft = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        } else {
+            countdownLabel = "Event over";
+            timeLeft = "";
+            showTimer = false;
+            clearInterval(timer);
+        }
     }
 
-    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    onMount(() => {
+        updateCountdown();
+        timer = setInterval(updateCountdown, 1000);
+    });
 
-    timeLeft = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-  }
-
-  onMount(() => {
-    updateCountdown();
-    timer = setInterval(updateCountdown, 1000);
-  });
-
-  // Dynamic event year info
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-  const eventYear = currentMonth < 9 ? currentYear : currentYear + 1;
-  const eventMonthLabel = currentMonth < 9 ? "this" : "next";
+    // Dynamic event year info
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const eventYear = currentMonth < 9 ? currentYear : currentYear + 1;
+    const eventMonthLabel = currentMonth < 9 ? "this" : "next";
 </script>
 
 <main>
@@ -53,9 +64,11 @@
       </div>
       <div class="text-center mb-3">
         <h4 class="mb-2" style="color: #b7b7b7ff;">{countdownLabel}</h4>
-        <div class="countdown-timer p-2 rounded" style="background-color: #f8f9fa; border: 2px solid #007bff; display: inline-block; font-family: monospace; font-size: clamp(1.2rem, 3vw, 1.8rem); font-weight: bold; color: #007bff;">
-          {timeLeft}
-        </div>
+        {#if showTimer}
+            <div class="countdown-timer p-2 rounded" style="background-color: #f8f9fa; border: 2px solid #007bff; display: inline-block; font-family: monospace; font-size: clamp(1.2rem, 3vw, 1.8rem); font-weight: bold; color: #007bff;">
+                {timeLeft}
+            </div>
+        {/if}
       </div>
     </div>
 
