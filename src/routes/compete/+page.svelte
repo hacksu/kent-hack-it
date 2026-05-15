@@ -190,13 +190,19 @@
                         <form method="POST" action="?/submit_flag" use:enhance={() => {
                             return async ({ result, update }) => {
                                 await update();
-                                console.log(result.data);
-
-                                if (result.type === 'success') {
-                                    if (result.data.success) {
-                                        success = result.data?.message;
+                                
+                                if (result.type === 'success' && result.data) {
+                                    // perform a cast to avoid error/warning popups
+                                    const data = result.data as {
+                                        success: boolean;
+                                        message?: string;
+                                        error?: string;
+                                    };
+                                    
+                                    if (data.success && data.message) {
+                                        success = data.message;
                                     } else {
-                                        error = result.data?.message;
+                                        error = data.message ?? data.error ?? 'Error Occurred!';
                                     }
                                 } else {
                                     error = 'Error Occurred!';
@@ -275,7 +281,7 @@
 
                         <!-- Search -->
                         <div class="mb-3">
-                            <label class="form-label">Search</label>
+                            <label for="search-text" class="form-label">Search</label>
                             <input
                                 type="text"
                                 class="form-control form-control-sm"
@@ -286,7 +292,7 @@
 
                         <!-- Category -->
                         <div class="mb-3">
-                            <label class="form-label">Category</label>
+                            <label for="catagory-search" class="form-label">Category</label>
                             <select class="form-select form-select-sm" bind:value={filters.category}>
                                 <option value="">All Categories</option>
                                 {#each availableCategories as category}
@@ -297,7 +303,7 @@
 
                         <!-- Difficulty -->
                         <div class="mb-3">
-                            <label class="form-label">Difficulty</label>
+                            <label for="difficulty-search" class="form-label">Difficulty</label>
                             <select class="form-select form-select-sm" bind:value={filters.difficulty}>
                                 <option value="">All Difficulties</option>
                                 {#each availableDifficulties as difficulty}
@@ -308,7 +314,7 @@
 
                         <!-- Rating -->
                         <div class="mb-3">
-                            <label class="form-label">Minimum Rating</label>
+                            <label for="rating-search" class="form-label">Minimum Rating</label>
                             <select class="form-select form-select-sm" bind:value={filters.rating}>
                                 <option value="">All Ratings</option>
                                 {#each availableRatings as rating}
@@ -321,7 +327,7 @@
 
                         <!-- Author -->
                         <div class="mb-3">
-                            <label class="form-label">Author</label>
+                            <label for="author-search" class="form-label">Author</label>
                             <select class="form-select form-select-sm" bind:value={filters.author}>
                                 <option value="">All Authors</option>
                                 {#each availableAuthors as author}
@@ -332,7 +338,7 @@
 
                         <!-- Individual Completion -->
                         <div class="mb-3">
-                            <label class="form-label">Individual Progress</label>
+                            <label for="completion-search" class="form-label">Individual Progress</label>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="showCompleted" bind:checked={filters.showCompleted} />
                                 <label class="form-check-label" for="showCompleted">

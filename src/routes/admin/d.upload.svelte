@@ -103,17 +103,25 @@
                                 fileInput.value = "";
                             }
 
-                            if (result.type === 'success') {
-                                if (!result.data?.warning) {
-                                    success = "Files Uploaded!";
+                            if (result.type === 'success' && result.data) {
+                                // perform a cast to avoid error/warning popups
+                                const data = result.data as {
+                                    success: boolean;
+                                    message?: string;
+                                    warning?: string;
+                                    error?: string;
+                                };
+                                
+                                if (data.success && data.message) {
+                                    success = data.message;
                                 } else {
-                                    warning = result.data.warning;
+                                    error = data.message ?? data.error ?? 'Error Occurred!';
                                 }
-                                setTimeout(clearResult, 5000);
                             } else {
-                                error = "Error Occurred!";
-                                setTimeout(clearResult, 5000);
+                                error = 'Error Occurred!';
                             }
+
+                            setTimeout(clearResult, 5000);
                         };
                     }}>
                         <div class="mb-3">

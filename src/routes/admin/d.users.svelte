@@ -40,7 +40,7 @@
     // whenever searchTerm is modified filterUsers will be recomputed
     let searchTerm = $state("");
     const filteredUsers = $derived(
-        users.filter(user => {
+        users.filter((user: any) => {
             return user.name.toLowerCase().includes(searchTerm.toLowerCase());
         })
     );

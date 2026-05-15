@@ -1,5 +1,5 @@
 <script lang="ts">
-    const teams = [];
+    const teams: any[] = [];
     let searchTerm = "";
 
     const filteredTeams = teams.filter(team =>

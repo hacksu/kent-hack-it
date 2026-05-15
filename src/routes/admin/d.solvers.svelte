@@ -60,7 +60,7 @@
 
                 <!-- Challenge Filter -->
                 <div class="mb-3">
-                    <label class="form-label">Challenge</label>
+                    <label for="challenge-filter" class="form-label">Challenge</label>
                     <select class="form-select form-select-sm"
                         value={filters.challengeFilter}
                         oninput={() => {}}>
@@ -73,7 +73,7 @@
 
                 <!-- User Filter -->
                 <div class="mb-3">
-                    <label class="form-label">User</label>
+                    <label for="user-filter" class="form-label">User</label>
                     <select class="form-select form-select-sm"
                         value={filters.userFilter}
                         oninput={() => {}}>
@@ -86,7 +86,7 @@
 
                 <!-- Difficulty Filter -->
                 <div class="mb-3">
-                    <label class="form-label">Difficulty</label>
+                    <label for="difficulty-filter" class="form-label">Difficulty</label>
                     <select class="form-select form-select-sm"
                         value={filters.difficultyFilter}
                         oninput={() => {}}>
@@ -99,7 +99,7 @@
 
                 <!-- Rating Filter -->
                 <div class="mb-3">
-                    <label class="form-label">Minimum Rating</label>
+                    <label for="rating-filter" lass="form-label">Minimum Rating</label>
                     <select class="form-select form-select-sm"
                         value={filters.ratingFilter}
                         oninput={() => {}}>
@@ -114,7 +114,7 @@
 
                 <!-- Author Filter -->
                 <div class="mb-3">
-                    <label class="form-label">Author</label>
+                    <label for="author-filter" class="form-label">Author</label>
                     <select class="form-select form-select-sm"
                         value={filters.authorFilter}
                         oninput={() => {}}>

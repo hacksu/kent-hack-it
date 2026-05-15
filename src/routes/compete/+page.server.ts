@@ -55,7 +55,7 @@ export const actions = {
             return await CheckFlag(uid, cid, flag_value);
         } catch (e) {
             console.error(`[-] Submit Flag -> ${e}`);
-            return fail(500, { error: 'An error occurred while adding the challenge' });
+            return fail(500, { success: false, error: 'An error occurred while adding the challenge' });
         }
     },
 };

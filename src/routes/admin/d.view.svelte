@@ -64,7 +64,7 @@
                 title="Edit Challenge"
                 action_target="?/edit_challenge"
                 challenge={originalData}
-                onSubmit={(data: { success: boolean, message: string }|undefined) => {
+                onSubmit={(data: { success: boolean, message?: string, error?: string }|undefined) => {
                     showEditPanel = false;
                     if (data) {
                         result = data;

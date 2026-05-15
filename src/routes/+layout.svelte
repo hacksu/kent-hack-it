@@ -21,10 +21,10 @@
 
     const session = authClient.useSession();
     let profDropOpen = $state(false);
-    let profDropElem = $state(null);
+    let profDropElem = $state<HTMLElement|undefined>(undefined);
     let profHovered = $state(false);
 
-    function handleClickOutside(e) {
+    function handleClickOutside(e: any) {
         if (profDropElem && !profDropElem.contains(e.target)) {
             profDropOpen = false;
         }

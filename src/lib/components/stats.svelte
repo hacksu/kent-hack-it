@@ -5,7 +5,7 @@
     let show = $state(false);
 
     const { progressBars } = $props();
-    let stats = $state<Stat[]>(progressBars);
+    let stats = $derived<Stat[]>(progressBars);
 </script>
 
 <svelte:head>

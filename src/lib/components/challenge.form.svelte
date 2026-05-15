@@ -9,10 +9,11 @@
         title: string,
         action_target: string,
         challenge: ChallengeData | undefined,
-        onSubmit?: (data: { success: boolean, message: string }|undefined) => void,
+        onSubmit?: (data: { success: true; message: string } | { success: false; error: string } | undefined) => void,
         result: { error?: string, success?: boolean, message?: string } | null,
         uploaded_files: any
     } = $props();
+    
     let selectedFiles = $state<string[]>(challenge?.hlinks || []);
 </script>
 
@@ -25,14 +26,27 @@
             <form method="POST" action={action_target} use:enhance={() => {
                 return async ({ result, update }) => {
                     await update();
-                    if (result.type === 'success') {
-                        onSubmit?.(result.data);
+                    if (result.type === 'success' && result.data) {
+                        const data = result.data as {
+                            success: boolean;
+                            message?: string;
+                            error?: string;
+                        };
+                        onSubmit?.(
+                            data.success ? {
+                                success: true,
+                                message: data.message ?? ''
+                            } : {
+                                success: false,
+                                error: data.error ?? 'An error occurred'
+                            }
+                        );
                     }
                 };
             }}>
                 <!-- Challenge Name -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Challenge Name</label>
+                    <label for="name" class="form-label fw-semibold">Challenge Name</label>
                     <input
                         type="text"
                         class="form-control"
@@ -44,7 +58,7 @@
 
                 <!-- Description -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Description</label>
+                    <label for="desc" class="form-label fw-semibold">Description</label>
                     <textarea
                         class="form-control"
                         name="description" required
@@ -56,7 +70,7 @@
 
                 <!-- Author -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Written By</label>
+                    <label for="author" class="form-label fw-semibold">Written By</label>
                     <input
                         type="text"
                         class="form-control"
@@ -68,7 +82,7 @@
 
                 <!-- Challenge Files -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Challenge Files</label>
+                    <label for="attached-files" class="form-label fw-semibold">Challenge Files</label>
                     <hr />
 
                     <button
@@ -110,7 +124,7 @@
                 <!-- Category & Difficulty -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Category</label>
+                        <label for="category" class="form-label fw-semibold">Category</label>
                         <select
                             class="form-select"
                             name="category" required
@@ -127,7 +141,7 @@
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Difficulty</label>
+                        <label for="difficulty" class="form-label fw-semibold">Difficulty</label>
                         <select
                             class="form-select"
                             name="difficulty" required
@@ -144,7 +158,7 @@
 
                 <!-- Flag -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Flag</label>
+                    <label for="flag-value" class="form-label fw-semibold">Flag</label>
                     <input
                         type="text"
                         class="form-control"

@@ -1,7 +1,7 @@
 <script lang="ts">
     import ChallengeForm from '$lib/components/challenge.form.svelte';
     
-    let result = $state(undefined);
+    let result = $state<{success: boolean, message?: string, error?: string} | undefined>(undefined);
     function clearResult() {
         result = undefined;
     }
@@ -30,11 +30,11 @@
     title="Create a New Challenge"
     action_target="?/add_challenge"
     challenge={undefined}
-    onSubmit={(data: { success: boolean, message: string }|undefined) => {
+    onSubmit={(data: { success: boolean, message?: string, error?: string }|undefined) => {
         if (data) {
             result = data;
         } else {
-            result = { error: 'An error occurred' };
+            result = { success: false, error: 'An error occurred' };
         }
         scrollToFeedback();
         setTimeout(clearResult, 5000);
