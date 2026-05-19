@@ -30,7 +30,7 @@
         }
     }
 
-	let { children } = $props();
+	let { data, children } = $props();
 </script>
 
 <svelte:head>
@@ -59,6 +59,21 @@
             />
         </a>
 
+        {#if data.error}
+            <span style="
+                display: inline-block;
+                padding: 8px 14px;
+                background: #fef2f2;
+                color: #991b1b;
+                border: 0.5px solid #fca5a5;
+                border-radius: 8px;
+                font-size: 13px;
+                font-weight: 500;
+            ">
+                {data.error}
+            </span>
+        {/if}
+
         <button
             class="navbar-toggler"
             type="button"
@@ -79,6 +94,10 @@
                 {#if $session.data?.user.role === "admin"}
                     <li class="nav-item">
                         <a class="nav-link" href="/admin">Admin</a>
+                    </li>
+                {:else}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/team">Team</a>
                     </li>
                 {/if}
 

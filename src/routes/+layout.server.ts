@@ -8,12 +8,22 @@ import { auth } from '$lib/server/auth';
  * @returns 
  */
 export const load = async (event) => {
-    const session = await auth.api.getSession({
-        headers: event.request.headers,
-    });
+    try {
+        const session = await auth.api.getSession({
+            headers: event.request.headers,
+        });
+    
+        return {
+            user: session?.user ?? null,
+            session: session?.session ?? null,
+        };
+    } catch (e: any) {
+        console.error("[-]", e);
 
-    return {
-        user: session?.user ?? null,
-        session: session?.session ?? null,
-    };
+        return {
+            user: null,
+            session: null,
+            error: "Database is unreachable!"
+        };
+    }
 };
