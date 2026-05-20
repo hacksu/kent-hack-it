@@ -2,7 +2,7 @@ import { relations } from "drizzle-orm";
 import {
     pgTable, text, timestamp, boolean,
     index, serial, numeric, integer,
-    jsonb
+    jsonb, unique
 } from "drizzle-orm/pg-core";
 
 // pair element that holds a reference to the challenge and when it was claimed
@@ -126,3 +126,19 @@ export const challenges = pgTable("challenges", {
     is_active: boolean("is_active").default(true),  // used to close a challenge from players to perform maintanence
     is_gym: boolean("is_gym").default(false),       // used to defined what is an event challenge and post-event challenge
 });
+
+export const teams = pgTable("teams", {
+    id: serial("id").primaryKey(),
+    name: text("name").unique().notNull(),
+    leader_id: text("leader_id").notNull().references(() => user.id),
+    created_at: timestamp("created_at").defaultNow(),
+});
+
+export const team_members = pgTable("team_members", {
+    id: serial("id").primaryKey(),
+    team_id: integer("team_id").notNull().references(() => teams.id),
+    user_id: text("user_id").notNull().references(() => user.id),
+    joined_at: timestamp("joined_at").defaultNow(),
+}, (t) => [
+    unique().on(t.team_id, t.user_id), // prevent duplicate membership
+]);

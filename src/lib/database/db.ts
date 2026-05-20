@@ -1,7 +1,11 @@
 import postgres from "postgres";
 
 import { drizzle } from "drizzle-orm/postgres-js";
-import { eq, sql, arrayContains, and } from "drizzle-orm";
+import {
+    eq, sql, arrayContains, and,
+    or, asc, isNull, lt, count,
+    inArray,
+} from "drizzle-orm";
 
 import * as schema from "./auth-schema";
 import { env } from "$env/dynamic/private"; // dynamic allows the .env file to be read at runtime
@@ -101,7 +105,7 @@ export async function AddChallenge(data: ChallengeForm) {
  * @param id 
  * @returns 
  */
-export async function UpdateChallenge(data: ChallengeForm, id) {
+export async function UpdateChallenge(data: ChallengeForm, id: any) {
     try {
         const [row] = await db.update(schema.challenges)
                         .set(data)
@@ -150,7 +154,7 @@ export async function GetChallenges(is_admin: boolean, grab_mode: number = 0) {
  * @param set_enabled
  * @returns 
  */
-export async function ToggleChallenge(id, set_enabled: boolean) {
+export async function ToggleChallenge(id: any, set_enabled: boolean) {
     try {
         const [row] = await db.update(schema.challenges)
                         .set({ is_active: set_enabled })
@@ -170,7 +174,7 @@ export async function ToggleChallenge(id, set_enabled: boolean) {
  * @param id 
  * @returns 
  */
-export async function GetChallenge(id) {
+export async function GetChallenge(id: any) {
     try {
         return await db.select(publicChallengeData)
                         .from(schema.challenges)
@@ -188,7 +192,7 @@ export async function GetChallenge(id) {
  * @param id 
  * @returns 
  */
-export async function DeleteChallenge(id) {
+export async function DeleteChallenge(id: any) {
     try {
         const [row] = await db.delete(schema.challenges)
             .where(eq(schema.challenges.id, id))
@@ -241,7 +245,7 @@ export async function GetAdmins() {
  * @param id 
  * @returns 
  */
-export async function DeleteAdmin(id) {
+export async function DeleteAdmin(id: any) {
     try {
         // remove user entry
         const [user_data] = await db.delete(schema.user)
@@ -291,7 +295,7 @@ export async function GetUsers() {
  * @param id 
  * @returns 
  */
-export async function DeleteUser(id) {
+export async function DeleteUser(id: any) {
     try {
         // remove user entry
         const [user_data] = await db.delete(schema.user)
@@ -355,7 +359,7 @@ export async function UnlinkArchive(file: string) {
  * @param cid 
  * @returns 
  */
-async function addClaim(uid, cid): Promise<boolean> {
+async function addClaim(uid: any, cid: any): Promise<boolean> {
     try {
         // duplicate claim insert protection
         const [data] = await db.select({ claims: schema.user.claims })
@@ -390,7 +394,7 @@ async function addClaim(uid, cid): Promise<boolean> {
  * @param flag_value 
  * @returns 
  */
-export async function CheckFlag(uid, cid, flag_value): Promise<{ success: boolean, message: string }> {
+export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ success: boolean, message: string }> {
     try {
         // fetch users flag claims to determine if they already captured this flag
         const [data] = await db.select({ claims: schema.user.claims })
@@ -429,43 +433,193 @@ export async function CheckFlag(uid, cid, flag_value): Promise<{ success: boolea
     }
 }
 
+export async function GetOpenTeams() {
+    try {
+        const counts = db
+            .select({
+                team_id: schema.team_members.team_id,
+                count: count().as("count"),
+            })
+            .from(schema.team_members)
+            .groupBy(schema.team_members.team_id)
+            .as("counts");
+
+        return await db
+            .select({
+                id: schema.teams.id,
+                name: schema.teams.name,
+            })
+            .from(schema.teams)
+            .leftJoin(counts, eq(schema.teams.id, counts.team_id))
+            .where(or(
+                isNull(counts.count),
+                lt(counts.count, 4)
+            ));
+    } catch (e: any) {
+        console.error("Error occurred fetching open teams:", e);
+        return [];
+    }
+}
+
+export async function LeaveTeam(uid: string, team_id: any) {
+    try {
+        await db.delete(schema.team_members)
+            .where(
+                and(
+                    eq(schema.team_members.user_id, uid),
+                    eq(schema.team_members.team_id, team_id)
+                )
+            );
+
+        const [team] = await db
+            .select()
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        if (!team) return { success: true, message: 'Left team!' };
+
+        if (team.leader_id === uid) {
+            const [next] = await db
+                .select()
+                .from(schema.team_members)
+                .where(eq(schema.team_members.team_id, team_id))
+                .orderBy(asc(schema.team_members.joined_at))
+                .limit(1);
+
+            if (next) {
+                await db.update(schema.teams)
+                    .set({ leader_id: next.user_id })
+                    .where(eq(schema.teams.id, team_id));
+            } else {
+                await db.delete(schema.teams)
+                    .where(eq(schema.teams.id, team_id));
+            }
+        }
+
+        return { success: true, message: 'Left team!' };
+    } catch (e: any) {
+        console.error("Error occurred leaving team:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function MakeTeam(uid: string, name: string) {
+    try {
+        const [existing] = await db
+            .select()
+            .from(schema.team_members)
+            .where(eq(schema.team_members.user_id, uid))
+            .limit(1);
+
+        if (existing) return { success: false, error: "You are already in a team!" };
+
+        const [team_data] = await db.insert(schema.teams).values({
+            name,
+            leader_id: uid,
+        }).returning({ team_id: schema.teams.id });
+
+        await db.insert(schema.team_members).values({
+            team_id: team_data.team_id,
+            user_id: uid,
+        });
+
+        return { success: true, message: 'Team created!' };
+    } catch (e: any) {
+        console.error("Error occurred creating a team:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function GetTeam(uid: string) {
+    try {
+        const membership = await db
+            .select({ team_id: schema.team_members.team_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.user_id, uid))
+            .limit(1);
+
+        if (!membership.length) return null;
+
+        const team_id = membership[0].team_id;
+
+        const [team] = await db
+            .select()
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        const [leader] = await db
+            .select({ id: schema.user.id, name: schema.user.name, image: schema.user.image })
+            .from(schema.user)
+            .where(eq(schema.user.id, team.leader_id))
+            .limit(1);
+
+        const memberRows = await db
+            .select({ user_id: schema.team_members.user_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.team_id, team_id));
+
+        const memberIds = memberRows
+            .map(m => m.user_id)
+            .filter(id => id !== team.leader_id);
+
+        const memberUsers = memberIds.length > 0
+            ? await db
+                .select({ id: schema.user.id, name: schema.user.name, image: schema.user.image })
+                .from(schema.user)
+                .where(inArray(schema.user.id, memberIds))
+            : [];
+
+        return {
+            id: team.id,
+            name: team.name,
+            leader: { id: leader.id, name: leader.name, image: leader.image },
+            members: memberUsers.map(m => ({ id: m.id, name: m.name, image: m.image })),
+        };
+    } catch (e: any) {
+        console.error("Error occurred fetching team:", e);
+        return null;
+    }
+}
+
 import { type Stat } from "$lib/mtypes";
 export async function GetProgress(uid: string): Promise<Stat[]> {
     try {
-
+        const [data] = await db.select({ claims: schema.user.claims })
+                        .from(schema.user)
+                        .where(eq(schema.user.id, uid)).limit(1);
+    
+        const c_data = await db.select({ name: schema.challenges.name })
+                        .from(schema.challenges);
+        const evt_data = await db.select({ id: schema.challenges.id, name: schema.challenges.name })
+                            .from(schema.challenges)
+                            .where(eq(schema.challenges.is_gym, false));
+    
+        // show progress between both event and gym challenges
+        const totalProg: Stat = {
+            label: 'Total',
+            value: data.claims?.length || 0,
+            total: c_data.length
+        }
+    
+        // show event progress
+        const eventClaims = data.claims?.filter(c => evt_data.some(e => {
+            return String(e.id) === String(c.challenge_id);
+        }));
+        const eventProg: Stat = {
+            label: 'Event',
+            value: eventClaims?.length || 0,
+            total: evt_data.length,
+            color: '#72b35f'
+        }
+    
+        return [
+            totalProg,
+            eventProg
+        ]
     } catch (e) {
         console.error("[-] Error", e);
+        return [];
     }
-    const [data] = await db.select({ claims: schema.user.claims })
-                    .from(schema.user)
-                    .where(eq(schema.user.id, uid)).limit(1);
-
-    const c_data = await db.select({ name: schema.challenges.name })
-                    .from(schema.challenges);
-    const evt_data = await db.select({ id: schema.challenges.id, name: schema.challenges.name })
-                        .from(schema.challenges)
-                        .where(eq(schema.challenges.is_gym, false));
-
-    // show progress between both event and gym challenges
-    const totalProg: Stat = {
-        label: 'Total',
-        value: data.claims?.length || 0,
-        total: c_data.length
-    }
-
-    // show event progress
-    const eventClaims = data.claims?.filter(c => evt_data.some(e => {
-        return String(e.id) === String(c.challenge_id);
-    }));
-    const eventProg: Stat = {
-        label: 'Event',
-        value: eventClaims?.length || 0,
-        total: evt_data.length,
-        color: '#72b35f'
-    }
-
-    return [
-        totalProg,
-        eventProg
-    ]
 }
