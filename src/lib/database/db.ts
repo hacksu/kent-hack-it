@@ -433,7 +433,22 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
     }
 }
 
-export async function GetOpenTeams() {
+export async function IsTeamLeader(uid: string) {
+    try {
+        const results = await db
+            .select({ name: schema.teams.name })
+            .from(schema.teams)
+            .where(eq(schema.teams.leader_id, uid))
+            .limit(1);
+
+        return results.length > 0;
+    } catch (e: any) {
+        console.error("Error checking leadership status:", e);
+        return false;
+    }
+}
+
+export async function GetOpenTeams(uid: string) {
     try {
         const counts = db
             .select({
@@ -444,7 +459,7 @@ export async function GetOpenTeams() {
             .groupBy(schema.team_members.team_id)
             .as("counts");
 
-        return await db
+        const teams = await db
             .select({
                 id: schema.teams.id,
                 name: schema.teams.name,
@@ -455,6 +470,19 @@ export async function GetOpenTeams() {
                 isNull(counts.count),
                 lt(counts.count, 4)
             ));
+
+        const requests = await db
+            .select({ to: schema.team_requests.to })
+            .from(schema.team_requests)
+            .where(eq(schema.team_requests.from, uid));
+
+        const pendingLeaderIds = new Set(requests.map(r => r.to));
+
+        return teams.map(team => ({
+            id: team.id,
+            name: team.name,
+            pending: pendingLeaderIds.has(team.id.toString()),
+        }));
     } catch (e: any) {
         console.error("Error occurred fetching open teams:", e);
         return [];
@@ -539,7 +567,12 @@ export async function GetTeam(uid: string) {
             .where(eq(schema.team_members.user_id, uid))
             .limit(1);
 
-        if (!membership.length) return null;
+        if (!membership.length) {
+            return {
+                is_leader: false,
+                team: null
+            };
+        }
 
         const team_id = membership[0].team_id;
 
@@ -548,6 +581,8 @@ export async function GetTeam(uid: string) {
             .from(schema.teams)
             .where(eq(schema.teams.id, team_id))
             .limit(1);
+
+        const is_leader = uid === team.leader_id;
 
         const [leader] = await db
             .select({ id: schema.user.id, name: schema.user.name, image: schema.user.image })
@@ -571,19 +606,169 @@ export async function GetTeam(uid: string) {
                 .where(inArray(schema.user.id, memberIds))
             : [];
 
-        return {
+        const teamJoinRows = await db
+            .select({
+                id: schema.team_requests.id,
+                name: schema.user.name,
+                image: schema.user.image,
+                checksum: schema.team_requests.checksum,
+            })
+            .from(schema.team_requests)
+            .innerJoin(schema.user, eq(schema.team_requests.from, schema.user.id))
+            .where(eq(schema.team_requests.to, team_id as any));
+
+        const requests = (is_leader) ? (
+            teamJoinRows.map(r => ({ id: r.id, name: r.name, image: r.image, checksum: r.checksum }))
+        ) : [];
+
+        const team_data = {
             id: team.id,
             name: team.name,
             leader: { id: leader.id, name: leader.name, image: leader.image },
             members: memberUsers.map(m => ({ id: m.id, name: m.name, image: m.image })),
+            requests,
+        };
+
+        return {
+            is_leader,
+            team: team_data
         };
     } catch (e: any) {
         console.error("Error occurred fetching team:", e);
-        return null;
+        return {
+            is_leader: false,
+            team: null
+        };
+    }
+}
+
+export async function CreateRequest(uid: any, team_id: any) {
+    try {
+        const existing = await db.select().from(schema.team_requests)
+                        .where(
+                            and(
+                                eq(schema.team_requests.to, team_id),
+                                eq(schema.team_requests.from, uid)
+                            )
+                        ).limit(1);
+        if (existing.length > 0) {
+            console.log("[*] Request has already been sent!");
+            return { success: true, error: "Request Pending" };
+        }
+
+        await db.insert(schema.team_requests).values({
+            to: team_id,
+            from: uid,
+            checksum: await randomString(),
+        });
+
+        return { success: true, message: 'Request Sent!' };
+    } catch (e: any) {
+        console.error("Error occurred requesting to join:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function AcceptMember(rid: any, r_checksum: any) {
+    try {
+        const data = await db.select().from(schema.team_requests)
+                        .where(
+                            and(
+                                eq(schema.team_requests.id, rid),
+                                eq(schema.team_requests.checksum, r_checksum)
+                            )
+                        ).limit(1);
+
+        if (data.length === 0) {
+            console.log("[*] Bad_Acceptance | Request not found!");
+            return { success: false, error: "Acceptance Failed" };
+        }
+
+        // remove request from db
+        await db.delete(schema.team_requests)
+                .where(eq(schema.team_requests.id, rid));
+
+        // update team record
+        const join_req = data[0];
+        return await AddMember(join_req.to, join_req.from);
+    } catch (e: any) {
+        console.error("Error occurred accepting request:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function AddMember(team_id: any, user_id: any) {
+    try {
+        const [existing] = await db
+            .select()
+            .from(schema.team_members)
+            .where(eq(schema.team_members.user_id, user_id))
+            .limit(1);
+
+        if (existing) return { success: false, error: "User is already in a team!" };
+
+        const [count_row] = await db
+            .select({ count: count() })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.team_id, team_id));
+
+        if (count_row.count >= 4) return { success: false, error: "Team is full!" };
+
+        await db.insert(schema.team_members).values({ team_id, user_id });
+
+        return { success: true, message: "Member added!" };
+    } catch (e: any) {
+        console.error("Error occurred adding member:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function RemoveMember(team_id: any, user_id: any) {
+    try {
+        await db
+            .delete(schema.team_members)
+            .where(
+                and(
+                    eq(schema.team_members.team_id, team_id),
+                    eq(schema.team_members.user_id, user_id)
+                )
+            );
+
+        const [team] = await db
+            .select()
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        if (!team) return { success: true, message: "Member removed!" };
+
+        if (team.leader_id === user_id) {
+            const [next] = await db
+                .select()
+                .from(schema.team_members)
+                .where(eq(schema.team_members.team_id, team_id))
+                .orderBy(asc(schema.team_members.joined_at))
+                .limit(1);
+
+            if (next) {
+                await db
+                    .update(schema.teams)
+                    .set({ leader_id: next.user_id })
+                    .where(eq(schema.teams.id, team_id));
+            } else {
+                await db.delete(schema.teams).where(eq(schema.teams.id, team_id));
+            }
+        }
+
+        return { success: true, message: "Member removed!" };
+    } catch (e: any) {
+        console.error("Error occurred removing member:", e);
+        return { success: false, error: "Error occurred!" };
     }
 }
 
 import { type Stat } from "$lib/mtypes";
+import { randomString } from "$lib/utilities";
 export async function GetProgress(uid: string): Promise<Stat[]> {
     try {
         const [data] = await db.select({ claims: schema.user.claims })

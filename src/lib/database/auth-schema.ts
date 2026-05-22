@@ -2,7 +2,7 @@ import { relations } from "drizzle-orm";
 import {
     pgTable, text, timestamp, boolean,
     index, serial, numeric, integer,
-    jsonb, unique
+    jsonb, unique, varchar
 } from "drizzle-orm/pg-core";
 
 // pair element that holds a reference to the challenge and when it was claimed
@@ -142,3 +142,10 @@ export const team_members = pgTable("team_members", {
 }, (t) => [
     unique().on(t.team_id, t.user_id), // prevent duplicate membership
 ]);
+
+export const team_requests = pgTable("team_requests", {
+    id: serial("id").primaryKey(),
+    to: text("to").notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    from: text("from").notNull().references(() => user.id).notNull(),
+    checksum: varchar("checksum", {length: 12}).unique().notNull()
+});

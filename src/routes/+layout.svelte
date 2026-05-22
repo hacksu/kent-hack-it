@@ -95,7 +95,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/admin">Admin</a>
                     </li>
-                {:else}
+                {:else if $session.data?.user.role === "user" }
                     <li class="nav-item">
                         <a class="nav-link" href="/team">Team</a>
                     </li>
