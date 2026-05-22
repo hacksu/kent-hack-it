@@ -305,3 +305,7 @@ h6 {
     height: 38px;
     padding: 0.35rem 0.7rem;
 }
+
+.team-list {
+    font-size: 20px !important;
+}

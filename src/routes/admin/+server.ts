@@ -3,7 +3,7 @@ import {
     ToggleChallenge, DeleteChallenge,
     DeleteAdmin,
     DeleteUser,
-    UnlinkArchive,
+    RemoveTeam,
 } from '$lib/database/db';
 import { json } from '@sveltejs/kit';
 
@@ -39,6 +39,15 @@ async function deleteUser(id: string) {
     }
 }
 
+async function deleteTeam(id: string) {
+    console.log("[*] Remove Team ->", id);
+    if ( await RemoveTeam(id) ) {
+        return json({ success: true , status: 200 });
+    } else {
+        return json({ success: false , status: 200 });
+    }
+}
+
 import { rm } from "fs/promises";
 import { join, basename } from "path";
 async function deleteArchive(file: string) {
@@ -61,7 +70,7 @@ async function deleteArchive(file: string) {
 
 export const POST = async (event) => {
     // check user authorizations
-    if (await isAdmin(event.request)) {
+    if (!await isAdmin(event.request)) {
         return json({ success: false, error: 'Unauthorized' , status: 401 });
     }
 
@@ -112,7 +121,14 @@ export const POST = async (event) => {
             // unknown action
             return json({ success: false, error: 'Unknown action' , status: 500 });
         }
-    }  else {
+    } else if (data.context === 'team') {
+        if (data.action === 'delete') {
+            handler = await deleteTeam(data.id);
+        } else {
+            // unknown action
+            return json({ success: false, error: 'Unknown action' , status: 500 });
+        }
+    } else {
         // unknown context
         return json({ success: false, error: 'Unknown context' , status: 500 });
     }

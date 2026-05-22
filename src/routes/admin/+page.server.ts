@@ -3,7 +3,7 @@ import { isAdmin } from '$lib/server/auth'
 import {
     AddChallenge, GetChallenges, UpdateChallenge,
     GetAdmins,
-    GetUsers,
+    GetUsers, GetTeams
 } from "$lib/database/db";
 
 import { readdir, writeFile, mkdir } from "fs/promises";
@@ -36,11 +36,13 @@ export const load = async ({ parent }) => {
     let admins = await GetAdmins();
     let players = await GetUsers();
     let files = await GetArchives();
+    let teams = await GetTeams();
 
     return {
         user, challenges,
         admins, players,
-        files
+        teams,
+        files,
     }
 };
 

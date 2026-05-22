@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import {
     eq, sql, arrayContains, and,
     or, asc, isNull, lt, count,
-    inArray,
+    inArray, ne
 } from "drizzle-orm";
 
 import * as schema from "./auth-schema";
@@ -433,6 +433,41 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
     }
 }
 
+export async function GetTeams() {
+    try {
+        const teams = await db.select().from(schema.teams);
+
+        return await Promise.all(teams.map(async (team) => {
+            const [leader] = await db
+                .select({ name: schema.user.name })
+                .from(schema.user)
+                .where(eq(schema.user.id, team.leader_id))
+                .limit(1);
+
+            const memberRows = await db
+                .select({ name: schema.user.name })
+                .from(schema.team_members)
+                .innerJoin(schema.user, eq(schema.team_members.user_id, schema.user.id))
+                .where(
+                    and(
+                        eq(schema.team_members.team_id, team.id),
+                        ne(schema.team_members.user_id, team.leader_id)
+                    )
+                );
+
+            return {
+                id: team.id,
+                name: team.name,
+                leader: leader.name,
+                members: memberRows.map(m => m.name),
+            };
+        }));
+    } catch (e: any) {
+        console.error("Error getting teams:", e);
+        return [];
+    }
+}
+
 export async function IsTeamLeader(uid: string) {
     try {
         const results = await db
@@ -556,6 +591,21 @@ export async function MakeTeam(uid: string, name: string) {
     } catch (e: any) {
         console.error("Error occurred creating a team:", e);
         return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function RemoveTeam(team_id: any) {
+    try {
+        await db.delete(schema.team_members)
+            .where(eq(schema.team_members.team_id, team_id));
+
+        await db.delete(schema.teams)
+            .where(eq(schema.teams.id, team_id));
+
+        return true;
+    } catch (e: any) {
+        console.error("Error occurred removing team:", e);
+        return false;
     }
 }
 

@@ -101,7 +101,7 @@
             {#if activeTab === "users"}
                 <UsersTab users={ data.players } />
             {:else if activeTab === "teams"}
-                <TeamsTab />
+                <TeamsTab teams={ data.teams } />
             {:else if activeTab === "admins"}
                 <AdminsTab admins={ data.admins } />
             {:else if activeTab === "solvers"}
