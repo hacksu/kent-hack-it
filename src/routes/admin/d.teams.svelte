@@ -39,8 +39,8 @@
     interface TeamInfo {
         id: string,
         name: string,
-        leader: string,
-        members: string[],
+        leader: { name: string, image: string },
+        members: { name: string, image: string }[],
     };
     const { teams } = $props();
 
@@ -94,15 +94,29 @@
                         <ul class="list-group list-group-flush mb-3 small team-list">
                             <li class="list-group-item px-0 py-2 border-0 d-flex align-items-center justify-content-between">
                                 <div class="d-flex align-items-center gap-2">
-                                    <i class="bi bi-person-circle text-secondary"></i>
-                                    <span>{team.leader}</span>
+                                    <img
+                                        src={team.leader.image}
+                                        alt="{team.leader.name}'s avatar"
+                                        class="rounded-circle me-2 shadow-sm"
+                                        style="width: 45px; height: 45px; object-fit: cover;"
+                                        referrerpolicy="no-referrer"
+                                        crossorigin="anonymous"
+                                    />
+                                    <span>{team.leader.name}</span>
                                 </div>
                                 <span class="badge text-bg-warning">Leader</span>
                             </li>
 
                             {#each team.members as member}
                                 <li class="list-group-item px-0 py-2 border-0 d-flex align-items-center gap-2">
-                                    <i class="bi bi-person-circle text-secondary"></i>
+                                    <img
+                                        src={member.image}
+                                        alt="{member.name}'s avatar"
+                                        class="rounded-circle me-2 shadow-sm"
+                                        style="width: 45px; height: 45px; object-fit: cover;"
+                                        referrerpolicy="no-referrer"
+                                        crossorigin="anonymous"
+                                    />
                                     <span>{member}</span>
                                 </li>
                             {/each}

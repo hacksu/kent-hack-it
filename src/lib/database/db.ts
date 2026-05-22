@@ -280,12 +280,27 @@ export async function DeleteAdmin(id: any) {
  */
 export async function GetUsers() {
     try {
-        return await db.select()
-                .from(schema.user)
-                .where(eq(schema.user.role, "user"));
-    } catch (error) {
-        console.error('Failed to get users:', error);
-        return false;
+        const users = await db
+            .select({
+                name: schema.user.name,
+                email: schema.user.email,
+                image: schema.user.image,
+                team_name: schema.teams.name,
+            })
+            .from(schema.user)
+            .leftJoin(schema.team_members, eq(schema.user.id, schema.team_members.user_id))
+            .leftJoin(schema.teams, eq(schema.team_members.team_id, schema.teams.id))
+            .where(eq(schema.user.role, "user"));
+
+        return users.map(u => ({
+            name: u.name,
+            email: u.email,
+            image: u.image,
+            team_name: u.team_name ?? null,
+        }));
+    } catch (e: any) {
+        console.error('Failed to get users:', e);
+        return [];
     }
 }
 
@@ -439,13 +454,19 @@ export async function GetTeams() {
 
         return await Promise.all(teams.map(async (team) => {
             const [leader] = await db
-                .select({ name: schema.user.name })
+                .select({
+                    name: schema.user.name,
+                    image: schema.user.image,
+                })
                 .from(schema.user)
                 .where(eq(schema.user.id, team.leader_id))
                 .limit(1);
 
             const memberRows = await db
-                .select({ name: schema.user.name })
+                .select({
+                    name: schema.user.name,
+                    image: schema.user.image,
+                })
                 .from(schema.team_members)
                 .innerJoin(schema.user, eq(schema.team_members.user_id, schema.user.id))
                 .where(
@@ -458,8 +479,8 @@ export async function GetTeams() {
             return {
                 id: team.id,
                 name: team.name,
-                leader: leader.name,
-                members: memberRows.map(m => m.name),
+                leader: leader,
+                members: memberRows.map(m => {m.name,m.image}),
             };
         }));
     } catch (e: any) {

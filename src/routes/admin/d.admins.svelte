@@ -58,6 +58,8 @@
                             alt="{admin.name}'s avatar"
                             class="rounded-circle me-3"
                             style="width: 40px; height: 40px; object-fit: cover;"
+                            referrerpolicy="no-referrer"
+                            crossorigin="anonymous"
                         />
                         <span class="fw-semibold text-dark">{admin.name}</span>
                     </div>

@@ -70,7 +70,7 @@
     <!-- User Cards -->
     <div class="row">
 
-        {#each filteredUsers as user (user._id)}
+        {#each filteredUsers as user}
             <div class="col-md-3 mb-3">
                 <!-- 4 cards per row -->
                 <div class="card shadow-sm border-0 h-100 rounded-3" style="font-size: 0.9rem;">
@@ -83,6 +83,8 @@
                                 alt="{user.name}'s avatar"
                                 class="rounded-circle me-2 shadow-sm"
                                 style="width: 45px; height: 45px; object-fit: cover;"
+                                referrerpolicy="no-referrer"
+                                crossorigin="anonymous"
                             />
                             <h6 class="card-title mb-0 fw-bold" style="font-size: 1rem;">
                                 {user.name}
@@ -95,7 +97,7 @@
                                 <strong>Email:</strong> {user.email}
                             </p>
                             <p class="card-text text-muted mb-0">
-                                <strong>Team ID:</strong> {user.team_id || "—"}
+                                <strong>Team:</strong> {user.team_name || "—"}
                             </p>
                         </div>
 

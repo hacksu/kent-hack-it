@@ -72,7 +72,15 @@
                 <p class="text-muted mb-2" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;">Leader</p>
                 <div class="d-flex align-items-center gap-2">
                     {#if data.team.leader.image}
-                        <img src={data.team.leader.image} alt={data.team.leader.name} class="rounded-circle" width="32" height="32" style="object-fit: cover;" />
+                        <img
+                            src={data.team.leader.image}
+                            alt={data.team.leader.name}
+                            class="rounded-circle"
+                            width="32" height="32"
+                            style="object-fit: cover;"
+                            referrerpolicy="no-referrer"
+                            crossorigin="anonymous"    
+                        />
                     {:else}
                         <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-medium" style="width:32px; height:32px; font-size:12px;">
                             {data.team.leader.name.slice(0, 2).toUpperCase()}
@@ -95,7 +103,15 @@
                         {#each data.team.members as member}
                             <div class="d-flex align-items-center gap-4">
                                 {#if member.image}
-                                    <img src={member.image} alt={member.name} class="rounded-circle" width="32" height="32" style="object-fit: cover;" />
+                                    <img
+                                        src={member.image}
+                                        alt={member.name}
+                                        class="rounded-circle"
+                                        width="32" height="32"
+                                        style="object-fit: cover;"
+                                        referrerpolicy="no-referrer"
+                                        crossorigin="anonymous"    
+                                    />
                                 {:else}
                                     <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center fw-medium" style="width:32px; height:32px; font-size:12px;">
                                         {member.name.slice(0, 2).toUpperCase()}
@@ -129,7 +145,15 @@
                     {#each data.team.requests as req}
                         <div class="d-flex align-items-center gap-2">
                             {#if req.image}
-                            <img src={req.image} alt={req.name} class="rounded-circle" width="32" height="32" style="object-fit: cover;" />
+                                <img
+                                    src={req.image}
+                                    alt={req.name}
+                                    class="rounded-circle"
+                                    width="32" height="32"
+                                    style="object-fit: cover;"
+                                    referrerpolicy="no-referrer"
+                                    crossorigin="anonymous"
+                                />
                             {:else}
                                 <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center fw-medium" style="width:32px; height:32px; font-size:12px;">
                                     {req.name.slice(0, 2).toUpperCase()}
