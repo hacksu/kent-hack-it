@@ -12,10 +12,10 @@ export const load = async ({ parent }) => {
 
     const challenges = await GetChallenges(false);
 
-    const progressBars = await GetProgress(user.id);
+    const progressData = await GetProgress(user.id);
 
     return {
-        user, challenges, progressBars
+        user, challenges, progressData
     }
 };
 

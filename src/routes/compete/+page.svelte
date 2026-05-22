@@ -251,7 +251,7 @@
     <div class="container-fluid mt-4">
 
         <div class="row align-items-center mb-4">
-            <Stats progressBars={ data.progressBars } />
+            <Stats progressData={ data.progressData } />
 
             <div class="col-12 text-center">
                 <h2 class="mb-0">Challenges</h2>

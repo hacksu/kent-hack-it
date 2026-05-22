@@ -10,6 +10,9 @@ import {
 import * as schema from "./auth-schema";
 import { env } from "$env/dynamic/private"; // dynamic allows the .env file to be read at runtime
 
+import { randomString } from "$lib/utilities";
+import { type Stat } from "$lib/mtypes";
+
 const PSQL = postgres({
     host: env.PG_HOST,
     port: Number(env.PG_PORT),
@@ -838,44 +841,160 @@ export async function RemoveMember(team_id: any, user_id: any) {
     }
 }
 
-import { type Stat } from "$lib/mtypes";
-import { randomString } from "$lib/utilities";
-export async function GetProgress(uid: string): Promise<Stat[]> {
+export async function GetProgress(uid: string) {
+    const category_colors = [
+        "#ec8058",
+        "#d8a04b",
+        "#d4d444",
+        "#90b850",
+        "#13beb6",
+        "#4068c5",
+        "#8354b5",
+    ];
+
     try {
         const [data] = await db.select({ claims: schema.user.claims })
-                        .from(schema.user)
-                        .where(eq(schema.user.id, uid)).limit(1);
-    
-        const c_data = await db.select({ name: schema.challenges.name })
-                        .from(schema.challenges);
-        const evt_data = await db.select({ id: schema.challenges.id, name: schema.challenges.name })
-                            .from(schema.challenges)
-                            .where(eq(schema.challenges.is_gym, false));
-    
-        // show progress between both event and gym challenges
-        const totalProg: Stat = {
-            label: 'Total',
-            value: data.claims?.length || 0,
-            total: c_data.length
+            .from(schema.user)
+            .where(eq(schema.user.id, uid))
+            .limit(1);
+
+        const all_challenges = await db.select({
+            id: schema.challenges.id,
+            name: schema.challenges.name,
+            category: schema.challenges.category,
+            is_gym: schema.challenges.is_gym,
+        }).from(schema.challenges);
+
+        const evt_challenges = all_challenges.filter(c => !c.is_gym);
+        const claims = data.claims ?? [];
+        const hasClaim = (id: number) => claims.some(c => String(c.challenge_id) === String(id));
+
+        const byCategory = (challenges: typeof all_challenges): Stat[] => {
+            const categories = [...new Set(challenges.map(c => c.category))];
+
+            return categories.map((cat, index) => {
+                const group = challenges.filter(c => c.category === cat);
+
+                return {
+                    label: cat,
+                    value: group.filter(c => hasClaim(c.id)).length,
+                    total: group.length,
+                    color: category_colors[index % category_colors.length],
+                };
+            });
+        };
+
+        // check if uid is in a team
+        const [membership] = await db
+            .select({ team_id: schema.team_members.team_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.user_id, uid))
+            .limit(1);
+
+        let teamProg = null;
+
+        if (membership) {
+            const team_id = membership.team_id;
+
+            // get all team members with their claims
+            const team_member_rows = await db
+                .select({ user_id: schema.team_members.user_id })
+                .from(schema.team_members)
+                .where(eq(schema.team_members.team_id, team_id));
+
+            const member_ids = team_member_rows.map(m => m.user_id);
+
+            const member_claims = await db
+                .select({ id: schema.user.id, name: schema.user.name, claims: schema.user.claims })
+                .from(schema.user)
+                .where(inArray(schema.user.id, member_ids));
+
+            // for each challenge, find who completed it first
+            // credit goes to earliest claimed_at, ties broken by member order
+            type Contribution = { challenge_id: string; winner_id: string; winner_name: string; claimed_at: string };
+
+            const contributions: Contribution[] = [];
+
+            for (const challenge of all_challenges) {
+                const completions = member_claims
+                    .flatMap(m => (m.claims ?? [])
+                        .filter(c => String(c.challenge_id) === String(challenge.id))
+                        .map(c => ({ user_id: m.id, name: m.name, claimed_at: c.claimed_at }))
+                    )
+                    .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime());
+
+                if (completions.length > 0) {
+                    contributions.push({
+                        challenge_id: String(challenge.id),
+                        winner_id: completions[0].user_id,
+                        winner_name: completions[0].name,
+                        claimed_at: completions[0].claimed_at,
+                    });
+                }
+            }
+
+            // category bars — how many challenges per category are completed by anyone on the team
+            const categories = [...new Set(all_challenges.map(c => c.category))];
+
+            const categoryBars: Stat[] = categories.map((cat, index) => {
+                const group = all_challenges.filter(c => c.category === cat);
+
+                const completed = group.filter(c =>
+                    contributions.some(con => con.challenge_id === String(c.id))
+                ).length;
+
+                return {
+                    label: cat,
+                    value: completed,
+                    total: group.length,
+                    color: category_colors[index % category_colors.length],
+                };
+            });
+
+            // pie chart data — contribution count per member (first-completion credit)
+            const pieData = member_claims.map(m => ({
+                user_id: m.id,
+                name: m.name,
+                contributions: contributions.filter(c => c.winner_id === m.id).length,
+            }));
+
+            teamProg = {
+                bars: [
+                    {
+                        label: 'Team Total',
+                        value: contributions.length,
+                        total: all_challenges.length,
+                        color: '#5b93d8',
+                    },
+                    ...categoryBars,
+                ],
+                pie: pieData,
+            };
         }
-    
-        // show event progress
-        const eventClaims = data.claims?.filter(c => evt_data.some(e => {
-            return String(e.id) === String(c.challenge_id);
-        }));
-        const eventProg: Stat = {
-            label: 'Event',
-            value: eventClaims?.length || 0,
-            total: evt_data.length,
-            color: '#72b35f'
-        }
-    
-        return [
-            totalProg,
-            eventProg
-        ]
+
+        return {
+            totalProg: [
+                {
+                    label: 'Total',
+                    value: claims.length,
+                    total: all_challenges.length,
+                    color: '#5b93d8',
+                },
+                ...byCategory(all_challenges),
+            ] as Stat[],
+            eventProg: [
+                {
+                    label: 'Event',
+                    value: evt_challenges.filter(c => hasClaim(c.id)).length,
+                    total: evt_challenges.length,
+                    color: '#5b93d8',
+                },
+                ...byCategory(evt_challenges),
+            ] as Stat[],
+            teamProg,
+        };
     } catch (e) {
         console.error("[-] Error", e);
-        return [];
+        return { totalProg: [], eventProg: [], teamProg: null };
     }
 }
