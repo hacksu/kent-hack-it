@@ -58,7 +58,7 @@ const PointValues = {
 export const actions = {
     // special form named-target
 	add_challenge: async ({ cookies, request }) => {
-        if (await isAdmin(request))
+        if (!await isAdmin(request))
             throw redirect(303, '/auth/login');
 
         const form = await request.formData();
@@ -94,7 +94,7 @@ export const actions = {
         }
     },
     edit_challenge: async ({ request }) => {
-        if (await isAdmin(request))
+        if (!await isAdmin(request))
             throw redirect(303, '/auth/login');
 
         const form = await request.formData();
