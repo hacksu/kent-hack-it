@@ -1,7 +1,7 @@
 import { auth, isAdmin } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 
-import { GetProgress, GetChallenges, CheckFlag, IsSiteActive } from "$lib/database/db";
+import { GetProgress, GetChallenges, CheckFlag, IsSiteActive, GetCompletions } from "$lib/database/db";
 
 export const load = async ({ parent }) => {
     // goes to +layout.server.ts and fetches the user state
@@ -11,11 +11,11 @@ export const load = async ({ parent }) => {
     if (!user) throw redirect(303, '/auth/login');
 
     const challenges = await GetChallenges(false);
-
+    const completions = await GetCompletions(user.id);
     const progressData = await GetProgress(user.id);
 
     return {
-        user, challenges, progressData
+        user, challenges, progressData, completions
     }
 };
 
@@ -52,7 +52,7 @@ export const actions = {
         console.log(`[${uid}] Checking Flag (${cid}) -> ${flag_value}`);
 
         try {
-            if (await IsSiteActive()) {
+            if (!await IsSiteActive()) {
                 return { success: false, message: 'Not accepting flags at this time' };
             } else {
                 return await CheckFlag(uid, cid, flag_value);

@@ -3,28 +3,23 @@
     import { invalidateAll } from '$app/navigation';
 
     import Feedback from '$lib/components/feedback.svelte';
-    import Stats from '$lib/components/stats.svelte'
+    import Stats from '$lib/components/stats.svelte';
 
     import { type ViewableChallengeData } from '$lib/database/db.js';
     import { handleFormResult } from "$lib/utilities.js";
 
-    function clearResult() {
-        error = warning = success = "";
-    }
     let error = $state("");
     let warning = $state("");
     let success = $state("");
+    
+    function clearResult() {
+        error = warning = success = "";
+    }
 
     const { data } = $props();
-
-    let challenges: any[] = $state([]);
+    
     let currentPage = $state(1);
     const challengesPerPage = 20;
-
-    let availableCategories: string[] = $state([]);
-    let availableDifficulties: string[] = $state([]);
-    let availableRatings: string[] = $state([]);
-    let availableAuthors: string[] = $state([]);
 
     let filters = $state({
         category: '',
@@ -32,62 +27,145 @@
         rating: '',
         author: '',
         searchText: '',
-        showCompleted: false,
+        showCompleted: true,
         showUncompleted: true,
-        showTeamCompleted: false,
+        showTeamCompleted: true,
         showTeamUncompleted: true
     });
 
-    function applyFilters(data: any[]) {
-        let filtered = [...data];
+    let availableCategories = $derived(
+        [...new Set<string>(
+            (data.challenges ?? []).map((c: any) => c.category)
+        )].sort()
+    );
 
+    let availableDifficulties = $derived(() => {
+        const difficultyOrder = ['Simple', 'Easy', 'Medium', 'Hard', 'Extreme'];
+
+        const unique = [...new Set<string>(
+            (data.challenges ?? []).map((c: any) => c.difficulty)
+        )];
+
+        return difficultyOrder.filter(d => unique.includes(d));
+    });
+
+    let availableRatings = ['4.0', '3.0', '2.0', '1.0', '0.0'];
+
+    let availableAuthors = $derived(
+        [...new Set<string>(
+            (data.challenges ?? [])
+                .map((c: any) => c.written_by)
+                .filter(Boolean)
+        )].sort()
+    );
+
+    function applyFilters(dataSet: ViewableChallengeData[]) {
+        let filtered = [...dataSet];
+
+        // Category
         if (filters.category) {
-            filtered = filtered.filter(c => c.category === filters.category);
-        }
-        if (filters.difficulty) {
-            filtered = filtered.filter(c => c.difficulty === filters.difficulty);
-        }
-        if (filters.rating) {
-            const threshold = parseFloat(filters.rating);
-            filtered = filtered.filter(c => c.rating >= threshold);
-        }
-        if (filters.author) {
-            filtered = filtered.filter(c => c.written_by === filters.author);
-        }
-        if (filters.searchText) {
-            const term = filters.searchText.toLowerCase();
-            filtered = filtered.filter(c =>
-                c.name.toLowerCase().includes(term) ||
-                c.category.toLowerCase().includes(term) ||
-                (c.written_by && c.written_by.toLowerCase().includes(term))
+            filtered = filtered.filter(
+                c => c.category === filters.category
             );
         }
+
+        // Difficulty
+        if (filters.difficulty) {
+            filtered = filtered.filter(
+                c => c.difficulty === filters.difficulty
+            );
+        }
+
+        // Rating
+        if (filters.rating) {
+            const threshold = parseFloat(filters.rating);
+
+            filtered = filtered.filter(
+                c => Number(c.rating) >= threshold
+            );
+        }
+
+        // Author
+        if (filters.author) {
+            filtered = filtered.filter(
+                c => c.written_by === filters.author
+            );
+        }
+
+        // Search
+        if (filters.searchText.trim()) {
+            const term = filters.searchText.toLowerCase();
+
+            filtered = filtered.filter((c) =>
+                c.name?.toLowerCase().includes(term) ||
+                c.category?.toLowerCase().includes(term) ||
+                c.written_by?.toLowerCase().includes(term) ||
+                c.description?.toLowerCase().includes(term)
+            );
+        }
+
+        // Completion Filters
+        filtered = filtered.filter((c) => {
+            const completed = data.completions?.some(
+                (chall) => Number(c.id) === Number(chall.challenge_id)
+            ) ?? false;
+
+            // SELF-COMPLETIONS
+            if (completed && !filters.showCompleted) {
+                return false;
+            }
+
+            if (!completed && !filters.showUncompleted) {
+                return false;
+            }
+
+            // @todo - Add team completion filter implementation
+
+            return true;
+        });
 
         return filtered;
     }
 
-    async function fetchChallenges() {
-        try {
-            if (!data.challenges) return;
+    let challenges = $derived(
+        applyFilters(data.challenges ?? [])
+    );
 
-            const categories = [...new Set<string>(data.challenges.map((c: any) => c.category))].sort();
-            const difficultyOrder = ['Simple', 'Easy', 'Medium', 'Hard', 'Extreme'];
-            const unique = [...new Set<string>(data.challenges.map((c: any) => c.difficulty))];
-            const difficulties = difficultyOrder.filter(d => unique.includes(d));
-            const ratings = ['4.0', '3.0', '2.0', '1.0', '0.0'];
-            const authors = [...new Set<string>(data.challenges.map((c: any) => c.written_by).filter(Boolean))].sort();
+    $effect(() => {
+        filters;
+        currentPage = 1;
+    });
 
-            availableCategories = categories;
-            availableDifficulties = difficulties;
-            availableRatings = ratings;
-            availableAuthors = authors;
+    let totalPages = $derived(
+        Math.max(
+            1,
+            Math.ceil(challenges.length / challengesPerPage)
+        )
+    );
 
-            challenges = applyFilters(data.challenges);
-        } catch (err) {
-            console.error('Failed to fetch challenges:', err);
+    let indexOfLast = $derived(
+        currentPage * challengesPerPage
+    );
+
+    let indexOfFirst = $derived(
+        indexOfLast - challengesPerPage
+    );
+
+    let currentChallenges = $derived(
+        challenges.slice(indexOfFirst, indexOfLast)
+    );
+
+    function nextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
         }
     }
-    fetchChallenges();
+
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+        }
+    }
 
     function clearFilters() {
         filters = {
@@ -96,43 +174,27 @@
             rating: '',
             author: '',
             searchText: '',
-            showCompleted: false,
+            showCompleted: true,
             showUncompleted: true,
-            showTeamCompleted: false,
+            showTeamCompleted: true,
             showTeamUncompleted: true
         };
     }
 
-    // Pagination
-    let indexOfLast = $derived(currentPage * challengesPerPage);
-    let indexOfFirst = $derived(indexOfLast - challengesPerPage);
-    let currentChallenges = $derived(challenges.slice(indexOfFirst, indexOfLast));
-    let totalPages = $derived(Math.ceil(challenges.length / challengesPerPage) || 1);
-
-    function nextPage() {
-        if (indexOfLast < challenges.length) currentPage++;
-    }
-    function prevPage() {
-        if (currentPage > 1) currentPage--;
-    }
-
-    // Reset page on filter change
-    $effect(() => {
-        filters;
-        currentPage = 1;
-    });
-
     let showPanel = $state<boolean>(false);
-    let challengeInfo = $state<ViewableChallengeData|undefined>(undefined);
-    async function viewChallenge(cid: string|number) {
-        // console.log(`Viewing cid -> ${cid}`);
-        const data: any|undefined = currentChallenges.find(challenge => Number(challenge.id) === Number(cid));
-        // console.log(`Data Fetched -> ${JSON.stringify(data)}`);
 
-        showPanel = (data !== undefined) ? true : false;
-        challengeInfo = data;
+    let challengeInfo = $state<ViewableChallengeData | undefined>(
+        undefined
+    );
+
+    async function viewChallenge(cid: string | number) {
+        const challenge = challenges.find(
+            (c) => Number(c.id) === Number(cid)
+        );
+
+        challengeInfo = challenge;
+        showPanel = challenge !== undefined;
     }
-
 </script>
 
 <svelte:head>
@@ -295,7 +357,7 @@
                             <label for="difficulty-search" class="form-label">Difficulty</label>
                             <select class="form-select form-select-sm" bind:value={filters.difficulty}>
                                 <option value="">All Difficulties</option>
-                                {#each availableDifficulties as difficulty}
+                                {#each availableDifficulties() as difficulty}
                                     <option value={difficulty}>{difficulty}</option>
                                 {/each}
                             </select>

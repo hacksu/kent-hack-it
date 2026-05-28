@@ -361,6 +361,24 @@ export async function DeleteUser(id: any) {
     }
 }
 
+export async function GetCompletions(uid: any) {
+    try {
+        const [user] = await db.select({ completions: schema.user.claims })
+                        .from(schema.user)
+                        .where(eq(schema.user.id, uid)).limit(1);
+        if (!user) {
+            console.log("[-] Could not find completions for (UID):", uid);
+            return [];
+        } else {
+            return user.completions;
+        }
+
+    } catch (e: any) {
+        console.error("[-] Error:", e);
+        return [];
+    }
+}
+
 /**
  * Delete a specific challenge archive from the server
  * 
