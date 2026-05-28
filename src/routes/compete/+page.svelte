@@ -242,6 +242,14 @@
                         {/if}
                         
                         <p class="card-text small mb-1">⭐ {Number(challengeInfo.rating).toFixed(1)} / 5</p>
+                        
+                        <details class="hints-section">
+                            <summary>Hints</summary>
+                            {#each challengeInfo.hints as hint}
+                                <span>{hint}</span>
+                            {/each}
+                        </details>
+                        
                         <p class="card-text small">Points: {challengeInfo.points}</p>
                         <!--
                             <p class="card-text small">{challengeInfo.user_completions} Solves</p>

@@ -309,3 +309,52 @@ h6 {
 .team-list {
     font-size: 20px !important;
 }
+
+.hints-section {
+    border: 0.5px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 8px;
+}
+
+.hints-section summary {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hints-section summary::before {
+    content: '›';
+    font-size: 16px;
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.hints-section[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.hints-section[open] summary {
+    margin-bottom: 10px;
+}
+
+.hints-section span {
+    display: block;
+    font-size: 13px;
+    color: #374151;
+    background: #f9fafb;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+}
+
+.hints-section span:last-child {
+    margin-bottom: 0;
+}

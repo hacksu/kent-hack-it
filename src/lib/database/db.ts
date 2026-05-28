@@ -44,14 +44,15 @@ try {
 }
 
 export interface ChallengeForm {
-    name: string,
-    description: string,
-    written_by: string,
-    category: string,
-    difficulty: string,
-    flag: string,
-    points: number,
+    name: string;
+    description: string;
+    written_by: string;
+    category: string;
+    difficulty: string;
+    flag: string;
+    points: number;
     hlinks: string[] | null;
+    hints: string[] | null;
 };
 
 export interface ChallengeData {
@@ -65,6 +66,7 @@ export interface ChallengeData {
     points: number;
     user_rates: number[] | null;
     rating: string | null;
+    hints: string[] | null;
     hlinks: string[] | null;
     is_active: boolean | null;
     is_gym: boolean | null;
@@ -79,6 +81,7 @@ export interface ViewableChallengeData {
     written_by: string | null;
     points: number;
     rating: string | null;
+    hints: string[] | null;
     hlinks: string[] | null;
     is_active: boolean | null;
     is_gym: boolean | null;
@@ -93,8 +96,9 @@ const publicChallengeData = {
     difficulty: schema.challenges.difficulty,
     written_by: schema.challenges.written_by,
     points: schema.challenges.points,
-    hlinks: schema.challenges.hlinks,
     rating: schema.challenges.rating,
+    hlinks: schema.challenges.hlinks,
+    hints: schema.challenges.hints,
     is_active: schema.challenges.is_active,
     is_gym: schema.challenges.is_gym,
 };

@@ -121,6 +121,7 @@ export const challenges = pgTable("challenges", {
     points: integer("points").notNull(),            // computed server-side
 
     user_rates: integer("user_rates").array().default([]),
+    hints: text("hints").array().default([]),
     rating: numeric("rating", { precision: 3, scale: 2 }).default("0"),
     hlinks: text("hlinks").array().default([]),
     is_active: boolean("is_active").default(true),  // used to close a challenge from players to perform maintanence

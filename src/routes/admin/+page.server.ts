@@ -61,7 +61,7 @@ const PointValues = {
 // FORM DATA HANDLING ONLY - POSTS ARE HANDLED IN +server.ts
 export const actions = {
     // special form named-target
-	add_challenge: async ({ cookies, request }) => {
+	add_challenge: async ({ request }) => {
         if (!await isAdmin(request))
             throw redirect(303, '/auth/login');
 
@@ -69,6 +69,7 @@ export const actions = {
         let formData = Object.fromEntries(form.entries()) as Record<string, string>;
         
         const attached_files = form.getAll("attached_files") as string[];
+        const hints = JSON.parse(formData['hints'] || '[]') as string[];
 
         if (!formData.name || !formData.description || !formData.written_by || 
             !formData.category || !formData.difficulty || !formData.flag)
@@ -87,7 +88,8 @@ export const actions = {
                 difficulty: formData.difficulty,
                 flag: formData.flag,
                 points,
-                hlinks: attached_files
+                hlinks: attached_files,
+                hints
             };
 
             await AddChallenge(data);
@@ -105,6 +107,9 @@ export const actions = {
         const formData = Object.fromEntries(form.entries()) as Record<string, string>;
 
         const attached_files = form.getAll("attached_files") as string[];
+        const hints = JSON.parse(formData['hints'] || '[]') as string[];
+
+        console.log(hints);
 
         if (!formData.id || !formData.name || !formData.description ||
             !formData.written_by || !formData.category || !formData.difficulty || !formData.flag)
@@ -125,7 +130,8 @@ export const actions = {
                 difficulty: formData.difficulty,
                 flag: formData.flag,
                 points,
-                hlinks: attached_files
+                hlinks: attached_files,
+                hints,
             }, formData.id);
 
             return { success: true, message: 'Challenge updated!' };

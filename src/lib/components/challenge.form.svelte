@@ -13,8 +13,25 @@
         result: { error?: string, success?: boolean, message?: string } | null,
         uploaded_files: any
     } = $props();
-    
+
     let selectedFiles = $state<string[]>(challenge?.hlinks || []);
+    let hints = $state<string[]>(
+        challenge?.hints?.length
+            ? [...challenge.hints]
+            : [""]
+    );
+
+    function addHint() {
+        hints.push("");
+    }
+
+    function removeHint(index: number) {
+        hints.splice(index, 1);
+
+        if (hints.length === 0) {
+            hints.push("");
+        }
+    }
 </script>
 
 <div class="container mt-4" style="max-width: 700px;">
@@ -119,6 +136,48 @@
                     {/if}
 
                     <hr />
+                </div>
+                
+                <div class="mb-3">
+                    <label for="hints" class="form-label fw-semibold">
+                        Hints
+                    </label>
+
+                    {#each hints as _, index}
+                        <div class="input-group mb-2">
+                            <input
+                                type="text"
+                                class="form-control"
+                                bind:value={hints[index]}
+                                placeholder={`Hint #${index + 1}`}
+                            />
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-danger"
+                                onclick={() => removeHint(index)}
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    {/each}
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        onclick={addHint}
+                    >
+                        + Add Hint
+                    </button>
+
+                    <!-- Hidden field sent to backend -->
+                    <input
+                        type="hidden"
+                        name="hints"
+                        value={JSON.stringify(
+                            hints.filter(h => h.trim() !== "")
+                        )}
+                    />
                 </div>
 
                 <!-- Category & Difficulty -->
