@@ -136,10 +136,9 @@
     }
 
     function hasRated(cid: number) {
-        const r = data.rated?.some(
+        return data.rated?.some(
             (ch_r) => cid === ch_r
         ) ?? false;
-        return r;
     }
 
     let challenges = $derived(
