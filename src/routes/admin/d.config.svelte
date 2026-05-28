@@ -3,6 +3,7 @@
     import { invalidateAll } from '$app/navigation';
     
     import Feedback from '$lib/components/feedback.svelte';
+    import { handleFormResult } from "$lib/utilities";
 
     function clearResult() {
         error = warning = success = "";
@@ -84,30 +85,16 @@
                     <form method="POST" action="?/update_config" use:enhance={() => {
                         return async ({ result, update }) => {
                             await update();
+                            
+                            const formResult = await handleFormResult(result);
+                            success = formResult.success;
+                            warning = formResult.warning;
+                            error = formResult.error;
+
                             if (result.type === 'success' && result.data) {
-
-                                if (result.type === 'success' && result.data) {
-                                    // perform a cast to avoid error/warning popups
-                                    const data = result.data as {
-                                        success: boolean;
-                                        message?: string;
-                                        error?: string;
-                                    };
-                                    
-                                    if (data.success && data.message) {
-                                        success = data.message;
-                                    } else {
-                                        error = data.message ?? data.error ?? 'Error Occurred!';
-                                    }
-                                } else {
-                                    error = 'Error Occurred!';
-                                }
-
                                 await invalidateAll();
                                 resync();
                                 setTimeout(clearResult, 5000);
-                            } else {
-                                error = "Error Occurred!";
                             }
                         };
                     }}>

@@ -3,6 +3,7 @@
     import { invalidateAll } from '$app/navigation';
     
     import Feedback from '$lib/components/feedback.svelte';
+    import { handleFormResult } from "$lib/utilities";
 
     let selectedFiles = $state<File[]>([]);
     let fileInput = $state<HTMLInputElement | null>(null);
@@ -103,23 +104,10 @@
                                 fileInput.value = "";
                             }
 
-                            if (result.type === 'success' && result.data) {
-                                // perform a cast to avoid error/warning popups
-                                const data = result.data as {
-                                    success: boolean;
-                                    message?: string;
-                                    warning?: string;
-                                    error?: string;
-                                };
-                                
-                                if (data.success && data.message) {
-                                    success = data.message;
-                                } else {
-                                    error = data.message ?? data.error ?? 'Error Occurred!';
-                                }
-                            } else {
-                                error = 'Error Occurred!';
-                            }
+                            const formResult = await handleFormResult(result);
+                            success = formResult.success;
+                            warning = formResult.warning;
+                            error = formResult.error;
 
                             setTimeout(clearResult, 5000);
                         };

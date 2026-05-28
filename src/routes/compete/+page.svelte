@@ -6,6 +6,7 @@
     import Stats from '$lib/components/stats.svelte'
 
     import { type ViewableChallengeData } from '$lib/database/db.js';
+    import { handleFormResult } from "$lib/utilities.js";
 
     function clearResult() {
         error = warning = success = "";
@@ -190,23 +191,11 @@
                         <form method="POST" action="?/submit_flag" use:enhance={() => {
                             return async ({ result, update }) => {
                                 await update();
-                                
-                                if (result.type === 'success' && result.data) {
-                                    // perform a cast to avoid error/warning popups
-                                    const data = result.data as {
-                                        success: boolean;
-                                        message?: string;
-                                        error?: string;
-                                    };
-                                    
-                                    if (data.success && data.message) {
-                                        success = data.message;
-                                    } else {
-                                        error = data.message ?? data.error ?? 'Error Occurred!';
-                                    }
-                                } else {
-                                    error = 'Error Occurred!';
-                                }
+
+                                const formResult = await handleFormResult(result);
+                                success = formResult.success;
+                                warning = formResult.warning;
+                                error = formResult.error;
 
                                 await invalidateAll();
                                 setTimeout(clearResult, 5000);
