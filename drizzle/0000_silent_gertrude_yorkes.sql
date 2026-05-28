@@ -23,7 +23,8 @@ CREATE TABLE "challenges" (
 	"written_by" text DEFAULT 'Unknown Author',
 	"flag" text NOT NULL,
 	"points" integer NOT NULL,
-	"user_rates" integer[] DEFAULT '{}',
+	"user_rates" text[] DEFAULT '{}',
+	"hints" text[] DEFAULT '{}',
 	"rating" numeric(3, 2) DEFAULT '0',
 	"hlinks" text[] DEFAULT '{}',
 	"is_active" boolean DEFAULT true,
@@ -55,7 +56,7 @@ CREATE TABLE "session" (
 --> statement-breakpoint
 CREATE TABLE "team_members" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"team_id" integer NOT NULL,
+	"team_id" serial NOT NULL,
 	"user_id" text NOT NULL,
 	"joined_at" timestamp DEFAULT now(),
 	CONSTRAINT "team_members_team_id_user_id_unique" UNIQUE("team_id","user_id")
@@ -63,7 +64,7 @@ CREATE TABLE "team_members" (
 --> statement-breakpoint
 CREATE TABLE "team_requests" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"to" text NOT NULL,
+	"to" serial NOT NULL,
 	"from" text NOT NULL,
 	"checksum" varchar(12) NOT NULL,
 	CONSTRAINT "team_requests_checksum_unique" UNIQUE("checksum")
@@ -90,6 +91,7 @@ CREATE TABLE "user" (
 	"ban_reason" text,
 	"ban_expires" timestamp,
 	"claims" jsonb DEFAULT '[]'::jsonb,
+	"ratings" integer[] DEFAULT '{}',
 	CONSTRAINT "user_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint

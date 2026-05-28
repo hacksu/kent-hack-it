@@ -33,7 +33,7 @@ export async function handleFormResult(result: ActionResult<Record<string, unkno
                 success = data.message;
                 warning = data.warning ?? "";
             } else {
-                error = data.error ?? 'Error Occurred!';
+                error = data.message ?? data.error ?? 'Error Occurred!';
             }
         } else {
             error = 'Error Occurred!';

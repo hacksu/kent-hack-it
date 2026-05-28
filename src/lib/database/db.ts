@@ -64,7 +64,6 @@ export interface ChallengeData {
     written_by: string | null;
     flag: string;
     points: number;
-    user_rates: number[] | null;
     rating: string | null;
     hints: string[] | null;
     hlinks: string[] | null;
@@ -85,6 +84,7 @@ export interface ViewableChallengeData {
     hlinks: string[] | null;
     is_active: boolean | null;
     is_gym: boolean | null;
+    solves: number;
 }
 
 // special select type used in challenge querying
@@ -251,6 +251,32 @@ export async function DeleteChallenge(id: any) {
 }
 
 /**
+ * Get the number of solvers based on a challenge id (cid)
+ * 
+ * @param cid 
+ */
+export async function GetSolversCount(cid: number) {
+    try {
+        const result = await db
+            .select({ count: count() })
+            .from(schema.user)
+            .where(
+                and(
+                    eq(schema.user.role, 'user'),
+                    sql`
+                        ${schema.user.claims} @> ${JSON.stringify([{ challenge_id: String(cid) }])}::jsonb
+                    `
+                )
+            );
+
+        return result[0]?.count ?? 0;
+    } catch (e: any) {
+        console.error("[-] Error:", e);
+        return 0;
+    }
+}
+
+/**
  * Returns list of all admins on the DB
  * 
  * @returns 
@@ -362,6 +388,24 @@ export async function DeleteUser(id: any) {
     } catch (error) {
         console.error('Failed to delete CTF Player:', error);
         return false;
+    }
+}
+
+export async function GetRated(uid: any) {
+    try {
+        const [user] = await db.select({ rated: schema.user.ratings })
+                        .from(schema.user)
+                        .where(eq(schema.user.id, uid)).limit(1);
+        if (!user) {
+            console.log("[-] Could not find rated list for (UID):", uid);
+            return [];
+        } else {
+            return user.rated;
+        }
+
+    } catch (e: any) {
+        console.error("[-] Error:", e);
+        return [];
     }
 }
 
@@ -490,6 +534,64 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
     } catch (error) {
         console.error('Error occurred checking flag:', error);
         return { success: false, message: 'Error Occurred' };
+    }
+}
+
+export async function SubmitRating(uid: any, cid: any, rating: number): Promise<{ success: boolean, message: string }> {
+    try {
+        const [user] = await db
+            .select({ claims: schema.user.claims, ratings: schema.user.ratings })
+            .from(schema.user)
+            .where(eq(schema.user.id, uid))
+            .limit(1);
+
+        if (!user) return { success: false, message: 'User not found' };
+
+        // check if user has claimed this challenge
+        const hasClaimed = user.claims?.some(c => Number(c.challenge_id) === Number(cid));
+        if (!hasClaimed) return { success: false, message: 'You must complete a challenge before rating it' };
+
+        // atomic check + append: only appends if cid is NOT already in ratings
+        const ratingUpdate = await db.execute(
+            sql`
+                UPDATE "user"
+                SET ratings = array_append(ratings, ${cid}::int)
+                WHERE id = ${uid}
+                AND NOT (${cid}::int = ANY(ratings))
+                RETURNING id
+            `
+        );
+
+        // if no rows returned, user already rated
+        if (!ratingUpdate.length) {
+            return { success: false, message: 'You have already rated this challenge' };
+        }
+
+        const [challenge] = await db
+            .select({ rating: schema.challenges.rating, user_rates: schema.challenges.user_rates })
+            .from(schema.challenges)
+            .where(eq(schema.challenges.id, cid))
+            .limit(1);
+
+        if (!challenge) {
+            return { success: false, message: 'Challenge not found' };
+        }
+
+        const prevCount  = challenge.user_rates?.length ?? 0;
+        const prevRating = Number(challenge.rating ?? 0);
+        const newRating  = ((prevRating * prevCount) + rating) / (prevCount + 1);
+
+        await db.update(schema.challenges)
+            .set({
+                rating: newRating.toFixed(2),
+                user_rates: sql`array_append(${schema.challenges.user_rates}, ${uid})`,
+            })
+            .where(eq(schema.challenges.id, cid));
+
+        return { success: true, message: 'Rating submitted!' };
+    } catch (e: any) {
+        console.error('Error occurred rating challenge:', e);
+        return { success: false, message: 'Error occurred' };
     }
 }
 

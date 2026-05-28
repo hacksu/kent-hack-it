@@ -1,7 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
     pgTable, text, timestamp, boolean,
-    index, serial, numeric, integer,
+    index, numeric, integer, serial,
     jsonb, unique, varchar,
 } from "drizzle-orm/pg-core";
 
@@ -26,6 +26,7 @@ export const user = pgTable("user", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
   claims: jsonb("claims").$type<ClaimEntry[]>().default([]),
+  ratings: integer().array().default([]),
 });
 
 export const session = pgTable(
@@ -120,7 +121,7 @@ export const challenges = pgTable("challenges", {
     flag: text("flag").unique().notNull(),
     points: integer("points").notNull(),            // computed server-side
 
-    user_rates: integer("user_rates").array().default([]),
+    user_rates: text("user_rates").array().default([]),
     hints: text("hints").array().default([]),
     rating: numeric("rating", { precision: 3, scale: 2 }).default("0"),
     hlinks: text("hlinks").array().default([]),
@@ -137,7 +138,7 @@ export const teams = pgTable("teams", {
 
 export const team_members = pgTable("team_members", {
     id: serial("id").primaryKey(),
-    team_id: integer("team_id").notNull().references(() => teams.id),
+    team_id: serial("team_id").notNull().references(() => teams.id),
     user_id: text("user_id").notNull().references(() => user.id),
     joined_at: timestamp("joined_at").defaultNow(),
 }, (t) => [
@@ -146,7 +147,7 @@ export const team_members = pgTable("team_members", {
 
 export const team_requests = pgTable("team_requests", {
     id: serial("id").primaryKey(),
-    to: text("to").notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    to: serial("to").notNull().references(() => teams.id, { onDelete: 'cascade' }),
     from: text("from").notNull().references(() => user.id).notNull(),
     checksum: varchar("checksum", {length: 12}).unique().notNull()
 });

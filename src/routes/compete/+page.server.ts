@@ -1,7 +1,12 @@
 import { auth, isAdmin } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 
-import { GetProgress, GetChallenges, CheckFlag, IsSiteActive, GetCompletions } from "$lib/database/db";
+import {
+    GetProgress, GetChallenges, CheckFlag,
+    IsSiteActive, GetCompletions, GetSolversCount,
+    SubmitRating,
+    GetRated,
+} from "$lib/database/db";
 
 export const load = async ({ parent }) => {
     // goes to +layout.server.ts and fetches the user state
@@ -10,19 +15,25 @@ export const load = async ({ parent }) => {
     // redirect unauthenticated users to login
     if (!user) throw redirect(303, '/auth/login');
 
-    const challenges = await GetChallenges(false);
+    let challenges = await GetChallenges(false);
     const completions = await GetCompletions(user.id);
+    const rated = await GetRated(user.id);
     const progressData = await GetProgress(user.id);
 
+    // modify object to attach the solvers attribute
+    for (let c of challenges || []) {
+        c['solves'] = await GetSolversCount(c.id);
+    }
+
     return {
-        user, challenges, progressData, completions
+        user, challenges, progressData, completions, rated
     }
 };
 
 // FORM DATA HANDLING ONLY - POSTS ARE HANDLED IN +server.ts
 export const actions = {
     // special form named-target
-    submit_flag: async ({ cookies, request }) => {
+    submit_flag: async ({ request }) => {
         const session = await auth.api.getSession({
                 headers: request.headers,
             });
@@ -60,6 +71,51 @@ export const actions = {
         } catch (e) {
             console.error(`[-] Submit Flag -> ${e}`);
             return fail(500, { success: false, error: 'An error occurred while adding the challenge' });
+        }
+    },
+
+    submit_rating: async ({ request }) => {
+        const session = await auth.api.getSession({
+                headers: request.headers,
+            });
+
+        // user not authenticated
+        if (!session) {
+            return redirect(301, "/auth/login");
+        }
+
+        // admins cannot submit rating : srry again <3
+        if (await isAdmin(request)) {
+            console.log("[*] Admin tried rating a challenge!");
+            return { success: false, message: 'Admins cannot participate!' };
+        }
+
+        const form = await request.formData();
+        let formData = Object.fromEntries(form.entries()) as Record<string, string>;
+
+        const cid = formData.cid;
+        const uid = session.user.id;
+        
+        if (!formData.rating || !cid) {
+            return { success: false, message: !await IsSiteActive() ? 'No rating submitted' : 'Not accepting ratings at this time' };
+        }
+        
+        const rating = Number(formData.rating);
+        if (rating < 0 || rating > 5) {
+            console.warn(`[!] UID: ${uid} tried submitting a rating of: ${rating} for challenge id: ${cid}`);
+            return { success: false, message: 'Invalid rating' };
+        }
+
+        try {
+            if (!await IsSiteActive()) {
+                return { success: false, message: 'Not accepting ratings at this time' };
+            } else {
+                console.log("[*] Attempting to Submit a Rating");
+                return await SubmitRating(uid, cid, rating);
+            }
+        } catch (e) {
+            console.error(`[-] Submit Rating -> ${e}`);
+            return fail(500, { success: false, error: 'An error occurred while rating the challenge' });
         }
     },
 };

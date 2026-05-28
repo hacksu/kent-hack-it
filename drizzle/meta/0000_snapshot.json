@@ -1,5 +1,5 @@
 {
-  "id": "ab5221e2-3943-424c-b234-cfd9c452bff0",
+  "id": "892fe693-2f45-4a69-9adc-221caf103f08",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -181,7 +181,14 @@
         },
         "user_rates": {
           "name": "user_rates",
-          "type": "integer[]",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'"
+        },
+        "hints": {
+          "name": "hints",
+          "type": "text[]",
           "primaryKey": false,
           "notNull": false,
           "default": "'{}'"
@@ -403,7 +410,7 @@
         },
         "team_id": {
           "name": "team_id",
-          "type": "integer",
+          "type": "serial",
           "primaryKey": false,
           "notNull": true
         },
@@ -477,7 +484,7 @@
         },
         "to": {
           "name": "to",
-          "type": "text",
+          "type": "serial",
           "primaryKey": false,
           "notNull": true
         },
@@ -677,6 +684,13 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'[]'::jsonb"
+        },
+        "ratings": {
+          "name": "ratings",
+          "type": "integer[]",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'"
         }
       },
       "indexes": {},

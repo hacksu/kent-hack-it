@@ -49,6 +49,8 @@
         return difficultyOrder.filter(d => unique.includes(d));
     });
 
+    let selectedRating = $state(0);
+    let hoveredRating  = $state(0);
     let availableRatings = ['4.0', '3.0', '2.0', '1.0', '0.0'];
 
     let availableAuthors = $derived(
@@ -125,6 +127,19 @@
         });
 
         return filtered;
+    }
+
+    function hasSolved(cid: number) {
+        return data.completions?.some(
+                (chall) => cid === Number(chall.challenge_id)
+            ) ?? false;
+    }
+
+    function hasRated(cid: number) {
+        const r = data.rated?.some(
+            (ch_r) => cid === ch_r
+        ) ?? false;
+        return r;
     }
 
     let challenges = $derived(
@@ -250,10 +265,8 @@
                             {/each}
                         </details>
                         
-                        <p class="card-text small">Points: {challengeInfo.points}</p>
-                        <!--
-                            <p class="card-text small">{challengeInfo.user_completions} Solves</p>
-                        -->
+                        <p class="card-text small p-1">Points: {challengeInfo.points}</p>
+                        <p class="card-text small">{challengeInfo.solves} Solves</p>
                     </div>
 
                     <!-- Footer action -->
@@ -285,6 +298,51 @@
                                 </button>
                             </div>
                         </form>
+
+                        {#if !hasRated(challengeInfo.id) && hasSolved(challengeInfo.id)}
+                            <form method="POST" action="?/submit_rating" use:enhance={() => {
+                                return async ({ result, update }) => {
+                                    await update();
+
+                                    const formResult = await handleFormResult(result);
+                                    success = formResult.success;
+                                    warning = formResult.warning;
+                                    error = formResult.error;
+
+                                    await invalidateAll();
+                                    setTimeout(clearResult, 5000);
+                                };
+                            }}>
+                                <input type="hidden" name="cid" value={challengeInfo.id} />
+                                <input type="hidden" name="rating" value={selectedRating} />
+
+                                <div class="star-rating mt-2">
+                                    {#each [1, 2, 3, 4, 5] as star}
+                                        <button
+                                            type="button"
+                                            class="star"
+                                            class:active={star <= selectedRating}
+                                            class:hovered={star <= hoveredRating}
+                                            onmouseenter={() => hoveredRating = star}
+                                            onmouseleave={() => hoveredRating = 0}
+                                            onclick={() => selectedRating = star}
+                                            aria-label="Rate {star} star{star !== 1 ? 's' : ''}"
+                                        >
+                                            ★
+                                        </button>
+                                    {/each}
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-primary btn-sm ms-3"
+                                        disabled={selectedRating === 0}
+                                    >
+                                        Submit Rating
+                                    </button>
+                                </div>
+                            </form>
+                        {/if}
+
                     </div>
                     
                 </div>
@@ -423,12 +481,6 @@
                             </a>
                         </div>
 
-                        <div class="mt-4">
-                            <a class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" href="/rate-challenge">
-                                Rate Challenges
-                            </a>
-                        </div>
-
                     </div>
                 </div>
             </div>
@@ -469,7 +521,7 @@
                                                 {/if}
                                                 <p class="card-text small mb-1">⭐ {Number(challenge.rating).toFixed(1)} / 5</p>
                                                 <p class="card-text small">Points: {challenge.points}</p>
-                                                <p class="card-text small">{challenge.user_completions} Solves</p>
+                                                <p class="card-text small">{challenge.solves} Solves</p>
                                             </div>
                                         </div>
                                     </button>

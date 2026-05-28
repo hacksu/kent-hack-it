@@ -358,3 +358,29 @@ h6 {
 .hints-section span:last-child {
     margin-bottom: 0;
 }
+
+.star-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.star {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #d1d5db;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.1s, transform 0.1s;
+}
+
+.star.active,
+.star.hovered {
+    color: #f59e0b;
+}
+
+.star:hover {
+    transform: scale(1.2);
+}
