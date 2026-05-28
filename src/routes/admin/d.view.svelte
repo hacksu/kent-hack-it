@@ -58,7 +58,9 @@
 {#if showEditPanel}
     <div class="edit-overlay">
         <div>
-            <button title="Close Panel" class="btn btn-sm btn-close btn-close-white" onclick={exitPanel}></button>
+            <button title="Close Panel" class="btn btn-lg btn-secondary" onclick={exitPanel}>
+                Close
+            </button>
 
             <ChallengeForm
                 title="Edit Challenge"
