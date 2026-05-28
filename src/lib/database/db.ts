@@ -29,6 +29,20 @@ const PSQL = postgres({
 */
 export const db = drizzle(PSQL);
 
+try {
+    console.log("[FIRST-TIME-INIT] Setting default event configuration in DB. . .");
+    await db.insert(schema.event_config)
+        .values({
+            name: 'config',
+            event_start: new Date(),
+            event_length: 7,
+            site_active: false
+        })
+        .onConflictDoNothing();
+} catch (e: any) {
+    console.error("Error seeding event_config:", e);
+}
+
 export interface ChallengeForm {
     name: string,
     description: string,
@@ -129,6 +143,9 @@ export async function GetChallenges(is_admin: boolean, grab_mode: number = 0) {
     try {
         const selection = is_admin ? undefined : publicChallengeData;
 
+        if (!await IsSiteActive() && !is_admin)
+            return undefined;
+
         const q = (where?: any) => {
             const base = selection
                 ? db.select(selection).from(schema.challenges)
@@ -179,6 +196,9 @@ export async function ToggleChallenge(id: any, set_enabled: boolean) {
  */
 export async function GetChallenge(id: any) {
     try {
+        if (!await IsSiteActive())
+            return [];
+
         return await db.select(publicChallengeData)
                         .from(schema.challenges)
                         .where(eq(schema.challenges.id, id))
@@ -996,5 +1016,53 @@ export async function GetProgress(uid: string) {
     } catch (e) {
         console.error("[-] Error", e);
         return { totalProg: [], eventProg: [], teamProg: null };
+    }
+}
+
+export async function GetConfiguration() {
+    try {
+        const [data] = await db.select()
+                .from(schema.event_config)
+                .where(eq(schema.event_config.name, "config"))
+                .limit(1);
+        return data;
+    } catch (e: any) {
+        console.error("[-] Error", e);
+        return null;
+    }
+}
+
+export async function IsSiteActive() {
+    try {
+        const [data] = await db.select({ status: schema.event_config.site_active })
+                .from(schema.event_config)
+                .where(eq(schema.event_config.name, "config"))
+                .limit(1);
+        console.log("[SITE-ONLINE]", data.status);
+        return data.status;
+    } catch (e: any) {
+        console.error("[-] Error", e);
+        return false;
+    }
+}
+
+export async function UpdateConfiguration(data: {
+    event_start: Date,
+    event_length: number,
+    site_active: boolean
+}) {
+    try {
+        await db.update(schema.event_config)
+            .set({
+                event_start: data.event_start,
+                event_length: data.event_length,
+                site_active: data.site_active,
+            })
+            .where(eq(schema.event_config.name, 'config'));
+
+        return { success: true, message: 'Config updated!' };
+    } catch (e: any) {
+        console.error("Error updating config:", e);
+        return { success: false, error: "Error updating config" };
     }
 }

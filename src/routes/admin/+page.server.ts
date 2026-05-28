@@ -3,7 +3,9 @@ import { isAdmin } from '$lib/server/auth'
 import {
     AddChallenge, GetChallenges, UpdateChallenge,
     GetAdmins,
-    GetUsers, GetTeams
+    GetUsers, GetTeams,
+    GetConfiguration,
+    UpdateConfiguration
 } from "$lib/database/db";
 
 import { readdir, writeFile, mkdir } from "fs/promises";
@@ -37,12 +39,14 @@ export const load = async ({ parent }) => {
     let players = await GetUsers();
     let files = await GetArchives();
     let teams = await GetTeams();
+    let config = await GetConfiguration();
 
     return {
         user, challenges,
         admins, players,
         teams,
         files,
+        config,
     }
 };
 
@@ -128,6 +132,31 @@ export const actions = {
         } catch (e) {
             console.error(`[-] Edit_Challenge -> ${e}`);
             return fail(500, { error: 'An error occurred while updating the challenge' });
+        }
+    },
+    
+    update_config: async ({ request }) => {
+        if (!await isAdmin(request))
+            throw redirect(303, '/auth/login');
+
+        try {
+            console.log("[!] Admin is modifying event config");
+
+            const form = await request.formData();
+            const formData = Object.fromEntries(form.entries()) as Record<string, string>;
+
+            const start_date = new Date(formData['start-date']);
+            const evt_duration = formData['event-length'];
+            const activation = formData['activation-status'].toLowerCase() === "true";
+
+            return await UpdateConfiguration({
+                event_start: start_date,
+                event_length: Number(evt_duration),
+                site_active: activation
+            });
+        } catch (e) {
+            console.error(`[-] Update_Config -> ${e}`);
+            return fail(500, { error: 'An error occurred while updating configuration' });
         }
     },
 

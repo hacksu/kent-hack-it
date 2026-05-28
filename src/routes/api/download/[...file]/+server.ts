@@ -3,8 +3,12 @@ import type { RequestHandler } from "./$types";
 
 import { join, basename, normalize } from "path";
 import { readFile } from "fs/promises";
+import { IsSiteActive } from "$lib/database/db";
 
 export const GET: RequestHandler = async ({ params }) => {
+    if (!await IsSiteActive())
+        throw error(503, "Site Inactive");
+
     const uploadDir = join(process.cwd(), "uploads");
 
     // path checking for path traversal

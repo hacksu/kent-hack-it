@@ -6,6 +6,7 @@
     import ChallengeView from './d.view.svelte';
     import ChallengeCreate from './d.create.svelte';
     import FileUploadTab from './d.upload.svelte';
+    import ConfigTab from './d.config.svelte';
 
     // control over refresh to persist the focused tab
     import { page } from '$app/state';
@@ -95,6 +96,16 @@
                         Upload
                     </button>
                 </li>
+
+                <li class="nav-item">
+                    <button
+                        class="nav-link {activeTab === 'config' ? 'active' : ''}"
+                        style="font-size: 1.5rem; padding: 0.25rem 0.5rem"
+                        onclick={() => setTab("config")}
+                    >
+                        Configuration
+                    </button>
+                </li>
             </ul>
 
             <div class="tab-content mt-4">
@@ -112,6 +123,8 @@
                 <ChallengeCreate uploaded_files={ data.files } form={undefined} />
             {:else if activeTab === "upload"}
                 <FileUploadTab uploaded_files={ data.files } />
+            {:else if activeTab === "config"}
+                <ConfigTab config={data.config} />
             {/if}
             </div>
         </div>

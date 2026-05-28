@@ -2,7 +2,7 @@ import { relations } from "drizzle-orm";
 import {
     pgTable, text, timestamp, boolean,
     index, serial, numeric, integer,
-    jsonb, unique, varchar
+    jsonb, unique, varchar,
 } from "drizzle-orm/pg-core";
 
 // pair element that holds a reference to the challenge and when it was claimed
@@ -148,4 +148,12 @@ export const team_requests = pgTable("team_requests", {
     to: text("to").notNull().references(() => teams.id, { onDelete: 'cascade' }),
     from: text("from").notNull().references(() => user.id).notNull(),
     checksum: varchar("checksum", {length: 12}).unique().notNull()
+});
+
+// only ever expect a single row to be in this table
+export const event_config = pgTable("event_config", {
+    name: varchar("name", { length: 8 }).default("config").primaryKey(),
+    site_active: boolean("site_active").default(false).notNull(),    // controls if players can both see EVENT challenges and EVENT submit flags
+    event_start: timestamp("event_start").defaultNow().notNull(),    // after this time EVENT challenges and flags can be interacted with by players
+    event_length: integer("event_length").default(7).notNull()       // allows dynamic changing of event length incase we do a shorter or longer event
 });

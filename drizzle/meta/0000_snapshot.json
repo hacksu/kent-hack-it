@@ -1,5 +1,5 @@
 {
-  "id": "aecd2140-ada4-4974-b92a-ab46dded8800",
+  "id": "ab5221e2-3943-424c-b234-cfd9c452bff0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -234,6 +234,47 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.event_config": {
+      "name": "event_config",
+      "schema": "",
+      "columns": {
+        "name": {
+          "name": "name",
+          "type": "varchar(8)",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "'config'"
+        },
+        "site_active": {
+          "name": "site_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "event_start": {
+          "name": "event_start",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "event_length": {
+          "name": "event_length",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 7
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

@@ -1,7 +1,7 @@
 import { auth, isAdmin } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 
-import { GetProgress, GetChallenges, CheckFlag } from "$lib/database/db";
+import { GetProgress, GetChallenges, CheckFlag, IsSiteActive } from "$lib/database/db";
 
 export const load = async ({ parent }) => {
     // goes to +layout.server.ts and fetches the user state
@@ -46,13 +46,17 @@ export const actions = {
         const uid = session.user.id;
 
         if (!flag_value || !cid) {
-            return { success: false, message: 'No flag submitted' };
+            return { success: false, message: !await IsSiteActive() ? 'No flag submitted' : 'Not accepting flags at this time' };
         }
 
         console.log(`[${uid}] Checking Flag (${cid}) -> ${flag_value}`);
 
         try {
-            return await CheckFlag(uid, cid, flag_value);
+            if (await IsSiteActive()) {
+                return { success: false, message: 'Not accepting flags at this time' };
+            } else {
+                return await CheckFlag(uid, cid, flag_value);
+            }
         } catch (e) {
             console.error(`[-] Submit Flag -> ${e}`);
             return fail(500, { success: false, error: 'An error occurred while adding the challenge' });

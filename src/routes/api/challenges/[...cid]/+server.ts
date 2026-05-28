@@ -1,7 +1,7 @@
 import { json, error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 
-import { GetChallenge } from "$lib/database/db";
+import { GetChallenge, IsSiteActive } from "$lib/database/db";
 
 export const POST: RequestHandler = async ({ params }) => {
     const cid = params.cid;
@@ -11,6 +11,9 @@ export const POST: RequestHandler = async ({ params }) => {
 
         if (!challenge || challenge.length === 0)
             throw error(404, "Challenge not found.");
+
+        if (!await IsSiteActive())
+            throw error(503, "Site Inactive");
 
         return json(challenge[0]);
     } catch (e) {

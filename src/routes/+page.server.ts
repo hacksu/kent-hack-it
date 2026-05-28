@@ -1,10 +1,12 @@
-import { env } from "$env/dynamic/private"; // dynamic allows the .env file to be read at runtime
+import { GetConfiguration } from "$lib/database/db";
 
 export const load = async () => {
-    const [month, day, year] = env.EVENT_DATE.split("/").map(Number);
-    const start = new Date(year, month - 1, day);
-    const end = new Date(year, month - 1, day);
-    end.setDate(end.getDate() + Number(env.EVENT_DURATION));
+    const config = await GetConfiguration();
+    if (!config) return {};
+
+    const start = new Date(config.event_start);
+    const end = new Date(config.event_start);
+    end.setDate(end.getDate() + config.event_length);
 
     return {
         eventStartDate: start.toISOString(),

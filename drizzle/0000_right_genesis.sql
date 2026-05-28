@@ -32,6 +32,13 @@ CREATE TABLE "challenges" (
 	CONSTRAINT "challenges_flag_unique" UNIQUE("flag")
 );
 --> statement-breakpoint
+CREATE TABLE "event_config" (
+	"name" varchar(8) PRIMARY KEY DEFAULT 'config' NOT NULL,
+	"site_active" boolean DEFAULT false NOT NULL,
+	"event_start" timestamp DEFAULT now() NOT NULL,
+	"event_length" integer DEFAULT 7 NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "session" (
 	"id" text PRIMARY KEY NOT NULL,
 	"expires_at" timestamp NOT NULL,
