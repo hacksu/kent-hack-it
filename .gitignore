@@ -1,4 +1,4 @@
-node_modules
+node_modules/
 
 # Output
 .output
@@ -23,5 +23,4 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 .vscode/
-*.conf
 uploads/
