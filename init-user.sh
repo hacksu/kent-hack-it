@@ -35,7 +35,6 @@ else
 fi
 
 echo "[*] Running khi.sql..."
-cp /root/khi.sql /tmp/khi.sql
 
 cat >> /tmp/khi.sql <<EOF
 INSERT INTO event_config (name, event_start, event_length, site_active)
