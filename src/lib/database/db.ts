@@ -448,6 +448,14 @@ export async function GetRated(uid: any) {
     }
 }
 
+/**
+ * Return two lists of completions, one based on the user
+ * the other based on the team the user is potentially
+ * associated with
+ * 
+ * @param uid 
+ * @returns 
+ */
 export async function GetCompletions(uid: any) {
     try {
         const [user] = await db.select({ completions: schema.user.claims })
@@ -455,14 +463,61 @@ export async function GetCompletions(uid: any) {
                         .where(eq(schema.user.id, uid)).limit(1);
         if (!user) {
             console.log("[-] Could not find completions for (UID):", uid);
-            return [];
-        } else {
-            return user.completions;
+            return {
+                user: [],
+                team: []
+            };
         }
+
+        // find the team id a given user is associated with and find
+        // the claims across the entire team
+        const [membership] = await db
+            .select({ team_id: schema.team_members.team_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.user_id, uid))
+            .limit(1);
+
+        if (!membership) {
+            console.log("[-] Could not find team id associated with (UID):", uid);
+            return {
+                user: user.completions,
+                team: []
+            };
+        } else {
+            const members = await db
+                .select({ user_id: schema.team_members.user_id })
+                .from(schema.team_members)
+                .where(eq(schema.team_members.team_id, membership.team_id));
+    
+            if (!members.length) return [];
+    
+            const member_ids = members.map(m => m.user_id);
+    
+            const users = await db
+                .select({ claims: schema.user.claims })
+                .from(schema.user)
+                .where(inArray(schema.user.id, member_ids));
+    
+            const claimed = new Set<number>();
+            for (const user of users) {
+                for (const claim of user.claims ?? []) {
+                    claimed.add(Number(claim.challenge_id));
+                }
+            }
+    
+            return {
+                user: user.completions,
+                team: [... claimed]
+            };
+        }
+
 
     } catch (e: any) {
         console.error("[-] Error:", e);
-        return [];
+        return {
+            user: [],
+            team: []
+        };
     }
 }
 

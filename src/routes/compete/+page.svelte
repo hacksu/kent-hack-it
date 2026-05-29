@@ -1,4 +1,7 @@
 <script lang="ts">
+    import TeamCompleteIcon from "$lib/assets/team_complete.png";
+    import TeamIncompleteIcon from "$lib/assets/team_nocomplete.png";
+
     import { enhance } from "$app/forms";
     import { invalidateAll } from '$app/navigation';
 
@@ -61,6 +64,22 @@
         )].sort()
     );
 
+    function InTeam() {
+        return data.completions?.team.length > 0;
+    };
+    function HasTeamCompleted(cid: any) {
+        return data.completions?.team.some(
+                (chall: Number) => Number(cid) === Number(chall)
+            ) ?? false;
+    }
+
+    function disableUserFilters() {
+        filters.showCompleted = filters.showUncompleted = false;
+    }
+    function disableTeamFilters() {
+        filters.showTeamCompleted = filters.showTeamUncompleted = false;
+    }
+
     function applyFilters(dataSet: ViewableChallengeData[]) {
         let filtered = [...dataSet];
 
@@ -108,20 +127,35 @@
 
         // Completion Filters
         filtered = filtered.filter((c) => {
-            const completed = data.completions?.some(
-                (chall) => Number(c.id) === Number(chall.challenge_id)
-            ) ?? false;
+            // TEAM-COMPLETIONS
+            if (InTeam() && ( filters.showTeamCompleted || filters.showTeamUncompleted) ) {
+                const team_completed = data.completions?.team.some(
+                    (chall: Number) => Number(c.id) === chall
+                ) ?? false;
+                
+                if (team_completed && !filters.showTeamCompleted) {
+                    return false;
+                }
 
-            // SELF-COMPLETIONS
-            if (completed && !filters.showCompleted) {
-                return false;
+                if (!team_completed && !filters.showTeamUncompleted) {
+                    return false;
+                }
+            } else {
+                const completed = data.completions?.user?.some(
+                    (chall: any) => Number(c.id) === Number(chall.challenge_id)
+                ) ?? false;
+
+                console.log(`CID ${c.id} : {completed}`);
+
+                // SELF-COMPLETIONS
+                if (completed && !filters.showCompleted) {
+                    return false;
+                }
+
+                if (!completed && !filters.showUncompleted) {
+                    return false;
+                }
             }
-
-            if (!completed && !filters.showUncompleted) {
-                return false;
-            }
-
-            // @todo - Add team completion filter implementation
 
             return true;
         });
@@ -130,8 +164,8 @@
     }
 
     function hasSolved(cid: number) {
-        return data.completions?.some(
-                (chall) => cid === Number(chall.challenge_id)
+        return data.completions?.user?.some(
+                (chall: any) => cid === Number(chall.challenge_id)
             ) ?? false;
     }
 
@@ -456,18 +490,49 @@
                         <div class="mb-3">
                             <label for="completion-search" class="form-label">Individual Progress</label>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="showCompleted" bind:checked={filters.showCompleted} />
+                                <input class="form-check-input" type="checkbox" id="showCompleted"
+                                    onchange={disableTeamFilters}
+                                    bind:checked={filters.showCompleted}
+                                />
                                 <label class="form-check-label" for="showCompleted">
                                     My Completed
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="showUncompleted" bind:checked={filters.showUncompleted} />
+                                <input class="form-check-input" type="checkbox" id="showUncompleted"
+                                    onchange={disableTeamFilters}
+                                    bind:checked={filters.showUncompleted}
+                                />
                                 <label class="form-check-label" for="showUncompleted">
                                     My Uncompleted
                                 </label>
                             </div>
                         </div>
+
+                        <!-- Team Completion -->
+                        {#if InTeam()}
+                            <div class="mb-3">
+                                <label for="completion-search" class="form-label">Team Progress</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="showTeamCompleted"
+                                        onchange={disableUserFilters}
+                                        bind:checked={filters.showTeamCompleted}
+                                    />
+                                    <label class="form-check-label" for="showTeamCompleted">
+                                        Team Completed
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="showTeamUncompleted"
+                                        onchange={disableUserFilters}
+                                        bind:checked={filters.showTeamUncompleted}
+                                    />
+                                    <label class="form-check-label" for="showTeamUncompleted">
+                                        Team Uncompleted
+                                    </label>
+                                </div>
+                            </div>
+                        {/if}
 
                         <button class="btn btn-sm btn-outline-secondary w-100 mb-3" onclick={clearFilters}>
                             Clear Filters
@@ -496,31 +561,59 @@
                                         style="border: none; background-color: #00000000;"
                                         onclick={ () => { viewChallenge(challenge.id) } }
                                     >
-                                        <div class="card h-100 shadow-sm p-2 {!challenge.is_active ? 'opacity-50' : ''}" style="position: relative">
-
+                                        <div class="card h-100 shadow-sm p-2" style="position: relative">
                                             <div class="card-body p-2">
+
                                                 {#if !challenge.is_active}
-                                                    <p>Challenge is currently Out-of-Order and will be back online soon!</p>
-                                                {/if}
-                                                <h6 class="card-title mb-1">{challenge.name}</h6>
-                                                <small class="text-muted">
-                                                    {challenge.category} | Difficulty: {challenge.difficulty}
-                                                </small>
-                                                <div class="mb-1">
-                                                    <small class="text-info">
-                                                        By: {challenge.written_by || 'Unknown Author'}
-                                                    </small>
-                                                </div>
-                                                {#if challenge.description}
-                                                    <div class="mb-2">
-                                                        <p class="card-text small text-muted" style="font-size: 0.75rem">
-                                                            {challenge.description}
-                                                        </p>
+                                                    <div class="border border-warning-subtle bg-warning-subtle rounded p-3 mb-3">
+                                                        <div class="d-flex align-items-start gap-2">
+                                                            <i class="ti ti-alert-circle text-warning fs-4"></i>
+
+                                                            <div>
+                                                                <div class="fw-semibold text-warning-emphasis">
+                                                                    Challenge Offline
+                                                                </div>
+
+                                                                <small class="text-muted">
+                                                                    This challenge is currently out-of-order and will return soon.
+                                                                </small>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 {/if}
-                                                <p class="card-text small mb-1">⭐ {Number(challenge.rating).toFixed(1)} / 5</p>
-                                                <p class="card-text small">Points: {challenge.points}</p>
-                                                <p class="card-text small">{challenge.solves} Solves</p>
+
+                                                <div class="{!challenge.is_active ? 'opacity-50' : ''}">
+                                                    <div style="display: flex; justify-content: center; align-items: center; gap: 10px">
+                                                        <h6 class="card-title mb-1">{challenge.name}</h6>
+                                                        {#if InTeam()}
+                                                            {#if HasTeamCompleted(challenge.id)}
+                                                                <img width=35 alt="Team Completed" src={TeamCompleteIcon}>
+                                                            {:else}
+                                                                <img width=35 alt="Team Incompleted" src={TeamIncompleteIcon}>
+                                                            {/if}
+                                                        {/if}
+                                                    </div>
+    
+                                                    <small class="text-muted">
+                                                        {challenge.category} | Difficulty: {challenge.difficulty}
+                                                    </small>
+                                                    <div class="mb-1">
+                                                        <small class="text-info">
+                                                            By: {challenge.written_by || 'Unknown Author'}
+                                                        </small>
+                                                    </div>
+                                                    {#if challenge.description}
+                                                        <div class="mb-2">
+                                                            <p class="card-text small text-muted" style="font-size: 0.75rem">
+                                                                {challenge.description}
+                                                            </p>
+                                                        </div>
+                                                    {/if}
+                                                    <p class="card-text small mb-1">⭐ {Number(challenge.rating).toFixed(1)} / 5</p>
+                                                    <p class="card-text small">Points: {challenge.points}</p>
+                                                    <p class="card-text small">{challenge.solves} Solves</p>
+                                                </div>
+                                                
                                             </div>
                                         </div>
                                     </button>
