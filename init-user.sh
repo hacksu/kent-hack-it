@@ -36,12 +36,6 @@ fi
 
 echo "[*] Running khi.sql..."
 
-cat >> /tmp/khi.sql <<EOF
-INSERT INTO event_config (name, event_start, event_length, site_active)
-VALUES ('config', NOW(), 7, false)
-ON CONFLICT (name) DO NOTHING;
-EOF
-
 if psql -v ON_ERROR_STOP=1 \
     --username "$POSTGRES_USER" \
     --dbname "$DB_NAME" \
