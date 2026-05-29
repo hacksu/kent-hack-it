@@ -145,8 +145,6 @@
                     (chall: any) => Number(c.id) === Number(chall.challenge_id)
                 ) ?? false;
 
-                console.log(`CID ${c.id} : {completed}`);
-
                 // SELF-COMPLETIONS
                 if (completed && !filters.showCompleted) {
                     return false;
