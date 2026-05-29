@@ -178,17 +178,32 @@ export async function GetChallenges(is_admin: boolean, grab_mode: number = 0) {
  * @param set_enabled
  * @returns 
  */
-export async function ToggleChallenge(id: any, set_enabled: boolean) {
+export async function ToggleChallenge(id: any, set_enabled: boolean, set_gym: boolean) {
     try {
+        const [challenge_old] = await db.select({ name: schema.challenges.name, is_active: schema.challenges.is_active, is_gym: schema.challenges.is_gym })
+                                    .from(schema.challenges)
+                                    .where(eq(schema.challenges.id, id));
+
         const [row] = await db.update(schema.challenges)
-                        .set({ is_active: set_enabled })
+                        .set({ is_active: set_enabled, is_gym: set_gym })
                         .where(eq(schema.challenges.id, id));
 
         console.log(`[*] ToggleChallenge -> ${id} [${ set_enabled ? "ACTIVE" : "DISABLED" }]`);
-        return true;
+        console.log(` |___--> ${id} [${ set_gym ? "GYM" : "LIVE" }]`);
+
+        let message = "";
+        if (challenge_old.is_active !== set_enabled) {
+            message = `"${challenge_old.name}" has been ${ set_enabled ? "enabled" : "disabled" }`;
+        } else if (challenge_old.is_gym !== set_gym) {
+            message = `"${challenge_old.name}" is now a ${ set_gym ? "gym" : "event" } challenge`;
+        }
+
+        console.log(message);
+
+        return { success: true, message };
     } catch (error) {
         console.error('Failed to toggle challenge:', error);
-        return false;
+        return { success: false, error: "Error Modifying Challenge" };
     }
 }
 

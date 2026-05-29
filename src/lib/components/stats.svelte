@@ -2,7 +2,7 @@
     import { slide } from 'svelte/transition';
     import PieChart from './pie_chart.svelte';
     
-    const { progressData } = $props();
+    const { progressData, showAll } = $props();
     
     let showTotal = $state(false);
     let showEvent = $state(false);
@@ -70,7 +70,7 @@
     {/if}
 
     <!-- Team Progress -->
-    {#if progressData.teamProg}
+    {#if showAll && progressData.teamProg}
         <button style="margin: 5px;" class="stat-toggle" onclick={() => showTeam = !showTeam}>
             <span>Team Progress</span>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="chevron" style:transform="rotate({showTeam ? 180 : 0}deg)" aria-hidden="true">

@@ -102,6 +102,9 @@
                 {/if}
 
                 <li class="nav-item">
+                    <a class="nav-link" href="/gym">Gym</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="/compete">Compete</a>
                 </li>
                 <li class="nav-item">

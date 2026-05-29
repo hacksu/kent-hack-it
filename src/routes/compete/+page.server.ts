@@ -15,7 +15,7 @@ export const load = async ({ parent }) => {
     // redirect unauthenticated users to login
     if (!user) throw redirect(303, '/auth/login');
 
-    let challenges = await GetChallenges(false);
+    let challenges = await GetChallenges(false, 1); // only fetch event/live challenges
     const completions = await GetCompletions(user.id);
     const rated = await GetRated(user.id);
     const progressData = await GetProgress(user.id);

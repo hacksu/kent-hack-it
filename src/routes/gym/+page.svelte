@@ -1,7 +1,4 @@
 <script lang="ts">
-    import TeamCompleteIcon from "$lib/assets/team_complete.png";
-    import TeamIncompleteIcon from "$lib/assets/team_nocomplete.png";
-
     import { enhance } from "$app/forms";
     import { invalidateAll } from '$app/navigation';
 
@@ -32,8 +29,6 @@
         searchText: '',
         showCompleted: true,
         showUncompleted: true,
-        showTeamCompleted: true,
-        showTeamUncompleted: true
     });
 
     let availableCategories = $derived(
@@ -63,22 +58,6 @@
                 .filter(Boolean)
         )].sort()
     );
-
-    function InTeam() {
-        return data.completions?.team.length > 0;
-    };
-    function HasTeamCompleted(cid: any) {
-        return data.completions?.team.some(
-                (chall: Number) => Number(cid) === Number(chall)
-            ) ?? false;
-    }
-
-    function disableUserFilters() {
-        filters.showCompleted = filters.showUncompleted = false;
-    }
-    function disableTeamFilters() {
-        filters.showTeamCompleted = filters.showTeamUncompleted = false;
-    }
 
     function applyFilters(dataSet: ViewableChallengeData[]) {
         let filtered = [...dataSet];
@@ -127,32 +106,17 @@
 
         // Completion Filters
         filtered = filtered.filter((c) => {
-            // TEAM-COMPLETIONS
-            if (InTeam() && ( filters.showTeamCompleted || filters.showTeamUncompleted) ) {
-                const team_completed = data.completions?.team.some(
-                    (chall: Number) => Number(c.id) === chall
-                ) ?? false;
-                
-                if (team_completed && !filters.showTeamCompleted) {
-                    return false;
-                }
+            const completed = data.completions?.user?.some(
+                (chall: any) => Number(c.id) === Number(chall.challenge_id)
+            ) ?? false;
 
-                if (!team_completed && !filters.showTeamUncompleted) {
-                    return false;
-                }
-            } else {
-                const completed = data.completions?.user?.some(
-                    (chall: any) => Number(c.id) === Number(chall.challenge_id)
-                ) ?? false;
+            // SELF-COMPLETIONS
+            if (completed && !filters.showCompleted) {
+                return false;
+            }
 
-                // SELF-COMPLETIONS
-                if (completed && !filters.showCompleted) {
-                    return false;
-                }
-
-                if (!completed && !filters.showUncompleted) {
-                    return false;
-                }
+            if (!completed && !filters.showUncompleted) {
+                return false;
             }
 
             return true;
@@ -222,8 +186,6 @@
             searchText: '',
             showCompleted: true,
             showUncompleted: true,
-            showTeamCompleted: true,
-            showTeamUncompleted: true
         };
     }
 
@@ -302,7 +264,7 @@
 
                     <!-- Footer action -->
                     <div class="card-footer d-grid">
-                        <form method="POST" action="?/submit_flag" use:enhance={() => {
+                        <form method="POST" action="/compete?/submit_flag" use:enhance={() => {
                             return async ({ result, update }) => {
                                 await update();
 
@@ -331,7 +293,7 @@
                         </form>
 
                         {#if !hasRated(challengeInfo.id) && hasSolved(challengeInfo.id)}
-                            <form method="POST" action="?/submit_rating" use:enhance={() => {
+                            <form method="POST" action="/compete?/submit_rating" use:enhance={() => {
                                 return async ({ result, update }) => {
                                     await update();
 
@@ -399,10 +361,38 @@
     <div class="container-fluid mt-4">
 
         <div class="row align-items-center mb-4">
-            <Stats progressData={ data.progressData } showAll={ true } />
+            <Stats progressData={ data.progressData } showAll={ false } />
 
             <div class="col-12 text-center">
-                <h2 class="mb-0">Challenges</h2>
+                <h2 class="mb-0">Welcome to the Gym</h2>
+
+                <details>
+                    <summary class="fw-thin fs-5">
+                        What's here?
+                    </summary>
+
+                    <div class="mt-3 text-muted" style="background-color: #aaaaaa22; border-radius: 10px;">
+                        <p class="mb-2">
+                            The Gym is a place for practicing, learning, and improving your skills.
+                        </p>
+
+                        <p class="mb-2">
+                            After events end event challenges are retired here, so you can continue solving them at your own pace.
+                        </p>
+
+                        <p class="mb-0">
+                            Think of it as an archive of past KHI challenges learning and skill development.
+                        </p>
+
+                        <p class="mb-0">
+                            <i>
+                                If you were on a team for KHI your teams completions are not counted here, meaning this page will show you
+                                what challenges you either have or have not completed.
+                            </i>
+                            Feel free to communicate on our Discord or view our <a href="https://github.com/hacksu/Kent-Hack-It-Released" target="_blank">author's solutions</a> if you looking for help!
+                        </p>
+                    </div>
+                </details>
             </div>
         </div>
 
@@ -489,7 +479,6 @@
                             <label for="completion-search" class="form-label">Individual Progress</label>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="showCompleted"
-                                    onchange={disableTeamFilters}
                                     bind:checked={filters.showCompleted}
                                 />
                                 <label class="form-check-label" for="showCompleted">
@@ -498,7 +487,6 @@
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="showUncompleted"
-                                    onchange={disableTeamFilters}
                                     bind:checked={filters.showUncompleted}
                                 />
                                 <label class="form-check-label" for="showUncompleted">
@@ -506,31 +494,6 @@
                                 </label>
                             </div>
                         </div>
-
-                        <!-- Team Completion -->
-                        {#if InTeam()}
-                            <div class="mb-3">
-                                <label for="completion-search" class="form-label">Team Progress</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="showTeamCompleted"
-                                        onchange={disableUserFilters}
-                                        bind:checked={filters.showTeamCompleted}
-                                    />
-                                    <label class="form-check-label" for="showTeamCompleted">
-                                        Team Completed
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="showTeamUncompleted"
-                                        onchange={disableUserFilters}
-                                        bind:checked={filters.showTeamUncompleted}
-                                    />
-                                    <label class="form-check-label" for="showTeamUncompleted">
-                                        Team Uncompleted
-                                    </label>
-                                </div>
-                            </div>
-                        {/if}
 
                         <button class="btn btn-sm btn-outline-secondary w-100 mb-3" onclick={clearFilters}>
                             Clear Filters
@@ -583,13 +546,6 @@
                                                 <div class="{!challenge.is_active ? 'opacity-50' : ''}">
                                                     <div style="display: flex; justify-content: center; align-items: center; gap: 10px">
                                                         <h6 class="card-title mb-1">{challenge.name}</h6>
-                                                        {#if InTeam()}
-                                                            {#if HasTeamCompleted(challenge.id)}
-                                                                <img width=35 alt="Team Completed" src={TeamCompleteIcon}>
-                                                            {:else}
-                                                                <img width=35 alt="Team Incompleted" src={TeamIncompleteIcon}>
-                                                            {/if}
-                                                        {/if}
                                                     </div>
     
                                                     <small class="text-muted">

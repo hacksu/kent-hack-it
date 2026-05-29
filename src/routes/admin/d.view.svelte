@@ -12,15 +12,27 @@
         result = undefined;
     }
 
-    async function toggleChallenge(id: string, name: string, is_active: boolean) {
-        const req = await fetch('/admin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ context: 'challenge', action: 'toggle', id, is_active })
-        });
-
-        result = await req.json();
-        result.message = `"${name}" has been ${ is_active ? "enabled" : "disabled" }`;
+    async function toggleChallenge(id: string, name: string, data: { is_active: boolean, is_gym: boolean }) {
+        try {
+            const req = await fetch('/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    context: 'challenge',
+                    action: 'toggle',
+                    id,
+                    is_active: data.is_active,
+                    is_gym: data.is_gym,
+                })
+            });
+    
+            result = await req.json();
+    
+        } catch (e: any) {
+            result = {
+                error: "Error Occurred!"
+            };
+        }
 
         // re-run the load in +page.server.ts updating the challenges collection
         await invalidateAll();
@@ -120,14 +132,24 @@
                  style="max-width: 400px;">
                 <div class="card h-100 shadow-sm p-2">
 
-                    <!-- Enable / Disable -->
-                    <div class="container">
+                    <div class="container" style="display: flex; gap: 10px;">
+                        <!-- Enable / Disable -->
                         <div class="d-flex justify-content-between pt-2">
                             <button
                                 class={`btn ${challenge.is_active ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                                onclick={() => { toggleChallenge(challenge.id, challenge.name, !challenge.is_active) }}
+                                onclick={() => { toggleChallenge(challenge.id, challenge.name, { is_active: !challenge.is_active, is_gym: challenge.is_gym }) }}
                             >
                                 {challenge.is_active ? 'Disable' : 'Enable'}
+                            </button>
+                        </div>
+
+                        <!-- Is Live / Is Gym -->
+                        <div class="d-flex justify-content-between pt-2">
+                            <button
+                                class={`btn ${challenge.is_gym ? 'btn-outline-secondary' : 'btn-outline-primary'}`}
+                                onclick={() => { toggleChallenge(challenge.id, challenge.name, { is_active: challenge.is_active, is_gym: !challenge.is_gym }) }}
+                            >
+                                {challenge.is_gym ? 'Set Live' : 'Set Gym'}
                             </button>
                         </div>
                     </div>
