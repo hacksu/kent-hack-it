@@ -1,8 +1,11 @@
 #!/bin/bash
+
+# THIS SCRIPT RUNS AS USER: POSTGRES
+
 set -e
 echo '[!] Initializing KHI Database'
 
-cat > /root/init.sql <<EOF
+cat > /tmp/init.sql <<EOF
 CREATE USER $DB_USER WITH PASSWORD '$DB_USER_PASSWORD' CONNECTION LIMIT 100;
 
 GRANT CONNECT ON DATABASE $DB_NAME TO $DB_USER;
@@ -19,13 +22,11 @@ REVOKE ALL ON pg_shadow FROM $DB_USER;
 ALTER USER $DB_USER NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
 EOF
 
-
 echo "[*] Running init.sql..."
-
 if psql -v ON_ERROR_STOP=1 \
     --username "$POSTGRES_USER" \
     --dbname "$DB_NAME" \
-    -f /root/init.sql
+    -f /tmp/init.sql
 then
     echo "[+] init.sql completed successfully"
 else
@@ -34,9 +35,9 @@ else
 fi
 
 echo "[*] Running khi.sql..."
+cp /root/khi.sql /tmp/khi.sql
 
-# append query to khi.sql
-cat >> /root/khi.sql <<EOF
+cat >> /tmp/khi.sql <<EOF
 INSERT INTO event_config (name, event_start, event_length, site_active)
 VALUES ('config', NOW(), 7, false)
 ON CONFLICT (name) DO NOTHING;
@@ -45,12 +46,12 @@ EOF
 if psql -v ON_ERROR_STOP=1 \
     --username "$POSTGRES_USER" \
     --dbname "$DB_NAME" \
-    -f /root/khi.sql
+    -f /tmp/khi.sql
 then
     echo "[+] khi.sql completed successfully"
 else
     echo "[-] khi.sql failed"
     exit 1
 fi
-     
+
 echo '[+] Database Configured!'
