@@ -277,6 +277,45 @@ export async function GetSolversCount(cid: number) {
 }
 
 /**
+ * Return a map of solvers where the key is a challenge id
+ * and the value is a set of usernames sorted by claim timestamp
+ * 
+ * @returns 
+ */
+export async function GetSolvers() {
+    
+    try {
+        const solvers: Record<number, { name: string; claimed_at: string }[]> = {};
+        const sorted: Record<number, string[]> = {};
+        
+        const users = await db
+            .select({ name: schema.user.name, claims: schema.user.claims })
+            .from(schema.user)
+            .where(eq(schema.user.role, 'user'));
+
+
+        for (const user of users) {
+            for (const claim of user.claims ?? []) {
+                const cid = Number(claim.challenge_id);
+                if (!solvers[cid]) solvers[cid] = [];
+                solvers[cid].push({ name: user.name, claimed_at: claim.claimed_at });
+            }
+        }
+
+        for (const [cid, entries] of Object.entries(solvers)) {
+            sorted[Number(cid)] = entries
+                .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime())
+                .map(e => e.name);
+        }
+
+        return sorted;
+    } catch (e: any) {
+        console.error("[-] Error:", e);
+        return undefined;
+    }
+}
+
+/**
  * Returns list of all admins on the DB
  * 
  * @returns 

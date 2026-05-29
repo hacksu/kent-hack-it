@@ -116,7 +116,7 @@
             {:else if activeTab === "admins"}
                 <AdminsTab admins={ data.admins } />
             {:else if activeTab === "solvers"}
-                <SolversTab />
+                <SolversTab solvers={ data.solvers } challenges={ data.challenges } />
             {:else if activeTab === "view"}
                 <ChallengeView uploaded_files={ data.files } challenges={ data.challenges } form={undefined} />
             {:else if activeTab === "create"}
