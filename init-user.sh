@@ -19,12 +19,16 @@ REVOKE ALL ON pg_shadow FROM $DB_USER;
 ALTER USER $DB_USER NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
 EOF
 
+# run the sql above
 psql -v ON_ERROR_STOP=1 \
-     -v app_user="$DB_USER" \
-     -v app_password="$DB_USER_PASSWORD" \
-     -v db_name="$DB_NAME" \
      --username "$POSTGRES_USER" \
      --dbname "$DB_NAME" \
      -f /docker-entrypoint-initdb.d/init.sql
+
+# create the tables needed for KHI
+psql -v ON_ERROR_STOP=1 \
+     --username "$POSTGRES_USER" \
+     --dbname "$DB_NAME" \
+     -f /docker-entrypoint-initdb.d/khi.sql
      
 echo '[+] Database Configured!'
