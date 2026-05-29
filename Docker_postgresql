@@ -1,7 +1,7 @@
 FROM postgres:16
 
 COPY init-user.sh /docker-entrypoint-initdb.d/init-user.sh
-COPY drizzle/0000_silent_gertrude_yorkes.sql /docker-entrypoint-initdb.d/khi.sql
+COPY drizzle/0000_silent_gertrude_yorkes.sql /root/khi.sql
 
 RUN chmod +x /docker-entrypoint-initdb.d/init-user.sh
 

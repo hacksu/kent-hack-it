@@ -2,7 +2,7 @@
 set -e
 echo '[!] Initializing KHI Database'
 
-cat > /docker-entrypoint-initdb.d/init.sql <<EOF
+cat > /root/init.sql <<EOF
 CREATE USER $DB_USER WITH PASSWORD '$DB_USER_PASSWORD' CONNECTION LIMIT 100;
 
 GRANT CONNECT ON DATABASE $DB_NAME TO $DB_USER;
@@ -25,7 +25,7 @@ echo "[*] Running init.sql..."
 if psql -v ON_ERROR_STOP=1 \
     --username "$POSTGRES_USER" \
     --dbname "$DB_NAME" \
-    -f /docker-entrypoint-initdb.d/init.sql
+    -f /root/init.sql
 then
     echo "[+] init.sql completed successfully"
 else
@@ -45,7 +45,7 @@ EOF
 if psql -v ON_ERROR_STOP=1 \
     --username "$POSTGRES_USER" \
     --dbname "$DB_NAME" \
-    -f /docker-entrypoint-initdb.d/khi.sql
+    -f /root/khi.sql
 then
     echo "[+] khi.sql completed successfully"
 else
