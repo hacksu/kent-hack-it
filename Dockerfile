@@ -10,6 +10,10 @@ COPY khi.conf /etc/nginx/conf.d/default.conf
 # move the svelte app into the container and build it
 WORKDIR /app
 COPY drizzle/ src/ static/ drizzle.config.ts package-lock.json package.json svelte.config.js tsconfig.json vite.config.ts .
+
+# debugging
+RUN find /app -type f
+
 RUN npm install . && npm run build
 
 # copy the automation config for running nginx and the web-app
