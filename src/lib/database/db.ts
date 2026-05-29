@@ -29,22 +29,6 @@ const PSQL = postgres({
 */
 export const db = drizzle(PSQL);
 
-// is not really causing issues but there is
-// most definitely a better setup for this initialization
-try {
-    console.log("[FIRST-TIME-INIT] Setting default event configuration in DB. . .");
-    await db.insert(schema.event_config)
-        .values({
-            name: 'config',
-            event_start: new Date(),
-            event_length: 7,
-            site_active: false
-        })
-        .onConflictDoNothing();
-} catch (e: any) {
-    console.error("Error seeding event_config:", e);
-}
-
 export interface ChallengeForm {
     name: string;
     description: string;
