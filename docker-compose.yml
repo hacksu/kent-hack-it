@@ -36,7 +36,7 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
 
-      PG_HOST: localhost
+      PG_HOST: postgres
       PG_PORT: 5432
       PG_USER: ${DB_USER}
       PG_PASSWORD: ${DB_USER_PASSWORD}

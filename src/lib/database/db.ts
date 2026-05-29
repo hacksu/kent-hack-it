@@ -29,6 +29,8 @@ const PSQL = postgres({
 */
 export const db = drizzle(PSQL);
 
+// is not really causing issues but there is
+// most definitely a better setup for this initialization
 try {
     console.log("[FIRST-TIME-INIT] Setting default event configuration in DB. . .");
     await db.insert(schema.event_config)
