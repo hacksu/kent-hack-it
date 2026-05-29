@@ -27,47 +27,47 @@ services:
     networks:
       - app_internal
 
-  # app:
-  #   container_name: web_khi
-  #   restart: unless-stopped
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-  #     BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+  app:
+    container_name: web_khi
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
 
-  #     PG_HOST: postgres
-  #     PG_PORT: 5432
-  #     PG_USER: ${DB_USER}
-  #     PG_PASSWORD: ${DB_USER_PASSWORD}
-  #     PG_DATABASE: ${DB_NAME}
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: ${DB_USER}
+      PG_PASSWORD: ${DB_USER_PASSWORD}
+      PG_DATABASE: ${DB_NAME}
 
-  #     HACKSU_GUILD_ID: ${HACKSU_GUILD_ID}
-  #     KHI_ADM_ROLE: ${KHI_ADM_ROLE}
+      HACKSU_GUILD_ID: ${HACKSU_GUILD_ID}
+      KHI_ADM_ROLE: ${KHI_ADM_ROLE}
 
-  #     DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
-  #     DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
 
-  #     GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
-  #     GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
 
-  #     GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-  #     GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
 
-  #     TESTING_READ: "C++ is the Best Language, the very best."
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.khi.rule=Host(`ctf.hacksu.com`)"
-  #     - "traefik.http.routers.khi.entrypoints=websecure"
-  #     - "traefik.http.routers.khi.tls.certresolver=letsencrypt"
-  #     - "traefik.http.services.khi.loadbalancer.server.port=80"
-  #   volumes:
-  #     - ./uploads:/app/build/uploads
-  #     - ./khi_web_logs:/var/log/nginx
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
+      TESTING_READ: "C++ is the Best Language, the very best."
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.khi.rule=Host(`ctf.hacksu.com`)"
+      - "traefik.http.routers.khi.entrypoints=websecure"
+      - "traefik.http.routers.khi.tls.certresolver=letsencrypt"
+      - "traefik.http.services.khi.loadbalancer.server.port=80"
+    volumes:
+      - ./uploads:/app/build/uploads
+      - ./khi_web_logs:/var/log/nginx
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   khi_psql_data:
