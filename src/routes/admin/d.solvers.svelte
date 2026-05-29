@@ -1,21 +1,5 @@
 <script lang="ts">
-    const { solvers, challenges }: {
-        solvers: Record<number, string[]>,
-        challenges: {
-            id: number;
-            name: string;
-            description: string;
-            category: string;
-            difficulty: string;
-            written_by: string | null;
-            points: number;
-            rating: string | null;
-            hlinks: string[] | null;
-            hints: string[] | null;
-            is_active: boolean | null;
-            is_gym: boolean | null;
-        }[]
-    } = $props();
+    const { solvers, challenges } = $props();
 
     const difficultyOrder = ['Simple', 'Easy', 'Medium', 'Hard', 'Extreme'];
 
@@ -27,9 +11,12 @@
         rating: '',
     });
 
-    let availableCategories = $derived([...new Set(challenges.map(c => c.category))].sort());
-    let availableDifficulties = $derived(difficultyOrder.filter(d => challenges.some(c => c.difficulty === d)));
-    let availableAuthors = $derived([...new Set(challenges.map(c => c.written_by).filter(Boolean))].sort() as string[]);
+    let availableCategories = $derived([...new Set(challenges.map(
+        (c: any) => c.category))].sort());
+    let availableDifficulties = $derived(difficultyOrder.filter(d => challenges.some(
+        (c: any) => c.difficulty === d)));
+    let availableAuthors = $derived([...new Set(challenges.map(
+        (c: any) => c.written_by).filter(Boolean))].sort() as string[]);
     let availableRatings = ['5.0', '4.0', '3.0', '2.0', '1.0'];
 
     function clearFilters() {
