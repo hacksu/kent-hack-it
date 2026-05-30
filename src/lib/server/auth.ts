@@ -15,12 +15,15 @@ import { eq } from "drizzle-orm";
  */
 async function checkDiscordRole(accessToken: string): Promise<boolean> {
     try {
-        const res = await fetch(`https://discord.com/api/v10/users/@me/guilds/${env.HACKSU_GUILD_ID}/member`, {
+        const GID = process.env.HACKSU_GUILD_ID ?? env.HACKSU_GUILD_ID;
+        const ADM_ROLE = process.env.KHI_ADM_ROLE ?? env.KHI_ADM_ROLE;
+
+        const res = await fetch(`https://discord.com/api/v10/users/@me/guilds/${GID}/member`, {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
 
         const member = await res.json();
-        return member.roles?.includes(env.KHI_ADM_ROLE) ?? false;
+        return member.roles?.includes(ADM_ROLE) ?? false;
     } catch (e) {
         console.error('checkDiscordRole error:', e);
         return false;
@@ -28,11 +31,11 @@ async function checkDiscordRole(accessToken: string): Promise<boolean> {
 }
 
 export const auth = betterAuth({
-    baseURL: env.BETTER_AUTH_URL,
-    secret: env.BETTER_AUTH_SECRET,
+    baseURL: process.env.BETTER_AUTH_URL ?? env.BETTER_AUTH_URL,
+    secret: process.env.BETTER_AUTH_SECRET ?? env.BETTER_AUTH_SECRET,
     basePath: "/api/auth",
     trustedOrigins: [
-        env.BETTER_AUTH_URL,
+        process.env.BETTER_AUTH_URL ?? env.BETTER_AUTH_URL,
         "https://ctf.hacksu.com",
         "https://*.ctf.hacksu.com"
     ],
@@ -44,16 +47,16 @@ export const auth = betterAuth({
     socialProviders: {
         discord: {
             scope: ["guilds.members.read"],
-            clientId: env.DISCORD_CLIENT_ID as string,
-            clientSecret: env.DISCORD_CLIENT_SECRET as string
+            clientId: process.env.DISCORD_CLIENT_ID ?? env.DISCORD_CLIENT_ID as string,
+            clientSecret: process.env.DISCORD_CLIENT_SECRET ?? env.DISCORD_CLIENT_SECRET as string
         },
         github: {
-            clientId: env.GITHUB_CLIENT_ID as string,
-            clientSecret: env.GITHUB_CLIENT_SECRET as string,
+            clientId: process.env.GITHUB_CLIENT_ID ?? env.GITHUB_CLIENT_ID as string,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET ?? env.GITHUB_CLIENT_SECRET as string,
         },
         google: {
-            clientId: env.GOOGLE_CLIENT_ID as string,
-            clientSecret: env.GOOGLE_CLIENT_SECRET as string,
+            clientId: process.env.GOOGLE_CLIENT_ID ?? env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? env.GOOGLE_CLIENT_SECRET as string,
         }
     },
     session: {

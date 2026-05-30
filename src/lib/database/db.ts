@@ -14,11 +14,11 @@ import { randomString } from "$lib/utilities";
 import { type Stat } from "$lib/mtypes";
 
 const PSQL = postgres({
-    host: env.PG_HOST,
-    port: Number(env.PG_PORT),
-    user: env.PG_USER,
-    password: env.PG_PASSWORD,
-    database: env.PG_DATABASE
+    host: process.env.PG_HOST ?? env.PG_HOST,
+    port: Number(process.env.PG_PORT ?? env.PG_PORT),
+    user: process.env.PG_USER ?? env.PG_USER,
+    password: process.env.PG_PASSWORD ?? env.PG_PASSWORD,
+    database: process.env.PG_DATABASE ?? env.PG_DATABASE
 });
 
 /*
