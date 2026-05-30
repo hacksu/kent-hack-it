@@ -55,6 +55,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
 
+      UPLOADS_DIR: ${UPLOADS_DIR}
       TESTING_READ: "C++ is the Best Language, the very best."
     labels:
       - "traefik.enable=true"
