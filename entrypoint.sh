@@ -2,7 +2,7 @@
 set -e
 
 # allow www-data and group to handle server files
-chown -R www-data:www-data /app/build
+chown -R www-data:www-data /app/
 
 # Start supervisord in the background
 /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf &
