@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+mkdir -p "${UPLOADS_DIR}" && chown www-data:www-data "${UPLOADS_DIR}"
+
 # Start supervisord in the background
 /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf &
 
