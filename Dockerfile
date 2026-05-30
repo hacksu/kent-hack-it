@@ -14,7 +14,7 @@ COPY src/ ./src
 COPY static/ ./static
 COPY drizzle.config.ts package-lock.json package.json svelte.config.js tsconfig.json vite.config.ts .
 
-RUN npm install .
+RUN npm install . && npm run build
 
 # copy the automation config for running nginx and the web-app
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
