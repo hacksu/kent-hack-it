@@ -62,7 +62,7 @@ services:
       - "traefik.http.routers.khi.entrypoints=websecure"
       - "traefik.http.routers.khi.tls.certresolver=letsencrypt"
       - "traefik.http.services.khi.loadbalancer.server.port=80"
-    port:
+    ports:
       - "3333:3000" # dev only
     volumes:
       - ./uploads:${UPLOADS_DIR}
