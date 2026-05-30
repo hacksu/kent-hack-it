@@ -9,7 +9,7 @@ export const GET: RequestHandler = async ({ params }) => {
     if (!await IsSiteActive())
         throw error(503, "Site Inactive");
 
-    const uploadDir = join(process.cwd(), "uploads");
+    const uploadDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
 
     // path checking for path traversal
     const requestedPath = normalize(join(uploadDir, params.file ?? ""));

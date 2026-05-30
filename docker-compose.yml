@@ -63,7 +63,7 @@ services:
       - "traefik.http.routers.khi.tls.certresolver=letsencrypt"
       - "traefik.http.services.khi.loadbalancer.server.port=80"
     volumes:
-      - ./uploads:/app/build/uploads
+      - ./uploads:${UPLOADS_DIR}
       - ./khi_web_logs:/var/log/nginx
     depends_on:
       postgres:

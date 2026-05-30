@@ -54,7 +54,7 @@ import { rm } from "fs/promises";
 import { join, basename } from "path";
 async function deleteArchive(file: string) {
     const filename = basename(file);
-    const uploadDir = join(process.cwd(), "uploads");
+    const uploadDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
     const filepath = join(uploadDir, filename);
 
     // check for path traversal

@@ -14,8 +14,9 @@ import { join, basename } from "path";
 // importing interface alias
 import type { ChallengeForm } from "$lib/database/db";
 
+const uploadDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
+
 async function GetArchives(): Promise<string[]> {
-    const uploadDir = join(process.cwd(), "uploads");
     let files: string[] = [];
     try {
         files = await readdir(uploadDir);
@@ -216,7 +217,6 @@ export const actions = {
                 }
             }
 
-            const uploadDir = join(process.cwd(), "uploads");
             console.log(`[*] Saving Files to: ${uploadDir}`);
             await mkdir(uploadDir, { recursive: true });
 
