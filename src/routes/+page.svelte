@@ -58,7 +58,7 @@
     <div class="text-center mb-auto">
       <h1 class="display-4 fw-bold mb-3">KENT HACK IT</h1>
       <div class="mb-4">
-        <a href="/profile" class="btn btn-primary btn-lg px-4 py-4" style="font-size: clamp(1.3rem, 4vw, 2rem); font-weight: bold; min-width: 250px;">
+        <a href="/auth/login" class="btn btn-primary btn-lg px-4 py-4" style="font-size: clamp(1.3rem, 4vw, 2rem); font-weight: bold; min-width: 250px;">
           Register Here
         </a>
       </div>
