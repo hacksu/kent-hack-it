@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-node'; // needed for SSC
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
