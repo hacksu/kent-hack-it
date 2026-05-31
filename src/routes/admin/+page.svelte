@@ -7,125 +7,56 @@
     import ChallengeCreate from './d.create.svelte';
     import FileUploadTab from './d.upload.svelte';
     import ConfigTab from './d.config.svelte';
+    import LogTab from './d.logs.svelte';
 
-    // control over refresh to persist the focused tab
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
+
+    const { data } = $props();
+
     let activeTab = $derived(page.url.searchParams.get('tab') ?? 'users');
     function setTab(tab: string) {
         goto(`?tab=${tab}`, { replaceState: true, keepFocus: true, noScroll: true });
     }
 
-    const { data } = $props();
+    const tabs = [
+        { title: "Users",      value: "users",    component: UsersTab,          props: () => ({ users: data.players }) },
+        { title: "Teams",      value: "teams",    component: TeamsTab,          props: () => ({ teams: data.teams }) },
+        { title: "Admins",     value: "admins",   component: AdminsTab,         props: () => ({ admins: data.admins }) },
+        { title: "Solvers",    value: "solvers",  component: SolversTab,        props: () => ({ solvers: data.solvers, challenges: data.challenges }) },
+        { title: "View",       value: "view",     component: ChallengeView,     props: () => ({ uploaded_files: data.files, challenges: data.challenges, form: undefined }) },
+        { title: "Create",     value: "create",   component: ChallengeCreate,   props: () => ({ uploaded_files: data.files, form: undefined }) },
+        { title: "Upload",     value: "upload",   component: FileUploadTab,     props: () => ({ uploaded_files: data.files }) },
+        { title: "Configuration",     value: "config",   component: ConfigTab,  props: () => ({ config: data.config }) },
+        { title: "Logs",     value: "logs",   component: LogTab,                props: () => ({ entries: data.log_data }) },
+    ];
+
+    let activeComponent = $derived(tabs.find(t => t.value === activeTab));
 </script>
 
 <main>
-    <header style=" display: block; height: auto; padding-top: 0;">
+    <header style="display: block; height: auto; padding-top: 0;">
         <h1 style="padding: 15px;">Admin Panel</h1>
-
-        <!-- manual site kill switch -->
 
         <div class="container">
             <ul class="nav nav-tabs">
-                <li class="nav-item">
-                    <button
-                        class="nav-link {activeTab === 'users' ? 'active' : ''}"
-                        style="font-size: 1.5rem; padding: 0.25rem 0.5rem"
-                        onclick={() => setTab("users")}
-                    >
-                        Users
-                    </button>
-                </li>
-
-                <li class="nav-item">
-                    <button
-                        class="nav-link {activeTab === 'teams' ? 'active' : ''}"
-                        style="font-size: 1.5rem; padding: 0.25rem 0.5rem"
-                        onclick={() => setTab("teams")}
-                    >
-                        Teams
-                    </button>
-                </li>
-
-                <li class="nav-item">
-                    <button
-                        class="nav-link {activeTab === 'admins' ? 'active' : ''}"
-                        style="font-size: 1.5rem; padding: 0.25rem 0.5rem"
-                        onclick={() => setTab("admins")}
-                    >
-                        Admins
-                    </button>
-                </li>
-
-                <li class="nav-item">
-                    <button
-                        class="nav-link {activeTab === 'solvers' ? 'active' : ''}"
-                        style="font-size: 1.5rem; padding: 0.25rem 0.5rem"
-                        onclick={() => setTab("solvers")}
-                    >
-                        Solvers
-                    </button>
-                </li>
-
-                <li class="nav-item">
-                    <button
-                        class="nav-link {activeTab === 'view' ? 'active' : ''}"
-                        style="font-size: 1.5rem; padding: 0.25rem 0.5rem"
-                        onclick={() => setTab("view")}
-                    >
-                        View Challenges
-                    </button>
-                </li>
-
-                <li class="nav-item">
-                    <button
-                        class="nav-link {activeTab === 'create' ? 'active' : ''}"
-                        style="font-size: 1.5rem; padding: 0.25rem 0.5rem"
-                        onclick={() => setTab("create")}
-                    >
-                        Create Challenge
-                    </button>
-                </li>
-
-                <li class="nav-item">
-                    <button
-                        class="nav-link {activeTab === 'upload' ? 'active' : ''}"
-                        style="font-size: 1.5rem; padding: 0.25rem 0.5rem"
-                        onclick={() => setTab("upload")}
-                    >
-                        Upload
-                    </button>
-                </li>
-
-                <li class="nav-item">
-                    <button
-                        class="nav-link {activeTab === 'config' ? 'active' : ''}"
-                        style="font-size: 1.5rem; padding: 0.25rem 0.5rem"
-                        onclick={() => setTab("config")}
-                    >
-                        Configuration
-                    </button>
-                </li>
+                {#each tabs as t}
+                    <li class="nav-item">
+                        <button
+                            class="nav-link {activeTab === t.value ? 'active' : ''}"
+                            style="font-size: 1.5rem; padding: 0.25rem 0.5rem"
+                            onclick={() => setTab(t.value)}
+                        >
+                            {t.title}
+                        </button>
+                    </li>
+                {/each}
             </ul>
 
             <div class="tab-content mt-4">
-            {#if activeTab === "users"}
-                <UsersTab users={ data.players } />
-            {:else if activeTab === "teams"}
-                <TeamsTab teams={ data.teams } />
-            {:else if activeTab === "admins"}
-                <AdminsTab admins={ data.admins } />
-            {:else if activeTab === "solvers"}
-                <SolversTab solvers={ data.solvers } challenges={ data.challenges } />
-            {:else if activeTab === "view"}
-                <ChallengeView uploaded_files={ data.files } challenges={ data.challenges } form={undefined} />
-            {:else if activeTab === "create"}
-                <ChallengeCreate uploaded_files={ data.files } form={undefined} />
-            {:else if activeTab === "upload"}
-                <FileUploadTab uploaded_files={ data.files } />
-            {:else if activeTab === "config"}
-                <ConfigTab config={data.config} />
-            {/if}
+                {#if activeComponent}
+                    <svelte:component this={activeComponent.component} {...activeComponent.props()} />
+                {/if}
             </div>
         </div>
     </header>

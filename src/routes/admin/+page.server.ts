@@ -8,6 +8,8 @@ import {
     UpdateConfiguration
 } from "$lib/database/db";
 
+import ParseLog from '$lib/parse_log';
+
 import { readdir, writeFile, mkdir } from "fs/promises";
 import { join, basename } from "path";
 
@@ -42,6 +44,7 @@ export const load = async ({ parent }) => {
     let teams = await GetTeams();
     let config = await GetConfiguration();
     let solvers = await GetSolvers();
+    let log_data = await ParseLog();
 
     return {
         user, challenges,
@@ -50,6 +53,7 @@ export const load = async ({ parent }) => {
         files,
         config,
         solvers,
+        log_data,
     }
 };
 
