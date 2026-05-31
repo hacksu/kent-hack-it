@@ -219,7 +219,7 @@
                 <div class="mb-3">
                     <label for="flag-value" class="form-label fw-semibold">Flag</label>
                     <input
-                        type="text"
+                        type="password"
                         class="form-control"
                         name="flag" required
                         value={challenge?.flag || ""}
