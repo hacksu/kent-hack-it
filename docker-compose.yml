@@ -68,6 +68,8 @@ services:
     volumes:
       - ./uploads:${UPLOADS_DIR}
       - ./khi_web_logs:/var/log/nginx
+    networks:
+      - app_internal
     depends_on:
       postgres:
         condition: service_healthy

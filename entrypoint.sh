@@ -1,11 +1,7 @@
 #!/bin/bash
 set -e
 
-# allow www-data and group to handle server files
-chown -R www-data:www-data /app/
-
-# build svelte application
-cd /app && npm run build
+mkdir -p "${UPLOADS_DIR}" && chown www-data:www-data "${UPLOADS_DIR}"
 
 # Start supervisord in the background
 /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf &
