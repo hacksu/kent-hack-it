@@ -779,7 +779,7 @@ export async function GetOpenTeams(uid: string) {
         return teams.map(team => ({
             id: team.id,
             name: team.name,
-            pending: pendingLeaderIds.has(team.id.toString()),
+            pending: pendingLeaderIds.has(team.id),
         }));
     } catch (e: any) {
         console.error("Error occurred fetching open teams:", e);
@@ -1283,5 +1283,172 @@ export async function UpdateConfiguration(data: {
     } catch (e: any) {
         console.error("Error updating config:", e);
         return { success: false, error: "Error updating config" };
+    }
+}
+
+/**
+ * Returns an array object consisting of the teams accumulated points
+ * and their most recent claim timestamp
+ * 
+ * @param team_id 
+ * @returns 
+ */
+async function GetTeamEntry(team_id: any): Promise<[number,string]> {
+    try {
+        const event_challenges = await db.select({
+            id: schema.challenges.id,
+            name: schema.challenges.name,
+            points: schema.challenges.points,
+            is_gym: schema.challenges.is_gym,
+        }).from(schema.challenges)
+          .where(eq(schema.challenges.is_gym, false));
+
+        // get all team members with their claims
+        const team_member_rows = await db
+            .select({ user_id: schema.team_members.user_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.team_id, team_id));
+
+        const member_ids = team_member_rows.map(m => m.user_id);
+
+        const member_claims = await db
+            .select({ id: schema.user.id, name: schema.user.name, claims: schema.user.claims })
+            .from(schema.user)
+            .where(inArray(schema.user.id, member_ids));
+
+        let score = 0;
+        let recent_claim = "";
+
+        for (const challenge of event_challenges) {
+            const completions = member_claims
+                .flatMap(m => (m.claims ?? [])
+                    .filter(c => String(c.challenge_id) === String(challenge.id))
+                    .map(c => ({ user_id: m.id, name: m.name, claimed_at: c.claimed_at }))
+                )
+                .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime());
+
+            console.log(completions);
+
+            if (completions.length > 0) {
+                score += challenge.points;
+
+                if (recent_claim.length === 0)
+                    recent_claim = completions[0].claimed_at;
+                else if (completions[0].claimed_at > recent_claim)
+                    recent_claim = completions[0].claimed_at;
+            }
+        }
+
+        return [ score, recent_claim ];
+    } catch (e: any) {
+        console.error();
+        return [0, new Date().toISOString()];
+    }
+}
+
+export interface LeaderboardEntry {
+    name: string;       // either a solo-player or team_name
+    score: number;      // primary sort criterion
+    rank: number;
+
+    // ISO timestamp
+    last_claim: string; // time of most recent claim (used to sort entries with the same score)
+}
+export async function GetLeaderboard(): Promise<LeaderboardEntry[]> {
+    try {
+        console.log("[*] Fetching Leaderboard Data");
+
+        let board: LeaderboardEntry[] = [];
+
+        // fetch the scores for all teams
+        const groups = await db.select({ id: schema.teams.id, name: schema.teams.name })
+                        .from(schema.teams);
+
+        for (const group of groups) {
+            const [ score, last_claim ] = await GetTeamEntry(group.id)
+            board.push({
+                name: group.name,
+                score,
+                rank: 0,
+                last_claim
+            });
+        }
+
+        // fetch the scores for all solo-players
+        const all_users = await db.select({ id: schema.user.id, name: schema.user.name })
+                            .from(schema.user).where(eq(schema.user.role, "user"));
+        const users_in_groups = await db.select({ uid: schema.team_members.user_id })
+                                    .from(schema.team_members);
+        const solo_users = all_users.filter((user) => {
+            return !users_in_groups.find((u) => u.uid === user.id);
+        });
+
+        for (const user of solo_users) {
+            let user_score = 0;
+            let most_recent_claim = "";
+
+            const [data] = await db.select({ claims: schema.user.claims })
+                            .from(schema.user)
+                            .where(eq(schema.user.id, user.id));
+            for (const claim of data.claims ?? []) {
+                const [challenge] = await db.select({ points: schema.challenges.points })
+                                        .from(schema.challenges)
+                                        .where(and(
+                                            eq(schema.challenges.is_gym, false),
+                                            eq(schema.challenges.id, claim.challenge_id)
+                                        ));
+                user_score += challenge?.points ?? 0;
+
+                if (most_recent_claim.length === 0)
+                    most_recent_claim = claim.claimed_at;
+                else if (claim.claimed_at > most_recent_claim)
+                    most_recent_claim = claim.claimed_at;
+            }
+
+            board.push({
+                name: user.name,
+                score: user_score,
+                rank: 0,
+                last_claim: most_recent_claim
+            });
+        }
+        
+        // @todo - stress test with larger dataset
+        board.sort((a, b) => {
+            if (b.score - a.score === 0) {
+                return new Date(a.last_claim).getTime() - new Date(b.last_claim).getTime();
+            } else {
+                return b.score - a.score;
+            }
+        });
+
+        // apply ranks after sorting completes
+        for (let i = 0; i < board.length; ++i) {
+            board[i].rank = i+1;
+        }
+
+        return board;
+    } catch (e: any) {
+        console.error("Error Fetching Leaderboard:", e);
+        return [];
+    }
+}
+
+export async function GetTeamFromPlayer(uid: any) {
+    try {
+        const [entry] = await db.select({ team_id: schema.team_members.team_id })
+                            .from(schema.team_members)
+                            .where(eq(schema.team_members.user_id, uid)).limit(1);
+        if (entry) {
+            const [team] = await db.select({ name: schema.teams.name })
+                            .from(schema.teams)
+                            .where(eq(schema.teams.id, entry.team_id)).limit(1);
+            return team;
+        } else {
+            return;
+        }
+    } catch (e: any) {
+        console.error("[-] Error:", e);
+        return;
     }
 }
