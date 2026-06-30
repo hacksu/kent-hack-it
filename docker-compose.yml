@@ -7,16 +7,16 @@ services:
       context: .
       dockerfile: Docker_postgresql
     environment:
-      POSTGRES_USER: ${DB_ADMIN_USER}
-      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_USER_PASSWORD: ${DB_USER_PASSWORD}
-      DB_NAME: ${DB_NAME}
+      POSTGRES_USER: ${PG_ADMIN_USER}
+      POSTGRES_PASSWORD: ${PG_ADMIN_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE}
+      DB_USER: ${PG_USER}
+      DB_USER_PASSWORD: ${PG_PASSWORD}
+      DB_NAME: ${PG_DATABASE}
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_ADMIN_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${PG_ADMIN_USER} -d ${PG_DATABASE}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,9 +39,9 @@ services:
 
       PG_HOST: postgres
       PG_PORT: 5432
-      PG_USER: ${DB_USER}
-      PG_PASSWORD: ${DB_USER_PASSWORD}
-      PG_DATABASE: ${DB_NAME}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      PG_DATABASE: ${PG_DATABASE}
 
       HACKSU_GUILD_ID: ${HACKSU_GUILD_ID}
       KHI_ADM_ROLE: ${KHI_ADM_ROLE}

@@ -5,6 +5,8 @@
 set -e
 echo '[!] Initializing KHI Database'
 
+# env vars referenced much match docker-compose.yml vars
+
 cat > /tmp/init.sql <<EOF
 CREATE USER $DB_USER WITH PASSWORD '$DB_USER_PASSWORD' CONNECTION LIMIT 100;
 
