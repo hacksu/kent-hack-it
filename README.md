@@ -41,6 +41,7 @@ psql -h localhost -u DB_USER -p -d DB_DATABASE < file.sql
 Running the website in developer mode, make sure you have a local `.env` file
 containing the following:
 ```text
+PG_HOST=
 PG_ADMIN_USER=
 PG_ADMIN_PASSWORD=
 PG_USER=
@@ -52,6 +53,7 @@ BETTER_AUTH_URL=
 
 HACKSU_GUILD_ID=
 KHI_ADM_ROLE=
+
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 
@@ -60,8 +62,6 @@ GITHUB_CLIENT_SECRET=
 
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-
-UPLOADS_DIR=
 
 UPLOADS_DIR=
 TESTING_READ=
