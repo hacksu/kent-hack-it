@@ -127,6 +127,8 @@ export const challenges = pgTable("challenges", {
     hlinks: text("hlinks").array().default([]),
     is_active: boolean("is_active").default(true),  // used to close a challenge from players to perform maintanence
     is_gym: boolean("is_gym").default(false),       // used to defined what is an event challenge and post-event challenge
+
+    bin_file: text("bin_file")
 });
 
 export const teams = pgTable("teams", {
@@ -158,4 +160,11 @@ export const event_config = pgTable("event_config", {
     site_active: boolean("site_active").default(false).notNull(),    // controls if players can both see EVENT challenges and EVENT submit flags
     event_start: timestamp("event_start").defaultNow().notNull(),    // after this time EVENT challenges and flags can be interacted with by players
     event_length: integer("event_length").default(7).notNull()       // allows dynamic changing of event length incase we do a shorter or longer event
+});
+
+// one user can have only one instance at a time
+export const instance_sessions = pgTable("instance_sessions", {
+    uid: text("uid").primaryKey().references(() => user.id),
+    sess_port: integer("sess_port").notNull(),
+    created_at: timestamp("created_at").defaultNow().notNull(),
 });

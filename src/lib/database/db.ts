@@ -39,6 +39,7 @@ export interface ChallengeForm {
     points: number;
     hlinks: string[] | null;
     hints: string[] | null;
+    bin_file: string | null;
 };
 
 export interface ChallengeData {
@@ -55,6 +56,7 @@ export interface ChallengeData {
     hlinks: string[] | null;
     is_active: boolean | null;
     is_gym: boolean | null;
+    bin_file: string | null;
 };
 
 export interface ViewableChallengeData {
@@ -71,6 +73,7 @@ export interface ViewableChallengeData {
     is_active: boolean | null;
     is_gym: boolean | null;
     solves: number;
+    bin_file: string | null;
 }
 
 // special select type used in challenge querying
@@ -87,6 +90,7 @@ const publicChallengeData = {
     hints: schema.challenges.hints,
     is_active: schema.challenges.is_active,
     is_gym: schema.challenges.is_gym,
+    bin_file: schema.challenges.bin_file,
 };
 
 /**

@@ -17,11 +17,12 @@ import { join, basename } from "path";
 import type { ChallengeForm } from "$lib/database/db";
 
 const uploadDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
+const binUploadDir = process.env.BIN_UPLOADS_DIR ?? join(process.cwd(), "ctf");
 
-async function GetArchives(): Promise<string[]> {
+async function GetFiles(search_dir: string): Promise<string[]> {
     let files: string[] = [];
     try {
-        files = await readdir(uploadDir);
+        files = await readdir(search_dir);
     } catch {
         files = [];
     }
@@ -40,7 +41,10 @@ export const load = async ({ parent }) => {
     let challenges = await GetChallenges(true);
     let admins = await GetAdmins();
     let players = await GetUsers();
-    let files = await GetArchives();
+    let files = {
+        archives: await GetFiles(uploadDir),
+        bins: await GetFiles(binUploadDir)
+    };
     let teams = await GetTeams();
     let config = await GetConfiguration();
     let solvers = await GetSolvers();
@@ -96,7 +100,8 @@ export const actions = {
                 flag: formData.flag,
                 points,
                 hlinks: attached_files,
-                hints
+                hints,
+                bin_file: formData.bin_file,
             };
 
             await AddChallenge(data);
@@ -139,6 +144,7 @@ export const actions = {
                 points,
                 hlinks: attached_files,
                 hints,
+                bin_file: formData.bin_file,
             }, formData.id);
 
             return { success: true, message: 'Challenge updated!' };
@@ -239,6 +245,56 @@ export const actions = {
             };
         } catch (e) {
             console.error(`[-] File Upload -> ${e}`);
+            return {
+                success: false,
+                error: "An error occurred while uploading files"
+            };
+        }
+    },
+    upload_exec_files: async ({ request }) => {
+        if (!await isAdmin(request))
+            throw redirect(303, '/auth/login');
+
+        try {
+            const form = await request.formData();
+            let files = form.getAll("bins") as File[];
+
+            console.log(files);
+            files.forEach(f => {
+                console.log(`${f} : ${f.size}`);
+            });
+
+            // check for file sizes and remove large files
+            const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12 MB
+
+            const largeFiles = files.filter(f => f.size > MAX_FILE_SIZE);
+            files = files.filter(f => f.size <= MAX_FILE_SIZE);
+
+            if (files.length === 0 || files.every(f => f.size === 0)) {
+                return { 
+                    success: false,
+                    error: "No bin files provided."
+                };
+            }
+
+            console.log(`[*] Saving Bin Files to: ${binUploadDir}`);
+            await mkdir(binUploadDir, { recursive: true });
+
+            for (const file of files) {
+                const safeName = basename(file.name);
+                const buffer = Buffer.from(await file.arrayBuffer());
+                await writeFile(join(binUploadDir, safeName), buffer);
+            }
+
+            return (largeFiles.length === 0) ? {
+                success: true,
+                message: "Bin Files Uploaded!"
+            } : {
+                success: true,
+                warning: "Some files were not uploaded due to size"
+            };
+        } catch (e) {
+            console.error(`[-] Bin File Upload -> ${e}`);
             return {
                 success: false,
                 error: "An error occurred while uploading files"

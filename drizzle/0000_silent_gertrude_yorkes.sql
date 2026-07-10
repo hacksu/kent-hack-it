@@ -29,6 +29,7 @@ CREATE TABLE "challenges" (
 	"hlinks" text[] DEFAULT '{}',
 	"is_active" boolean DEFAULT true,
 	"is_gym" boolean DEFAULT false,
+	"bin_file" text,
 	CONSTRAINT "challenges_name_unique" UNIQUE("name"),
 	CONSTRAINT "challenges_flag_unique" UNIQUE("flag")
 );
@@ -38,6 +39,12 @@ CREATE TABLE "event_config" (
 	"site_active" boolean DEFAULT false NOT NULL,
 	"event_start" timestamp DEFAULT now() NOT NULL,
 	"event_length" integer DEFAULT 7 NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "instance_sessions" (
+	"uid" text PRIMARY KEY NOT NULL,
+	"sess_port" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "session" (
@@ -105,6 +112,7 @@ CREATE TABLE "verification" (
 );
 --> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "instance_sessions" ADD CONSTRAINT "instance_sessions_uid_user_id_fk" FOREIGN KEY ("uid") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "team_members" ADD CONSTRAINT "team_members_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "team_members" ADD CONSTRAINT "team_members_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

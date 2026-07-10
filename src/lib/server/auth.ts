@@ -103,6 +103,7 @@ export async function isAdmin(request: Request): Promise<Boolean> {
         const session = await auth.api.getSession({
             headers: request.headers
         });
+        console.log(`[*] User-Info: ${session?.user.name} (${session?.user.role})`);
         return session?.user.role === 'admin';
     } catch {
         console.log("[-] Error Occurred, assuming user is unauthorized");

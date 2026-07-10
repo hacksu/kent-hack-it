@@ -11,7 +11,13 @@
         elem?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     
-    const { uploaded_files, form } = $props();
+    const { uploaded_files, form } : {
+        uploaded_files: {
+            archives: string[];
+            bins: string[];
+        },
+        form: any
+    } = $props();
 </script>
 
 <div id="feedback-display">

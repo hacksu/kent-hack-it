@@ -52,13 +52,21 @@ async function deleteTeam(id: string) {
 
 import { rm } from "fs/promises";
 import { join, basename } from "path";
-async function deleteArchive(file: string) {
+async function delFile(is_archive: boolean, file: string) {
     const filename = basename(file);
-    const uploadDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
-    const filepath = join(uploadDir, filename);
+    let basePath = "";
 
+    if (is_archive) {
+        // remove from archives directory
+        basePath = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
+    } else {
+        // remove from binaries directory
+        basePath = process.env.BIN_UPLOADS_DIR ?? join(process.cwd(), "ctf");
+    }
+    
     // check for path traversal
-    if (!filepath.startsWith(uploadDir)) {
+    const filepath = join(basePath, filename);
+    if (!filepath.startsWith(basePath)) {
         return json({ success: false , status: 403 });
     }
 
@@ -117,8 +125,10 @@ export const POST = async (event) => {
             return json({ success: false, error: 'Unknown action' , status: 500 });
         }
     } else if (data.context === 'file') {
-        if (data.action === 'delete') {
-            handler = await deleteArchive(data.file);
+        if (data.action === 'del_zip') {
+            handler = await delFile(true, data.file);
+        } else if (data.action === 'del_bin') {
+            handler = await delFile(false, data.file);
         } else {
             // unknown action
             return json({ success: false, error: 'Unknown action' , status: 500 });

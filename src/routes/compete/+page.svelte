@@ -286,6 +286,25 @@
                                 </p>
                             </div>
                         {/if}
+
+                        {#if challengeInfo.hlinks != null && challengeInfo.hlinks.length > 0}
+                            <p>Challenge Files:</p>
+                            {#each challengeInfo.hlinks ?? [] as hlink}
+                                <div class="mb-2">
+                                    <a
+                                        class="card-text small"
+                                        style="font-size: 0.75rem"
+                                        href={`/api/download/${hlink}?t=archive`}
+                                    >
+                                        {hlink}
+                                    </a>
+                                </div>
+                            {/each}
+                        {/if}
+
+                        {#if challengeInfo.bin_file != null && challengeInfo.bin_file.length > 0}
+                            <button class="btn btn-success">Launch Instance</button>
+                        {/if}
                         
                         <p class="card-text small mb-1">⭐ {Number(challengeInfo.rating).toFixed(1)} / 5</p>
                         
