@@ -27,13 +27,17 @@ RUN make -j"$(nproc)"
 FROM debian:bookworm-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    supervisor \
     nodejs \
     npm \
     net-tools \
     socat \
     libprotobuf32 \
     libnl-route-3-200 \
+    libcap2-bin \
     && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
 
 # nsjail binary from the build stage
 COPY --from=nsjail-builder /build/nsjail/nsjail /usr/bin/nsjail
@@ -42,6 +46,20 @@ RUN chmod +x /usr/bin/nsjail
 # prep container dirs
 RUN mkdir -p /jail
 RUN mkdir -p /app/ctf
+RUN mkdir -p /app/jobs
 
-WORKDIR /app
-#EXPOSE 5000
+# move node application code and install needed dependencies
+COPY ./handler/server.js ./handler/handler.js ./handler/package.json ./handler/package-lock.json /app
+RUN npm install .
+
+# allow www-data to rw /app and /jail
+RUN chown -R www-data:www-data /app
+RUN chown -R www-data:www-data /jail
+
+# move automation conf
+COPY ./handler/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# prep entry script and execute it
+COPY ./handler/entrypoint.sh /root/entrypoint.sh
+RUN chmod +x /root/entrypoint.sh
+CMD ["/root/entrypoint.sh"]

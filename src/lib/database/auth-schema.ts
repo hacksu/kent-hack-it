@@ -166,5 +166,6 @@ export const event_config = pgTable("event_config", {
 export const instance_sessions = pgTable("instance_sessions", {
     uid: text("uid").primaryKey().references(() => user.id),
     sess_port: integer("sess_port").notNull(),
+    cpid: integer("cpid").notNull(),
     created_at: timestamp("created_at").defaultNow().notNull(),
 });

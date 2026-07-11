@@ -4,11 +4,11 @@ import { redirect, fail } from '@sveltejs/kit';
 import {
     GetProgress, GetChallenges, CheckFlag,
     IsSiteActive, GetCompletions, GetSolversCount,
-    SubmitRating,
-    GetRated,
+    SubmitRating, GetRated,
+    CreateInstance,
 } from "$lib/database/db";
 
-export const load = async ({ parent }) => {
+export const load = async ({ parent, setHeaders }) => {
     // goes to +layout.server.ts and fetches the user state
     const { user } = await parent();
     
@@ -25,6 +25,10 @@ export const load = async ({ parent }) => {
         c['solves'] = await GetSolversCount(c.id);
     }
 
+    setHeaders({
+        "cache-control": "no-store"
+    });
+
     return {
         user, challenges, progressData, completions, rated
     }
@@ -40,7 +44,7 @@ export const actions = {
 
         // user not authenticated
         if (!session) {
-            return redirect(301, "/auth/login");
+            throw redirect(302, "/auth/login");
         }
 
         // admins cannot score flags : srry <3
@@ -81,7 +85,7 @@ export const actions = {
 
         // user not authenticated
         if (!session) {
-            return redirect(301, "/auth/login");
+            throw redirect(302, "/auth/login");
         }
 
         // admins cannot submit rating : srry again <3
@@ -116,6 +120,35 @@ export const actions = {
         } catch (e) {
             console.error(`[-] Submit Rating -> ${e}`);
             return fail(500, { success: false, error: 'An error occurred while rating the challenge' });
+        }
+    },
+
+    create_instance: async ({ request }) => {
+        const session = await auth.api.getSession({
+                headers: request.headers,
+            });
+
+        // user not authenticated
+        if (!session) {
+            throw redirect(302, "/auth/login");
+        }
+
+        const form = await request.formData();
+        const { cid } = Object.fromEntries(form.entries()) as Record<string, string>;
+        const uid = session.user.id;
+
+        try {
+            if (!await IsSiteActive()) {
+                return { success: false, message: 'Cannot create Instances at this time, try again later!' };
+            } else {
+                console.log("[*] Attempting to prepare Instance");
+                const instance_data = await CreateInstance(uid, cid);
+                console.log(instance_data);
+                return instance_data;
+            }
+        } catch (e) {
+            console.error(`[-] Create Instance -> ${e}`);
+            return fail(500, { success: false, error: 'An error occurred while preparing Instance' });
         }
     },
 };

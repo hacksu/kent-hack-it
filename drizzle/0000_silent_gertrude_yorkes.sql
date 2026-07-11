@@ -44,6 +44,7 @@ CREATE TABLE "event_config" (
 CREATE TABLE "instance_sessions" (
 	"uid" text PRIMARY KEY NOT NULL,
 	"sess_port" integer NOT NULL,
+	"cpid" integer NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

@@ -33,12 +33,22 @@ services:
     build:
       context: .
       dockerfile: ./handler/Dockerfile
+    environment:
+      MIN_PORT: ${MIN_PORT}
+      MAX_PORT: ${MAX_PORT}
+      BIN_UPLOADS_DIR: /app/ctf
+    # this is required by nsjail's documentation (https://nsjail.dev/)
+    # nsjail is executed as www-data (low-priv user)
+    privileged: true
     ports:
-      - "50000-50050:50000-50050"
+      - "${MIN_PORT}-${MAX_PORT}:${MIN_PORT}-${MAX_PORT}"
+      - "3000"
     volumes:
-      - khi_ctf_exec_files:/app/ctf:ro
+      - khi_ctf_exec_files:/app/ctf
+      - khi_jobs:/app/jobs
     networks:
-      - app_internal
+      # handler does not need to be on the same network as the database
+      - handler_net
 
   app:
     container_name: web_khi
@@ -85,13 +95,10 @@ services:
       - khi_uploads:/app/uploads
       # temp volume (destroyed on recompose on dokploy)
       - ./khi_web_logs:/var/log/nginx
-
-      # Compiled challenge executables will live here.
-      # the handler will have read-only access to these
-      # files so it can execute them within special jails
       - khi_ctf_exec_files:/app/ctf
     networks:
       - app_internal
+      - handler_net
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,6 +107,8 @@ volumes:
   khi_psql_data:
   khi_uploads:
   khi_ctf_exec_files:
+  khi_jobs:
 
 networks:
   app_internal:
+  handler_net:
