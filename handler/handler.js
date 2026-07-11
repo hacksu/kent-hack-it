@@ -75,10 +75,6 @@ export async function CheckFile(bin_dir, bin) {
 const SESSION_TIMEOUT = 15 * 60; // 15 minutes
 const SESSION_TIMEOUT_MS = SESSION_TIMEOUT * 1000;
 
-// unprivileged uid/gid used inside every jail
-const JAIL_UID = 99999;
-const JAIL_GID = 99999;
-
 /**
  * Helper method to generate the nsjail command use by instance handler
  * 
@@ -105,14 +101,15 @@ function buildNsjailCmd(jailDir, bin_path) {
         "-R", "/usr/bin/bash",
 
         "-R", "/usr/bin/id",
+        "-R", "/usr/bin/whoami",
         "-R", "/usr/bin/ls",
         "-R", "/usr/bin/cat",
 
         "-l", "/tmp/nsjail.log",                 // general logging for debugging
 
         "--cwd", "/",                            // jail-root == chal_dir, so this is correct post-chroot
-        "--user", String(JAIL_UID),
-        "--group", String(JAIL_GID),
+        "--user", "ctf-player",
+        "--group", "ctf-player",
 
         // --- resource limits ---
         "--rlimit_as", "512",
@@ -193,6 +190,25 @@ export async function CreateInstance(name, bin_dir, bin, flag_value) {
         return { success: false, rc: 500, error: 'Server Error' }
     }
 
+    // write jail passwd file
+    const jailPasswd = path.join(jailDir, "/etc/passwd");
+
+    console.log(`[*] Checking '${path.dirname(jailPasswd)}'...`);
+    if (!await PathExists(path.dirname(jailPasswd))) {
+        console.log("[*] Creating directory", path.dirname(jailPasswd));
+        if (!await CreateDir(path.dirname(jailPasswd))) {
+            console.error("[-] Failed to create", path.dirname(jailPasswd));
+            return { success: false, rc: 500, error: 'Server Error' }
+        }
+    }
+
+    console.log("[*] Creating Jail-Passwd File", jailPasswd);
+    if (!await CreateFile(jailPasswd, "ctf-player:x:99999:99999::/:/bin/sh")) {
+        console.error("[-] Failed to create", jailPasswd);
+        return { success: false, rc: 500, error: 'Server Error' }
+    }
+
+    // write nsjail job file
     const jobFile = path.join("/app/jobs", name + ".sh");
     if (!await PathExists(jobFile)) {
         // prepare jailcmd

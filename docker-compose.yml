@@ -39,6 +39,8 @@ services:
       BIN_UPLOADS_DIR: /app/ctf
     # this is required by nsjail's documentation (https://nsjail.dev/)
     # nsjail is executed as www-data (low-priv user)
+    # - all jails are set to read-only therefor the jail user cannot write malicious files within their cell
+    # - jails only have the binaries neccessary (whoami,id,ls,cat,sh,bash) thus they cannot access endpoints using things like curl/wget
     privileged: true
     ports:
       - "${MIN_PORT}-${MAX_PORT}:${MIN_PORT}-${MAX_PORT}"

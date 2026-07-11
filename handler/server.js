@@ -22,24 +22,27 @@ app.get('/', (req, res) => {
 });
 
 app.post('/create_instance', async (req, res) => {
-    const { name, bin, flag_value } = req.body;
-
-    // executables exists within BINS_FOLDER
-    const { success, rc, message } = await CheckFile(BINS_FOLDER, bin);
-    if (!success) {
-        console.error(`[-] '${BINS_FOLDER}/${bin}' might not exist...`);
-        return res.status(rc).send(message);
+    try {
+        const { name, bin, flag_value } = req.body;
+    
+        // executables exists within BINS_FOLDER
+        const { success, rc, message } = await CheckFile(BINS_FOLDER, bin);
+        if (!success) {
+            console.error(`[-] '${BINS_FOLDER}/${bin}' might not exist...`);
+            return res.status(rc).send(message);
+        }
+    
+        console.log("[*] Attempting to Create Instance...");
+        const sess = await CreateInstance(name, BINS_FOLDER, bin, flag_value);
+        return res.status(sess.rc).json(sess);
+    } catch (err) {
+        return res.status(500).json({ success: false, error: 'Failed to create Instance' });
     }
-
-    console.log("[*] Attempting to Create Instance...");
-    const sess = await CreateInstance(name, BINS_FOLDER, bin, flag_value);
-    return res.status(sess.rc).json(sess);
 });
 
 app.post('/kill', async (req, res) => {
-    const { cpid } = req.body;
-
     try {
+        const { cpid } = req.body;
         process.kill(pid, 'SIGKILL');
         return res.status(200).send(`PID: ${pid} killed`);
     } catch (err) {

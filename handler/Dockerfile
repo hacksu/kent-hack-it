@@ -42,6 +42,9 @@ WORKDIR /app
 # nsjail binary from the build stage
 COPY --from=nsjail-builder /build/nsjail/nsjail /usr/bin/nsjail
 RUN chmod +x /usr/bin/nsjail
+# create the jail user
+RUN groupadd -g 99999 ctf-player && \
+    useradd -m -u 99999 -g 99999 -s /bin/bash ctf-player
 
 # prep container dirs
 RUN mkdir -p /jail
