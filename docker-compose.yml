@@ -37,11 +37,10 @@ services:
       MIN_PORT: ${MIN_PORT}
       MAX_PORT: ${MAX_PORT}
       BIN_UPLOADS_DIR: /app/ctf
-    # this is required by nsjail's documentation (https://nsjail.dev/)
-    # nsjail is executed as www-data (low-priv user)
-    # - all jails are set to read-only therefor the jail user cannot write malicious files within their cell
-    # - jails only have the binaries neccessary (whoami,id,ls,cat,sh,bash) thus they cannot access endpoints using things like curl/wget
-    privileged: true
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=./handler/seccomp-nsjail.json
     ports:
       - "${MIN_PORT}-${MAX_PORT}:${MIN_PORT}-${MAX_PORT}"
       - "3000"
@@ -84,6 +83,7 @@ services:
 
       UPLOADS_DIR: /app/uploads
       BIN_UPLOADS_DIR: /app/ctf
+      CHALLENGE_HOST: ${CHALLENGE_HOST:-ctf.hacksu.com}
       TESTING_READ: "C++ is the Best Language, the very best."
     labels:
       - "traefik.enable=true"

@@ -1,4 +1,5 @@
 import { error, redirect, json, isRedirect } from "@sveltejs/kit";
+import { env } from "$env/dynamic/private";
 import { auth } from "$lib/server/auth";
 import { GetActiveInstance } from "$lib/database/db";
 import type { RequestHandler } from "./$types";
@@ -14,9 +15,11 @@ export const GET: RequestHandler = async ({ request }) => {
             throw redirect(302, "/auth/login");
         }
 
+        const CHALLENGE_HOST = process.env.CHALLENGE_HOST ?? env.CHALLENGE_HOST ?? "ctf.hacksu.com";
+
         const data = await GetActiveInstance(session.user.id);
         const instance_info = data
-            ? { active: true, host: "ctf.hacksu.com", rport: data.port, created_at: data.created_at }
+            ? { active: true, host: CHALLENGE_HOST, rport: data.port, created_at: data.created_at }
             : { active: false };
 
         console.log(instance_info);

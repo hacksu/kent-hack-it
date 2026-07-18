@@ -41,13 +41,13 @@ app.post('/create_instance', async (req, res) => {
 });
 
 app.post('/kill', async (req, res) => {
+    const { cpid } = req.body;
     try {
-        const { cpid } = req.body;
-        process.kill(pid, 'SIGKILL');
-        return res.status(200).send(`PID: ${pid} killed`);
+        process.kill(cpid, 'SIGKILL');
+        return res.status(200).send(`PID: ${cpid} killed`);
     } catch (err) {
         if (err.code === 'ESRCH') {
-            console.log(`Process ${pid} doesn't exist (already dead?)`);
+            console.log(`Process ${cpid} doesn't exist (already dead?)`);
         } else if (err.code === 'EPERM') {
             console.log("Permission Denied");
         } else {
