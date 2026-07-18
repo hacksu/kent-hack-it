@@ -10,10 +10,13 @@
 
     import { type ViewableChallengeData } from '$lib/database/db.js';
     import { handleFormResult } from "$lib/utilities.js";
+    import { onMount } from "svelte";
 
     let error = $state("");
     let warning = $state("");
     let success = $state("");
+    
+    let instance_infomation = $state("");
     
     function clearResult() {
         error = warning = success = "";
@@ -239,8 +242,65 @@
         );
 
         challengeInfo = challenge;
+        
+        try {
+            // find instance information to display
+            const req = await fetch("/api/cinstance", {
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                cache: "no-store"
+            });
+            const res: {
+                active: boolean,
+                host?: string,
+                rport?: number,
+                created_at?: Date
+            } = await req.json();
+
+            instance_infomation = (res.active) ? `nc ${res.host} ${res.rport}` : "";
+            instanceStart = res.created_at;
+        } catch {}
+
         showPanel = challenge !== undefined;
     }
+
+    let timeLeft = $state("00:00");
+    let instanceLabel = $state("Time Remaining:");
+    let timer: NodeJS.Timeout|undefined = undefined;
+    let instanceStart = $state<Date|undefined>(undefined);
+
+    function updateInstanceTimer() {
+        if (!instanceStart) return;
+
+        const now = new Date().getTime();
+        const start = new Date(instanceStart).getTime();
+        const end = start + 15 * 60 * 1000; // 15 minutes after start
+
+        let distance;
+
+        if (now < start) {
+            instanceLabel = "Time Remaining::";
+            distance = start - now;
+        } else if (now < end) {
+            instanceLabel = "Time Remaining::";
+            distance = end - now;
+        } else {
+            timeLeft = "00:00";
+            clearInterval(timer);
+            return;
+        }
+
+        const totalSeconds = Math.floor(distance / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        timeLeft = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    onMount(() => {
+        updateInstanceTimer();
+        timer = setInterval(updateInstanceTimer, 1000);
+    });
 </script>
 
 <svelte:head>
@@ -286,6 +346,81 @@
                                 </p>
                             </div>
                         {/if}
+
+                        {#if challengeInfo.hlinks != null && challengeInfo.hlinks.length > 0}
+                            <p>Challenge Files:</p>
+                            {#each challengeInfo.hlinks ?? [] as hlink}
+                                <div class="mb-2">
+                                    <a
+                                        class="card-text small"
+                                        style="font-size: 0.75rem"
+                                        href={`/api/download/${hlink}?t=archive`}
+                                    >
+                                        {hlink}
+                                    </a>
+                                </div>
+                            {/each}
+                        {/if}
+
+                        {#if instance_infomation.length === 0}
+                            {#if challengeInfo && (challengeInfo.bin_file != null && challengeInfo.bin_file.length > 0)}
+                                <form method="POST" action="?/create_instance" use:enhance={() => {
+                                    return async ({ result, update }) => {
+                                        await update();
+
+                                        const formResult = await handleFormResult(result);
+                                        success = formResult.success;
+                                        warning = formResult.warning;
+                                        error = formResult.error;
+
+                                        // trigger the instance to be rendered
+                                        viewChallenge(challengeInfo.id);
+
+                                        await invalidateAll();
+                                        setTimeout(clearResult, 5000);
+                                    };
+                                }}>
+                                    <input type="hidden" name="cid" value={challengeInfo.id} />
+                                    <button type="submit" class="btn btn-success">
+                                        Launch Instance
+                                    </button>
+                                </form>
+                            {/if}
+                        {:else}
+                            <div>
+                                <div
+                                    style="border-style: solid; border-radius: 3px; border-color: orange; border-radius: 8px; padding: 5px;"
+                                >
+                                    {instanceLabel} {timeLeft}
+                                </div>
+                                Connect to Instance<br>
+                                <code class="font-mono text-green-400 select-all">
+                                    $ {instance_infomation}
+                                </code>
+                                <form method="POST" action="?/create_instance" use:enhance={() => {
+                                    return async ({ result, update }) => {
+                                        await update();
+
+                                        const formResult = await handleFormResult(result);
+                                        success = formResult.success;
+                                        warning = formResult.warning;
+                                        error = formResult.error;
+
+                                        // trigger the instance to be rendered
+                                        viewChallenge(challengeInfo.id);
+
+                                        await invalidateAll();
+                                        setTimeout(clearResult, 5000);
+                                    };
+                                }}>
+                                    <input type="hidden" name="cid" value={challengeInfo.id} />
+                                    <button type="submit" class="btn btn-success">
+                                        Restart Instance
+                                    </button>
+                                </form>
+                            </div>
+                        {/if}
+
                         
                         <p class="card-text small mb-1">⭐ {Number(challengeInfo.rating).toFixed(1)} / 5</p>
                         

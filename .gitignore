@@ -25,4 +25,5 @@ vite.config.ts.timestamp-*
 # Custom
 .vscode/
 uploads/
+ctf/
 khi_web_logs/

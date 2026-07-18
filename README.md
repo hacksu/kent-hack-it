@@ -64,11 +64,15 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
 UPLOADS_DIR=
-TESTING_READ=
 ```
 
 Running the svelte application
 ```console
 npm install .
 npm run dev -- --open
+```
+
+If you'd prefer running the compose locally
+```console
+docker compose down -v && docker compose up -d --build
 ```

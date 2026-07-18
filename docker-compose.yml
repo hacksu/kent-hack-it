@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     build:
       context: .
-      dockerfile: Docker_postgresql
+      dockerfile: ./psql/Dockerfile
     environment:
       POSTGRES_USER: ${PG_ADMIN_USER}
       POSTGRES_PASSWORD: ${PG_ADMIN_PASSWORD}
@@ -18,22 +18,48 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PG_ADMIN_USER} -d ${PG_DATABASE}"]
       interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
     volumes:
       - khi_psql_data:/var/lib/postgresql/data
-      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./psql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     networks:
       - app_internal
+
+  handler:
+    container_name: handler_khi
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./handler/Dockerfile
+    environment:
+      MIN_PORT: ${MIN_PORT}
+      MAX_PORT: ${MAX_PORT}
+      BIN_UPLOADS_DIR: /app/ctf
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=./handler/seccomp-nsjail.json
+    ports:
+      - "${MIN_PORT}-${MAX_PORT}:${MIN_PORT}-${MAX_PORT}"
+      - "3000"
+    volumes:
+      - khi_ctf_exec_files:/app/ctf
+      - khi_jobs:/app/jobs
+    networks:
+      # handler does not need to be on the same network as the database
+      - handler_net
 
   app:
     container_name: web_khi
     restart: unless-stopped
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile
     environment:
+      # Svelte's CSRF is extremely annoying if ORIGIN is not present
+      ORIGIN: ${BETTER_AUTH_URL}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
 
@@ -55,7 +81,9 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
 
-      UPLOADS_DIR: ${UPLOADS_DIR}
+      UPLOADS_DIR: /app/uploads
+      BIN_UPLOADS_DIR: /app/ctf
+      CHALLENGE_HOST: ${CHALLENGE_HOST:-ctf.hacksu.com}
       TESTING_READ: "C++ is the Best Language, the very best."
     labels:
       - "traefik.enable=true"
@@ -66,16 +94,23 @@ services:
     ports:
       - "3333:3000" # dev only
     volumes:
-      - ./uploads:${UPLOADS_DIR}
+      - khi_uploads:/app/uploads
+      # temp volume (destroyed on recompose on dokploy)
       - ./khi_web_logs:/var/log/nginx
+      - khi_ctf_exec_files:/app/ctf
     networks:
       - app_internal
+      - handler_net
     depends_on:
       postgres:
         condition: service_healthy
 
 volumes:
   khi_psql_data:
+  khi_uploads:
+  khi_ctf_exec_files:
+  khi_jobs:
 
 networks:
   app_internal:
+  handler_net:

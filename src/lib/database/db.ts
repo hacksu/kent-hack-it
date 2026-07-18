@@ -39,6 +39,7 @@ export interface ChallengeForm {
     points: number;
     hlinks: string[] | null;
     hints: string[] | null;
+    bin_file: string | null;
 };
 
 export interface ChallengeData {
@@ -55,6 +56,7 @@ export interface ChallengeData {
     hlinks: string[] | null;
     is_active: boolean | null;
     is_gym: boolean | null;
+    bin_file: string | null;
 };
 
 export interface ViewableChallengeData {
@@ -71,6 +73,7 @@ export interface ViewableChallengeData {
     is_active: boolean | null;
     is_gym: boolean | null;
     solves: number;
+    bin_file: string | null;
 }
 
 // special select type used in challenge querying
@@ -87,6 +90,7 @@ const publicChallengeData = {
     hints: schema.challenges.hints,
     is_active: schema.challenges.is_active,
     is_gym: schema.challenges.is_gym,
+    bin_file: schema.challenges.bin_file,
 };
 
 /**
@@ -1450,5 +1454,113 @@ export async function GetTeamFromPlayer(uid: any) {
     } catch (e: any) {
         console.error("[-] Error:", e);
         return;
+    }
+}
+
+/**
+ * Generate a challenge instance and track it within the DB
+ * 
+ * @param uid 
+ * @param cid 
+ */
+export async function CreateInstance(uid: any, cid: any) {
+    try {
+        // if there is an existing instance we need to kill it
+        const activeInstance = await db.select().from(schema.instance_sessions)
+                                .where(eq(schema.instance_sessions.uid, uid)).limit(1);
+        if (activeInstance.length > 0) {
+            // signal handler to kill child-proc
+            console.log("[*] Fetching handler pkill...");
+            const res = await fetch("http://handler:3000/kill", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ cpid: activeInstance[0].cpid })
+            });
+            const resp = await res.text();
+            console.log(`[*] Sending cpid-kill: ${resp} (${res.status})`);
+
+            // remove row entry from db
+            await db.delete(schema.instance_sessions)
+                .where(eq(schema.instance_sessions.uid, uid));
+        }
+
+        const challenge_data = await db.select({
+            name: schema.challenges.name,
+            bin: schema.challenges.bin_file,
+            flag_value: schema.challenges.flag,
+        }).from(schema.challenges)
+        .where(eq(schema.challenges.id, cid)).limit(1);
+
+        if (challenge_data.length === 0) {
+            return {
+                success: false,
+                error: "Challenge Not Found"
+            }
+        } else if (!challenge_data[0].bin) {
+            // challenge does not have a configured bin_file
+            // therefor it cannot host an instance
+            return {
+                success: false,
+                error: "Instance Not Supported"
+            }
+        }
+
+        // ask handler to create a new instance and log it
+        console.log("[*] Fetching create_instance...");
+        const res = await fetch("http://handler:3000/create_instance", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: challenge_data[0].name,
+                bin: challenge_data[0].bin,
+                flag_value: challenge_data[0].flag_value,
+            })
+        });
+        const instance_data = await res.json();
+
+        if (instance_data.success) {
+            // log the session information
+            await db.insert(schema.instance_sessions).values({
+                uid: uid,
+                sess_port: instance_data.port,
+                cpid: instance_data.cpid
+            })
+        }
+
+        return instance_data;
+    } catch (e: any) {
+        console.error("[-] Instance-Creation:", e);
+        return {
+            success: false,
+            error: "Error Occurred when creating Instance"
+        }
+    }
+}
+
+/**
+ * Fetch the handler port a players challenge instance is listening on
+ * 
+ * @param uid 
+ * @returns 
+ */
+export async function GetActiveInstance(uid: any) {
+    try {
+        const instance_info = await db.select({
+            port: schema.instance_sessions.sess_port,
+            created_at: schema.instance_sessions.created_at
+        }).from(schema.instance_sessions)
+        .where(eq(schema.instance_sessions.uid, uid)).limit(1);
+
+        return (instance_info.length > 0) ? {
+            port: instance_info[0].port,
+            created_at: instance_info[0].created_at
+        } : undefined;
+    } catch (e: any) {
+        console.error("[-] GetActiveInstance:", e);
+        return undefined;
     }
 }

@@ -2,8 +2,10 @@
     import { enhance } from "$app/forms";
     import type { ChallengeData } from "$lib/database/db";
 
-    let isOpen = $state<boolean>(false);
+    let showArchiveFiles = $state<boolean>(false);
+    let showBinFiles = $state<boolean>(false);
     let creationDisabled = $state<boolean>(false);
+    let showFlag = $state<boolean>(false);
         
     const { title, action_target, challenge, result, onSubmit, uploaded_files } : {
         title: string,
@@ -11,10 +13,28 @@
         challenge: ChallengeData | undefined,
         onSubmit?: (data: { success: true; message: string } | { success: false; error: string } | undefined) => void,
         result: { error?: string, success?: boolean, message?: string } | null,
-        uploaded_files: any
+        uploaded_files: {
+            archives: string[];
+            bins: string[];
+        }
     } = $props();
 
-    let selectedFiles = $state<string[]>(challenge?.hlinks || []);
+    let archiveFiles = $state<string[]>(challenge?.hlinks || []);
+    let archiveSearch = $state("");
+    let filteredArchives = $derived(
+        uploaded_files.archives.filter(file =>
+            file.toLowerCase().includes(archiveSearch.toLowerCase())
+        )
+    );
+
+    let binaryFile = $state<string|undefined>(challenge?.bin_file || undefined);
+    let binFileSearch = $state("");
+    let filterBinaries = $derived(
+        uploaded_files.bins.filter(file =>
+            file.toLowerCase().includes(binFileSearch.toLowerCase())
+        )
+    );
+
     let hints = $state<string[]>(
         challenge?.hints?.length
             ? [...challenge.hints]
@@ -105,39 +125,103 @@
                     <button
                         type="button"
                         class="btn btn-sm btn-outline-primary mb-2"
-                        onclick={() => { isOpen = !isOpen }}
+                        onclick={() => { showArchiveFiles = !showArchiveFiles }}
                     >
-                        {isOpen ? "Hide Files" : "Show Files"}
+                        {showArchiveFiles ? "Hide Files" : "Show Archives"}
                     </button>
 
-                    {#if isOpen}
-                    <div class="border rounded p-2 d-flex flex-wrap gap-2">
-                        {#if uploaded_files.length === 0}
-                            <p class="text-muted mb-0">No files uploaded</p>
-                        {/if}
+                    {#if showArchiveFiles}
+                        <div class="mb-2">
+                            <input
+                                type="text"
+                                class="form-control form-control-sm"
+                                placeholder="Search files..."
+                                bind:value={archiveSearch}
+                            />
+                        </div>
 
-                        {#each uploaded_files as file}
-                            <label
-                                for={`file-${file}`}
-                                class="d-flex align-items-center gap-1 small border rounded px-2 py-1 hover-highlight"
-                            >
-                                <input
-                                    type="checkbox"
-                                    id={`file-${file}`}
-                                    name="attached_files"
-                                    value={file}
-                                    bind:group={selectedFiles}
-                                    class="form-check-input m-0"
-                                />
-                                {file}
-                            </label>
-                        {/each}
-                    </div>
+                        <div class="border rounded p-2 d-flex flex-wrap gap-2">
+                            {#if filteredArchives.length === 0}
+                                <p class="text-muted mb-0">
+                                    {uploaded_files.archives.length === 0 ? "No files uploaded" : "No files match your search"}
+                                </p>
+                            {/if}
+
+                            {#each filteredArchives as file}
+                                <label
+                                    for={`file-${file}`}
+                                    class="d-flex align-items-center gap-1 small border rounded px-2 py-1 hover-highlight"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        id={`file-${file}`}
+                                        name="attached_files"
+                                        value={file}
+                                        bind:group={archiveFiles}
+                                        class="form-check-input m-0"
+                                    />
+                                    {file}
+                                </label>
+                            {/each}
+                        </div>
+
+                        <hr />
                     {/if}
+                </div>
 
+                <!-- Binary Files -->
+                <div class="mb-3">
+                    <label for="attached-files" class="form-label fw-semibold">Binary Files</label>
                     <hr />
+
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary mb-2"
+                        onclick={() => { showBinFiles = !showBinFiles }}
+                    >
+                        {showBinFiles ? "Hide Files" : "Show Binaries"}
+                    </button>
+
+                    {#if showBinFiles}
+                        <div class="mb-2">
+                            <input
+                                type="text"
+                                class="form-control form-control-sm"
+                                placeholder="Search files..."
+                                bind:value={binFileSearch}
+                            />
+                        </div>
+
+                        <div class="border rounded p-2 d-flex flex-wrap gap-2">
+                            {#if filterBinaries.length === 0}
+                                <p class="text-muted mb-0">
+                                    {uploaded_files.bins.length === 0 ? "No files uploaded" : "No files match your search"}
+                                </p>
+                            {/if}
+
+                            {#each filterBinaries as file}
+                                <label
+                                    for={`file-${file}`}
+                                    class="d-flex align-items-center gap-1 small border rounded px-2 py-1 hover-highlight"
+                                >
+                                    <input
+                                        type="radio"
+                                        id={`file-${file}`}
+                                        name="bin_file"
+                                        value={file}
+                                        bind:group={binaryFile}
+                                        class="form-check-input m-0"
+                                    />
+                                    {file}
+                                </label>
+                            {/each}
+                        </div>
+
+                        <hr />
+                    {/if}
                 </div>
                 
+                <!-- Challenge Hints -->
                 <div class="mb-3">
                     <label for="hints" class="form-label fw-semibold">
                         Hints
@@ -218,13 +302,25 @@
                 <!-- Flag -->
                 <div class="mb-3">
                     <label for="flag-value" class="form-label fw-semibold">Flag</label>
-                    <input
-                        type="password"
-                        class="form-control"
-                        name="flag" required
-                        value={challenge?.flag || ""}
-                        placeholder="Enter flag"
-                    />
+                    <div class="input-group">
+                        <input
+                            id="flag-value"
+                            type={ showFlag ? "text" : "password" }
+                            class="form-control"
+                            name="flag" required
+                            value={challenge?.flag || ""}
+                            placeholder="Enter flag"
+                            autocomplete="off"
+                        />
+                        <button
+                            type="button"
+                            aria-label="showFlagValue"
+                            class="btn btn-outline-secondary"
+                            onclick={() => { showFlag = !showFlag }}
+                        >
+                            <i class={showFlag ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Points (not visible to viewer) -->

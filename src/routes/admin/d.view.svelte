@@ -62,7 +62,27 @@
     function openPanel(entry: ChallengeData) { originalData = entry; showEditPanel = true; }
     function exitPanel() { showEditPanel = false; }
 
-    const { uploaded_files, challenges, form } = $props();
+    const { uploaded_files, challenges, form } : {
+        uploaded_files: {
+            archives: string[];
+            bins: string[];
+        },
+        challenges: {
+        id: number;
+        name: string;
+        description: string;
+        category: string;
+        difficulty: string;
+        written_by: string | null;
+        points: number;
+        rating: string | null;
+        hlinks: string[] | null;
+        hints: string[] | null;
+        is_active: boolean | null;
+        is_gym: boolean | null;
+        }[] | undefined,
+        form: any
+    } = $props();
 </script>
 
 <!-- START OF PANEL -->
