@@ -1,6 +1,8 @@
 import { auth, isAdmin } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
+import { env } from "$env/dynamic/private";
 
+import { SHA256 } from '$lib/utilities';
 import {
     GetProgress, GetChallenges, CheckFlag,
     IsSiteActive, GetCompletions, GetSolversCount,
@@ -50,13 +52,15 @@ export const actions = {
         // admins cannot score flags : srry <3
         if (await isAdmin(request)) {
             console.log("[*] Admin tried claiming a flag!");
-            return { success: false, message: 'Admins cannot participate!' };
+            // PROD env var will not appear in developer env
+            if (process.env.PROD || env.PROD)
+                return { success: false, message: 'Admins cannot participate!' };
         }
 
         const form = await request.formData();
         let formData = Object.fromEntries(form.entries()) as Record<string, string>;
 
-        const flag_value = formData.flag_value;
+        const flag_value = await SHA256(formData.flag_value);
         const cid = formData.cid;
         const uid = session.user.id;
 
@@ -91,7 +95,8 @@ export const actions = {
         // admins cannot submit rating : srry again <3
         if (await isAdmin(request)) {
             console.log("[*] Admin tried rating a challenge!");
-            return { success: false, message: 'Admins cannot participate!' };
+            if (process.env.PROD || env.PROD)
+                return { success: false, message: 'Admins cannot participate!' };
         }
 
         const form = await request.formData();

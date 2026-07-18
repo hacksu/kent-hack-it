@@ -47,4 +47,5 @@
     }}
     result={form}
     uploaded_files={uploaded_files}
+    requireFlag={true}
 />

@@ -8,6 +8,20 @@ export function randomString(length: number = 12): string {
 }
 
 /**
+ * Hash a given message using SHA-256
+ * 
+ * @param message 
+ * @returns SHA-256 hash string
+ */
+export async function SHA256(message: string): Promise<string> {
+    const msgBuffer = new TextEncoder().encode(message);
+    // no import needed for `crypto.subtle`
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
  * Reviews the result from a form's use:enhance and returns
  * the Feedback success, error, warning messages
  * 

@@ -6,8 +6,9 @@
     let showBinFiles = $state<boolean>(false);
     let creationDisabled = $state<boolean>(false);
     let showFlag = $state<boolean>(false);
+    let flagValue = $state<string>("");
         
-    const { title, action_target, challenge, result, onSubmit, uploaded_files } : {
+    const { title, action_target, challenge, result, onSubmit, uploaded_files, requireFlag } : {
         title: string,
         action_target: string,
         challenge: ChallengeData | undefined,
@@ -16,7 +17,8 @@
         uploaded_files: {
             archives: string[];
             bins: string[];
-        }
+        },
+        requireFlag: boolean
     } = $props();
 
     let archiveFiles = $state<string[]>(challenge?.hlinks || []);
@@ -307,10 +309,11 @@
                             id="flag-value"
                             type={ showFlag ? "text" : "password" }
                             class="form-control"
-                            name="flag" required
-                            value={challenge?.flag || ""}
+                            name="flag"
+                            required={requireFlag}
                             placeholder="Enter flag"
                             autocomplete="off"
+                            bind:value={flagValue}
                         />
                         <button
                             type="button"

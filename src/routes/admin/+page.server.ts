@@ -5,7 +5,8 @@ import {
     GetAdmins,
     GetUsers, GetTeams, GetSolvers,
     GetConfiguration,
-    UpdateConfiguration
+    UpdateConfiguration,
+    GetFlagHash
 } from "$lib/database/db";
 
 import ParseLog from '$lib/parse_log';
@@ -15,6 +16,7 @@ import { join, basename } from "path";
 
 // importing interface alias
 import type { ChallengeForm } from "$lib/database/db";
+import { SHA256 } from '$lib/utilities';
 
 const uploadDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
 const binUploadDir = process.env.BIN_UPLOADS_DIR ?? join(process.cwd(), "ctf");
@@ -97,7 +99,7 @@ export const actions = {
                 written_by: formData.written_by,
                 category: formData.category,
                 difficulty: formData.difficulty,
-                flag: formData.flag,
+                flag: await SHA256(formData.flag),
                 points,
                 hlinks: attached_files,
                 hints,
@@ -121,15 +123,21 @@ export const actions = {
         const attached_files = form.getAll("attached_files") as string[];
         const hints = JSON.parse(formData['hints'] || '[]') as string[];
 
-        console.log(hints);
-
         if (!formData.id || !formData.name || !formData.description ||
-            !formData.written_by || !formData.category || !formData.difficulty || !formData.flag)
+            !formData.written_by || !formData.category || !formData.difficulty)
             return fail(400, { error: 'Missing required data' });
 
         const points = PointValues[formData.difficulty.toLowerCase() as keyof typeof PointValues];
         if (!points)
             return fail(400, { error: 'Invalid difficulty value' });
+
+        // if flag is not given reuse whats within the db
+        let flag_value = formData.flag;
+        if (!flag_value || flag_value.length === 0) {
+            flag_value = await GetFlagHash(formData.id);
+        } else {
+            flag_value = await SHA256(formData.flag);
+        }
 
         try {
             console.log("[!] Admin is modifying a challenge");
@@ -140,7 +148,7 @@ export const actions = {
                 written_by: formData.written_by,
                 category: formData.category,
                 difficulty: formData.difficulty,
-                flag: formData.flag,
+                flag: flag_value,
                 points,
                 hlinks: attached_files,
                 hints,

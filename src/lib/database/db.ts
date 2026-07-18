@@ -636,6 +636,24 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
     }
 }
 
+/**
+ * Return challenge flag hash based on given challenge id
+ * 
+ * @param cid 
+ * @returns 
+ */
+export async function GetFlagHash(cid: any) {
+    try {
+        const data = await db.select({ flag: schema.challenges.flag })
+            .from(schema.challenges)
+            .where(eq(cid, schema.challenges.id)).limit(1);
+        return data.length > 0 ? data[0].flag : "";
+    } catch (error) {
+        console.error('Error occurred checking flag:', error);
+        return "";
+    }
+}
+
 export async function SubmitRating(uid: any, cid: any, rating: number): Promise<{ success: boolean, message: string }> {
     try {
         const [user] = await db

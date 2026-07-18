@@ -1,13 +1,16 @@
 import { CreateRequest, GetOpenTeams, GetTeam, LeaveTeam, MakeTeam } from '$lib/database/db.js';
 import { auth } from '$lib/server/auth';
 import { redirect } from '@sveltejs/kit';
+import { env } from "$env/dynamic/private";
 
 export const load = async ({ parent }) => {
     const { user } = await parent();
 
-    // admins cannot have teams therefor redirect admins to admin panel
     if (!user) throw redirect(303, '/auth/login');
-    if (user.role === 'admin') throw redirect(303, '/admin');
+    // admins cannot have teams therefor redirect admins to admin panel
+    if (user.role === 'admin' && (process.env.PROD || env.PROD) ) {
+        throw redirect(303, '/admin');
+    }
 
     const results = await GetTeam(user.id);
 
