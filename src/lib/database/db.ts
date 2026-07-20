@@ -1545,7 +1545,8 @@ export async function CreateInstance(uid: any, cid: any) {
             await db.insert(schema.instance_sessions).values({
                 uid: uid,
                 sess_port: instance_data.port,
-                cpid: instance_data.cpid
+                cpid: instance_data.cpid,
+                challenge_id: cid
             })
         }
 
