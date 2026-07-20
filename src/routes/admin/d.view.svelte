@@ -24,7 +24,7 @@
 
     async function toggleChallenge(id: string, name: string, data: { is_active: boolean, is_gym: boolean }) {
         try {
-            const req = await fetch('/admin', {
+            const req = await fetch('/admin/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -51,7 +51,7 @@
 
     async function deleteChallenge(id: string, name: string) {
         if (window.confirm(`Are you sure you want to DELETE the challenge "${name}"?`)) {
-            const req = await fetch('/admin', {
+            const req = await fetch('/admin/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ context: 'challenge', action: 'delete', id })
