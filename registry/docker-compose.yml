@@ -1,0 +1,17 @@
+services:
+  registry:
+    image: registry:2
+    restart: unless-stopped
+    expose:
+      - "5000"
+    environment:
+      REGISTRY_USER: ${REGISTRY_USER}
+      REGISTRY_PASSWORD: ${REGISTRY_PASSWORD}
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: "Registry Realm"
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+    volumes:
+      - registry_data:/var/lib/registry
+
+volumes:
+  registry_data:
