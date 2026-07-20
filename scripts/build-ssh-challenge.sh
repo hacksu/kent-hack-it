@@ -9,4 +9,13 @@ fi
 CHALLENGE_DIR="$1"
 SLUG="$2"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WRAPPER_DIR="${SCRIPT_DIR}/../ssh-challenge-wrapper"
+
 docker build -t "khi-ssh-base/${SLUG}:latest" "$CHALLENGE_DIR"
+
+docker build \
+    -f "${WRAPPER_DIR}/Dockerfile.wrapper" \
+    --build-arg BASE_IMAGE="khi-ssh-base/${SLUG}:latest" \
+    -t "khi-ssh/${SLUG}:latest" \
+    "$WRAPPER_DIR"
