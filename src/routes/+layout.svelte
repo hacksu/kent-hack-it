@@ -79,11 +79,11 @@
 
 {#snippet sidebar()}
     <!-- Brand header -->
-    <div class="flex items-center gap-3 border-b border-sidebar-border px-5 py-4">
-        <img src={logo} alt="KHI Logo" class="logo h-9 w-auto" />
-        <div class="leading-tight">
-            <p class="font-mono text-sm font-bold tracking-tight text-foreground">KENT HACK IT</p>
-            <p class="font-mono text-[0.65rem] tracking-widest text-brand-blue uppercase">hacksu ctf</p>
+    <div class="flex items-center gap-3.5 border-b border-black/5 px-4 py-5 dark:border-white/5">
+        <img src={logo} alt="KHI Logo" class="logo h-12 w-auto shrink-0" />
+        <div class="min-w-0 leading-tight">
+            <p class="font-mono text-base font-bold whitespace-nowrap text-foreground">KENT HACK IT</p>
+            <p class="font-mono text-[0.65rem] tracking-[0.22em] text-brand-blue uppercase">HacKSU CTF</p>
         </div>
     </div>
 
@@ -114,12 +114,20 @@
         {#if $session.data?.user}
             {@const user = $session.data.user}
             <div class="flex items-center gap-3 rounded-lg px-2 py-2">
-                <div
-                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-blue font-mono text-sm font-bold text-[#08131f] select-none"
-                    aria-hidden="true"
-                >
-                    {(user.name ?? "?").trim().charAt(0).toUpperCase()}
-                </div>
+                {#if user.image}
+                    <img
+                        src={user.image}
+                        alt=""
+                        class="h-9 w-9 shrink-0 rounded-full border border-sidebar-border object-cover"
+                    />
+                {:else}
+                    <div
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-blue font-mono text-sm font-bold text-[#08131f] select-none"
+                        aria-hidden="true"
+                    >
+                        {(user.name ?? "?").trim().charAt(0).toUpperCase()}
+                    </div>
+                {/if}
                 <div class="min-w-0 flex-1 leading-tight">
                     <p class="truncate text-sm font-semibold text-foreground">{user.name}</p>
                     <p class="font-mono text-[0.6rem] tracking-widest text-brand-blue uppercase">
@@ -159,9 +167,9 @@
             </a>
         {/if}
 
-        <!-- Controls + version line at the very bottom -->
+        <!-- Theme control -->
         <div class="mt-2 flex items-center justify-between border-t border-sidebar-border/70 px-1 pt-2">
-            <span class="font-mono text-[0.6rem] tracking-widest text-muted-foreground uppercase">v2026.10</span>
+            <span class="font-mono text-[0.6rem] tracking-widest text-muted-foreground uppercase">theme</span>
             <ThemeToggle />
         </div>
     </div>
@@ -200,7 +208,7 @@
 </div>
 
 <!-- Desktop fixed sidebar -->
-<aside class="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+<aside class="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-black/5 bg-sidebar md:flex dark:border-white/5">
     {@render sidebar()}
 </aside>
 
@@ -212,7 +220,7 @@
         aria-label="Close menu"
         onclick={() => (mobileMenuOpen = false)}
     ></button>
-    <aside class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-sidebar-border bg-sidebar shadow-glow md:hidden">
+    <aside class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-black/5 bg-sidebar shadow-glow md:hidden dark:border-white/5">
         <button
             type="button"
             class="absolute top-4 right-3 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"

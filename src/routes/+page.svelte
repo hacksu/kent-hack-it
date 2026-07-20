@@ -2,12 +2,7 @@
     import { onMount } from "svelte";
     import { Button } from "$lib/components/ui/button";
     import * as Accordion from "$lib/components/ui/accordion";
-    import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right";
     import ArrowRight from "@lucide/svelte/icons/arrow-right";
-    import CalendarDays from "@lucide/svelte/icons/calendar-days";
-    import ShoppingBag from "@lucide/svelte/icons/shopping-bag";
-    import MessageSquare from "@lucide/svelte/icons/message-square";
-    import Wrench from "@lucide/svelte/icons/wrench";
 
     const { data } = $props();
 
@@ -61,37 +56,6 @@
 
     const linkClass =
         "font-medium text-brand-blue! underline underline-offset-4 decoration-brand-blue/40 hover:text-brand-green! hover:decoration-brand-green/60";
-
-    const quickLinks = [
-        {
-            href: "https://khe.io",
-            title: "KHE Hackathon",
-            description: "Our yearly HacKSU hackathon. Build something in a weekend.",
-            icon: CalendarDays,
-            external: true
-        },
-        {
-            href: "https://www.redbubble.com/people/KentStateCS/shop",
-            title: "Merch Store",
-            description: "Grab HacKSU gear and help support the club.",
-            icon: ShoppingBag,
-            external: true
-        },
-        {
-            href: "/discord",
-            title: "Community",
-            description: "Join the Discord for tips, teammates, and announcements.",
-            icon: MessageSquare,
-            external: true
-        },
-        {
-            href: "/tools",
-            title: "Tools",
-            description: "Handy utilities for working through CTF challenges.",
-            icon: Wrench,
-            external: true
-        }
-    ];
 </script>
 
 {#snippet eyebrow(label: string)}
@@ -130,7 +94,7 @@
             </div>
 
             <h1
-                class="bg-gradient-to-r from-[#61cf5a] to-[#4a9eff] bg-clip-text font-mono text-4xl font-extrabold tracking-tight text-transparent drop-shadow-[0_0_28px_rgba(97,207,90,0.2)] sm:text-6xl"
+                class="w-fit bg-gradient-to-r from-[#7bf078] via-[#61cf5a] to-[#5cb6ff] bg-clip-text font-mono text-[2rem] font-extrabold tracking-tight whitespace-nowrap text-transparent! drop-shadow-[0_1px_18px_rgba(92,182,255,0.35)] sm:text-5xl md:text-6xl"
             >
                 KENT HACK IT
             </h1>
@@ -171,40 +135,11 @@
         </div>
     </section>
 
-    <!-- Quick links: action cards -->
-    <section class="mt-12">
-        {@render eyebrow("Quick links")}
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {#each quickLinks as link (link.href)}
-                {@const Icon = link.icon}
-                <a
-                    href={link.href}
-                    target={link.external ? "_blank" : undefined}
-                    rel={link.external ? "noopener noreferrer" : undefined}
-                    class="group relative flex flex-col gap-3 rounded-xl border border-border bg-card p-5 no-underline! transition-colors hover:border-brand-blue/50 hover:bg-accent/40 hover:no-underline!"
-                >
-                    <div
-                        class="flex h-11 w-11 items-center justify-center rounded-lg border border-brand-blue/25 bg-gradient-to-br from-brand-green/15 to-brand-blue/15 text-brand-blue transition-colors group-hover:text-brand-green"
-                    >
-                        <Icon class="h-5 w-5" />
-                    </div>
-                    <ArrowUpRight
-                        class="absolute top-4 right-4 h-4 w-4 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-brand-green"
-                    />
-                    <div>
-                        <p class="font-semibold text-foreground!">{link.title}</p>
-                        <p class="mt-1 text-sm text-muted-foreground">{link.description}</p>
-                    </div>
-                </a>
-            {/each}
-        </div>
-    </section>
-
     <!-- About Section -->
-    <section class="mt-14">
+    <section class="mt-12">
         {@render eyebrow("About KHI")}
         <div class="rounded-2xl border border-border bg-card p-6 sm:p-8">
-            <div class="max-w-3xl space-y-4 text-base leading-relaxed">
+            <div class="max-w-3xl space-y-4 text-base leading-relaxed text-muted-foreground">
                 <p>
                     KHI is a <a href="https://hacksu.com/" class={linkClass}>HacKSU</a> sponsored Capture The Flag (CTF)
                     competition, where Computer Science and Cyber Security enthusiasts can connect with others and
@@ -218,6 +153,11 @@
                 <p class="text-brand-green">
                     Our {eventYear} event will take place in {eventMonthLabel} October. More details to come soon.
                 </p>
+                <p>
+                    Interested in other HacKSU events? Check out our yearly hackathon
+                    <a href="https://khe.io" class={linkClass}>KHE</a>. Want to support HacKSU? Grab something from our
+                    <a href="https://www.redbubble.com/people/KentStateCS/shop" class={linkClass}>Merch Store</a>.
+                </p>
             </div>
         </div>
     </section>
@@ -225,7 +165,7 @@
     <!-- FAQ Section -->
     <section class="mt-14 mb-8">
         {@render eyebrow("FAQ")}
-        <div class="rounded-2xl border border-border bg-card px-6 py-2 sm:px-8">
+        <div class="rounded-2xl border border-border bg-card px-6 py-2 text-card-foreground sm:px-8">
             <Accordion.Root type="single" class="w-full">
                 <Accordion.Item value="faq-1">
                     <Accordion.Trigger>What is a Capture The Flag (CTF) competition?</Accordion.Trigger>
