@@ -26,3 +26,9 @@ RUN if command -v apk >/dev/null 2>&1; then \
 
 RUN CHALLENGE_HOME="$(pwd)" && \
     sed -i "s#^\(ctf-player:[^:]*:[^:]*:[^:]*:[^:]*:\)[^:]*#\1${CHALLENGE_HOME}#" /etc/passwd
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 22
+ENTRYPOINT ["/entrypoint.sh"]
