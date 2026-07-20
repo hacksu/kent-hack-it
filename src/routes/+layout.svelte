@@ -6,13 +6,11 @@
     import { goto } from "$app/navigation"
     import { page } from "$app/state";
 
-    import { ModeWatcher } from 'mode-watcher';
-    import ThemeToggle from '$lib/components/theme-toggle.svelte';
     import { Button } from '$lib/components/ui/button';
     import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
     import Menu from '@lucide/svelte/icons/menu';
     import X from '@lucide/svelte/icons/x';
-    import ChevronDown from '@lucide/svelte/icons/chevron-down';
+    import ChevronUp from '@lucide/svelte/icons/chevron-up';
     import LogOut from '@lucide/svelte/icons/log-out';
     import Home from '@lucide/svelte/icons/home';
     import Shield from '@lucide/svelte/icons/shield';
@@ -72,7 +70,7 @@
     const linkIdle =
         "text-muted-foreground! hover:bg-sidebar-accent/70 hover:text-foreground! hover:no-underline!";
     const linkActive =
-        "bg-gradient-to-r from-brand-green/15 to-brand-blue/10 text-foreground! hover:no-underline! before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-gradient-to-b before:from-brand-green before:to-brand-blue";
+        "bg-gradient-to-r from-brand-green/15 to-brand-blue/10 text-foreground! hover:no-underline!";
 
 	let { data, children } = $props();
 </script>
@@ -109,11 +107,11 @@
         {/each}
     </nav>
 
-    <!-- Footer: profile block pinned to the bottom (mirrors the reference) -->
-    <div class="mt-auto border-t border-sidebar-border px-3 py-3">
+    <!-- Footer: profile + controls, borderless and integrated -->
+    <div class="mt-auto border-t border-sidebar-border p-3">
         {#if $session.data?.user}
             {@const user = $session.data.user}
-            <div class="flex items-center gap-3 rounded-lg px-2 py-2">
+            <div class="flex items-center gap-3">
                 {#if user.image}
                     <img
                         src={user.image}
@@ -134,27 +132,34 @@
                         {(user as { role?: string }).role ?? "member"}
                     </p>
                 </div>
-                <DropdownMenu.Root>
-                    <DropdownMenu.Trigger>
-                        {#snippet child({ props })}
-                            <Button
-                                {...props}
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Account menu"
-                                class="shrink-0 text-muted-foreground! hover:text-foreground!"
-                            >
-                                <ChevronDown class="h-4 w-4 transition-transform group-aria-expanded/button:rotate-180" />
-                            </Button>
-                        {/snippet}
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Content align="end" side="top" class="w-[12rem]">
-                        <DropdownMenu.Item onclick={handleLogout}>
-                            <LogOut class="h-4 w-4" />
-                            Logout
-                        </DropdownMenu.Item>
-                    </DropdownMenu.Content>
-                </DropdownMenu.Root>
+                <div class="flex items-center gap-1">
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger>
+                            {#snippet child({ props })}
+                                <Button
+                                    {...props}
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Account menu"
+                                    class="size-8 shrink-0 rounded-lg bg-[color-mix(in_oklch,var(--brand-green)_16%,var(--card))] text-foreground! hover:bg-[color-mix(in_oklch,var(--brand-green)_28%,var(--card))] hover:text-foreground!"
+                                >
+                                    <ChevronUp class="h-4 w-4" />
+                                </Button>
+                            {/snippet}
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Content
+                            align="end"
+                            side="top"
+                            sideOffset={8}
+                            class="w-[13.5rem] border border-white/10 bg-card text-foreground shadow-xl"
+                        >
+                            <DropdownMenu.Item onclick={handleLogout} class="gap-2 px-2 py-2 text-sm">
+                                <LogOut class="h-4 w-4 text-brand-green" />
+                                Logout
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Root>
+                </div>
             </div>
         {:else}
             <a
@@ -166,12 +171,6 @@
                 <span>Login</span>
             </a>
         {/if}
-
-        <!-- Theme control -->
-        <div class="mt-2 flex items-center justify-between border-t border-sidebar-border/70 px-1 pt-2">
-            <span class="font-mono text-[0.6rem] tracking-widest text-muted-foreground uppercase">theme</span>
-            <ThemeToggle />
-        </div>
     </div>
 {/snippet}
 
@@ -187,8 +186,6 @@
 
     <title>Kent Hack It</title>
 </svelte:head>
-
-<ModeWatcher defaultMode="dark" />
 
 <!-- Mobile top bar -->
 <div class="sticky top-0 z-30 flex items-center gap-3 border-b border-border/60 bg-background/90 px-4 py-2.5 backdrop-blur md:hidden">
@@ -234,9 +231,7 @@
 {/if}
 
 <!-- Main content -->
-<div
-    class="flex min-h-screen flex-col bg-background bg-[radial-gradient(120%_80%_at_50%_-10%,color-mix(in_oklch,var(--brand-blue)_9%,transparent),transparent_55%)] md:pl-60"
->
+<div class="app-bg flex min-h-screen flex-col md:pl-60">
     {#if data.error}
         <div
             class="mx-4 mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-sm text-destructive"

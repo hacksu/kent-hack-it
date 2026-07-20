@@ -120,9 +120,9 @@
 	/* Dark-first: deep navy / blue-black, tuned to the reference dashboard */
 	--background: oklch(0.155 0.032 262);
 	--foreground: oklch(0.95 0.012 230);
-	--card: oklch(0.205 0.038 262);
+	--card: #16223f;
 	--card-foreground: oklch(0.95 0.012 230);
-	--popover: oklch(0.2 0.038 262);
+	--popover: #131d36;
 	--popover-foreground: oklch(0.95 0.012 230);
 	/* Neon brand accents */
 	--brand-green: #61cf5a;
@@ -162,4 +162,23 @@
    overrides the legacy `body { background-color: #f8f9fa }` from index.css. */
 html {
 	background-color: var(--background);
+}
+
+/* Matrix-esque ambient backdrop: neon-green + electric-blue glows over deep
+   navy, with faint vertical "code rain" streaks. Viewport-fixed so it stays
+   ambient on long pages. */
+.app-bg {
+	background-color: var(--background);
+	background-image:
+		radial-gradient(48% 42% at 22% -4%, color-mix(in oklch, var(--brand-green) 20%, transparent), transparent 62%),
+		radial-gradient(52% 46% at 92% 6%, color-mix(in oklch, var(--brand-blue) 22%, transparent), transparent 62%),
+		radial-gradient(60% 55% at 55% 118%, color-mix(in oklch, var(--brand-green) 12%, transparent), transparent 58%),
+		repeating-linear-gradient(
+			90deg,
+			transparent 0,
+			transparent 46px,
+			color-mix(in oklch, var(--brand-green) 6%, transparent) 47px,
+			transparent 48px
+		);
+	background-attachment: fixed;
 }
