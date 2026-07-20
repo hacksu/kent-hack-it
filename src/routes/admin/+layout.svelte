@@ -2,10 +2,6 @@
 	let { children } = $props();
 </script>
 
-<!-- only applied to /admin pages -->
-<svelte:head>
-    <link rel="stylesheet" href="/css/overlay.css">
-</svelte:head>
-
-<!-- inherits root layout -->
+<!-- inherits root layout; overlay.css / edit-overlay markup replaced by Dialog,
+     view-feedback/alert markup replaced by Tailwind blocks (see d.*.svelte panels) -->
 {@render children()}

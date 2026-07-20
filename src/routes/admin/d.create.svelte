@@ -22,12 +22,12 @@
 
 <div id="feedback-display">
     {#if result?.success}
-        <div class="view-feedback">
-            <div class="view-alert">{result.message}</div>
+        <div class="mx-auto max-w-[37.5rem] rounded-lg border border-brand-green/40 bg-brand-green/10 px-3 py-2.5 text-center text-sm text-foreground">
+            {result.message}
         </div>
     {:else if result?.error}
-        <div class="view-feedback">
-            <div class="view-alert view-err">{result.error}</div>
+        <div class="mx-auto max-w-[37.5rem] rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-center text-sm text-destructive">
+            {result.error}
         </div>
     {/if}
 </div>
