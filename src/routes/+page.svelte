@@ -1,5 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { Button } from "$lib/components/ui/button";
+    import * as Accordion from "$lib/components/ui/accordion";
 
     const { data } = $props();
 
@@ -50,157 +52,120 @@
     const currentMonth = now.getMonth();
     const eventYear = currentMonth < 9 ? currentYear : currentYear + 1;
     const eventMonthLabel = currentMonth < 9 ? "this" : "next";
+
+    const linkClass = "text-primary underline underline-offset-4 hover:text-primary/80";
 </script>
 
-<main>
-  <header class="d-flex flex-column" style="min-height: 100vh; padding: 1rem 0;">
+<main class="flex min-h-screen flex-col">
     <!-- Hero Section -->
-    <div class="text-center mb-auto">
-      <h1 class="display-4 fw-bold mb-3">KENT HACK IT</h1>
-      <div class="mb-4">
-        <a href="/auth/login" class="btn btn-primary btn-lg px-4 py-4" style="font-size: clamp(1.3rem, 4vw, 2rem); font-weight: bold; min-width: 250px;">
-          Register Here
-        </a>
-      </div>
-      <div class="text-center mb-3">
-        <h4 class="mb-2" style="color: #b7b7b7ff;">{countdownLabel}</h4>
-        {#if showTimer}
-            <div class="countdown-timer p-2 rounded" style="background-color: #f8f9fa; border: 2px solid #007bff; display: inline-block; font-family: monospace; font-size: clamp(1.2rem, 3vw, 1.8rem); font-weight: bold; color: #007bff;">
-                {timeLeft}
-            </div>
-        {/if}
-      </div>
-    </div>
+    <section class="flex flex-1 flex-col items-center justify-center gap-7 px-4 py-20 text-center sm:py-28">
+        <h1
+            class="bg-gradient-to-r from-[#61cf5a] to-[#4a9eff] bg-clip-text text-5xl font-extrabold tracking-tight text-transparent sm:text-6xl md:text-7xl"
+        >
+            KENT HACK IT
+        </h1>
 
-    <!-- Main Content Container -->
-    <div class="container-fluid px-4 flex-grow-1 d-flex flex-column">
-      <div class="row justify-content-center h-100">
-        <div class="col-xl-10 col-lg-11 d-flex flex-column">
+        <Button href="/auth/login" size="lg" class="h-auto min-w-[220px] px-8 py-3.5 text-lg font-semibold sm:text-xl">
+            Register Here
+        </Button>
 
-          <!-- About Section -->
-          <div class="card p-3 p-md-4 shadow-sm mb-3 mb-md-4 flex-shrink-0">
-            <div class="card-body">
-              <h3 class="text-center mb-3 mb-md-4" style="color: #007bff;">About KHI</h3>
-              <p class="text-center mb-3 mb-md-4" style="font-size: clamp(1rem, 2.5vw, 1.2rem); line-height: 1.6;">
-                KHI is a <a href="https://hacksu.com/" class="link-primary">HacKSU</a> sponsored 
-                Capture The Flag (CTF) competition, where Computer Science and Cyber Security enthusiasts can 
-                connect with others and compete together to tackle challenges built by the HacKSU club!
-                <br><br>
-                Whether you're a beginner looking to learn or an experienced hacker aiming to test your skills,
-                KHI offers a variety of challenges that cater to all skill levels. Join us for an exciting week 
-                of problem-solving, teamwork, and fun!
-                <br><br>
-                Our {eventYear} Event will take place in {eventMonthLabel} October, more details to come soon!
-              </p>
-              <div class="row mt-3 mt-md-4">
-                <div class="col-md-6 mb-2 mb-md-3">
-                  <p class="mb-0" style="font-size: clamp(0.9rem, 2vw, 1.1rem);">
-                    Interested in other HacKSU events? Check out our yearly hackathon 
-                    <a href="https://khe.io" class="link-primary"> KHE</a>.
-                  </p>
+        <div class="mt-2 flex flex-col items-center gap-2.5">
+            <p class="text-sm font-medium tracking-wide text-muted-foreground uppercase">{countdownLabel}</p>
+            {#if showTimer}
+                <div
+                    class="rounded-md border-2 border-accent bg-accent/5 px-6 py-3 font-mono text-2xl font-bold text-foreground sm:text-3xl dark:bg-accent/10"
+                >
+                    {timeLeft}
                 </div>
-                <div class="col-md-6 mb-2 mb-md-3">
-                  <p class="mb-0" style="font-size: clamp(0.9rem, 2vw, 1.1rem);">
-                    Want to help support HacKSU? Check out our 
-                    <a href="https://www.redbubble.com/people/KentStateCS/shop" class="link-primary"> Merch Store</a>!
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- FAQ Section -->
-          <div class="card p-3 p-md-4 shadow-sm flex-grow-1 d-flex flex-column">
-            <div class="card-body d-flex flex-column">
-              <h3 class="text-center mb-3 mb-md-4">Frequently Asked Questions</h3>
-
-              <div class="accordion flex-grow-1" id="faqAccordion">
-
-                <!-- FAQ 1 -->
-                <div class="accordion-item mb-2 mb-md-3">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" style="font-size: clamp(0.95rem, 2.2vw, 1.1rem);">
-                      What is a Capture The Flag (CTF) competition?
-                    </button>
-                  </h2>
-                  <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                    <div class="accordion-body" style="font-size: clamp(0.85rem, 2vw, 1rem); line-height: 1.6;">
-                      CTF competitions are events where participants solve security-related challenges to find "flags" and earn points. 
-                      These challenges test various cybersecurity skills including cryptography, web security, forensics, and reverse engineering.
-                    </div>
-                  </div>
-                </div>
-
-                <!-- FAQ 2 -->
-                <div class="accordion-item mb-2 mb-md-3">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" style="font-size: clamp(0.95rem, 2.2vw, 1.1rem);">
-                      Do I need to be an expert to participate?
-                    </button>
-                  </h2>
-                  <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                    <div class="accordion-body" style="font-size: clamp(0.85rem, 2vw, 1rem); line-height: 1.6;">
-                      Not at all! CTFs are designed for all skill levels, and we encourage everyone to join and learn. 
-                      We have challenges ranging from beginner-friendly to advanced levels.
-                    </div>
-                  </div>
-                </div>
-
-                <!-- FAQ 3 -->
-                <div class="accordion-item mb-2 mb-md-3">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" style="font-size: clamp(0.95rem, 2.2vw, 1.1rem);">
-                      How can I prepare for the competition?
-                    </button>
-                  </h2>
-                  <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                    <div class="accordion-body" style="font-size: clamp(0.85rem, 2vw, 1rem); line-height: 1.6;">
-                      We recommend practicing with online CTF platforms like OverTheWire, PicoCTF, or HackTheBox. 
-                      Review common security topics and join our Discord for tips and discussions!<br><br>
-                      <strong>Some Challenges might use Kali Linux for completion!</strong> Check out our 
-                      <a href="/kali-setup-guide" class="link-primary">Kali Linux VM Setup Guide</a>.
-                    </div>
-                  </div>
-                </div>
-
-                <!-- FAQ 4 -->
-                <div class="accordion-item mb-2 mb-md-3">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" style="font-size: clamp(0.95rem, 2.2vw, 1.1rem);">
-                      How many people can be on a team?
-                    </button>
-                  </h2>
-                  <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                    <div class="accordion-body" style="font-size: clamp(0.85rem, 2vw, 1rem); line-height: 1.6;">
-                      Teams can have up to 4 members. We encourage collaboration and teamwork! 
-                      You can also participate individually if you prefer.
-                    </div>
-                  </div>
-                </div>
-
-                <!-- FAQ 5 -->
-                <div class="accordion-item mb-2 mb-md-3">
-                  <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" style="font-size: clamp(0.95rem, 2.2vw, 1.1rem);">
-                      How do I create or join a team on your site?
-                    </button>
-                  </h2>
-                  <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                    <div class="accordion-body" style="font-size: clamp(0.85rem, 2vw, 1rem); line-height: 1.6;">
-                      After registering and logging in, navigate to the <strong>Profile</strong> section, then click <strong>Go to Team Page</strong>. 
-                      There you can create a new team or join an existing team. Team leaders approve requests. Teams limited to 4 members maximum.
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
-
+            {/if}
         </div>
-      </div>
-    </div>
+    </section>
 
-    <div class="mb-auto"></div>
-  </header>
+    <!-- Main Content -->
+    <div class="mx-auto flex w-full max-w-4xl flex-col gap-16 px-4 pb-24 md:gap-20">
+        <!-- About Section -->
+        <section>
+            <h2 class="mb-6 text-center text-2xl font-bold text-primary sm:text-3xl">About KHI</h2>
+
+            <div class="mx-auto max-w-3xl space-y-4 text-center text-base leading-relaxed sm:text-lg">
+                <p>
+                    KHI is a <a href="https://hacksu.com/" class={linkClass}>HacKSU</a> sponsored Capture The Flag (CTF)
+                    competition, where Computer Science and Cyber Security enthusiasts can connect with others and
+                    compete together to tackle challenges built by the HacKSU club!
+                </p>
+                <p>
+                    Whether you're a beginner looking to learn or an experienced hacker aiming to test your skills,
+                    KHI offers a variety of challenges that cater to all skill levels. Join us for an exciting week
+                    of problem-solving, teamwork, and fun!
+                </p>
+                <p>Our {eventYear} Event will take place in {eventMonthLabel} October, more details to come soon!</p>
+            </div>
+
+            <div class="mt-10 grid gap-6 border-t border-border pt-8 md:grid-cols-2">
+                <p class="text-center text-sm sm:text-base">
+                    Interested in other HacKSU events? Check out our yearly hackathon
+                    <a href="https://khe.io" class={linkClass}>KHE</a>.
+                </p>
+                <p class="text-center text-sm sm:text-base">
+                    Want to help support HacKSU? Check out our
+                    <a href="https://www.redbubble.com/people/KentStateCS/shop" class={linkClass}>Merch Store</a>!
+                </p>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="border-t border-border pt-14 md:pt-20">
+            <h2 class="mb-6 text-center text-2xl font-bold sm:text-3xl">Frequently Asked Questions</h2>
+
+            <Accordion.Root type="single" class="w-full">
+                <Accordion.Item value="faq-1">
+                    <Accordion.Trigger>What is a Capture The Flag (CTF) competition?</Accordion.Trigger>
+                    <Accordion.Content>
+                        CTF competitions are events where participants solve security-related challenges to find
+                        "flags" and earn points. These challenges test various cybersecurity skills including
+                        cryptography, web security, forensics, and reverse engineering.
+                    </Accordion.Content>
+                </Accordion.Item>
+
+                <Accordion.Item value="faq-2">
+                    <Accordion.Trigger>Do I need to be an expert to participate?</Accordion.Trigger>
+                    <Accordion.Content>
+                        Not at all! CTFs are designed for all skill levels, and we encourage everyone to join and
+                        learn. We have challenges ranging from beginner-friendly to advanced levels.
+                    </Accordion.Content>
+                </Accordion.Item>
+
+                <Accordion.Item value="faq-3">
+                    <Accordion.Trigger>How can I prepare for the competition?</Accordion.Trigger>
+                    <Accordion.Content>
+                        <p>
+                            We recommend practicing with online CTF platforms like OverTheWire, PicoCTF, or
+                            HackTheBox. Review common security topics and join our Discord for tips and discussions!
+                        </p>
+                        <p>
+                            <strong>Some Challenges might use Kali Linux for completion!</strong> Check out our
+                            <a href="/kali-setup-guide">Kali Linux VM Setup Guide</a>.
+                        </p>
+                    </Accordion.Content>
+                </Accordion.Item>
+
+                <Accordion.Item value="faq-4">
+                    <Accordion.Trigger>How many people can be on a team?</Accordion.Trigger>
+                    <Accordion.Content>
+                        Teams can have up to 4 members. We encourage collaboration and teamwork! You can also
+                        participate individually if you prefer.
+                    </Accordion.Content>
+                </Accordion.Item>
+
+                <Accordion.Item value="faq-5">
+                    <Accordion.Trigger>How do I create or join a team on your site?</Accordion.Trigger>
+                    <Accordion.Content>
+                        After registering and logging in, navigate to the <strong>Profile</strong> section, then
+                        click <strong>Go to Team Page</strong>. There you can create a new team or join an existing
+                        team. Team leaders approve requests. Teams limited to 4 members maximum.
+                    </Accordion.Content>
+                </Accordion.Item>
+            </Accordion.Root>
+        </section>
+    </div>
 </main>

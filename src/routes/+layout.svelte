@@ -126,7 +126,7 @@
                         {#snippet child({ props })}
                             <Button {...props} variant="ghost" class="gap-1.5">
                                 {$session.data?.user.name}
-                                <ChevronDown class="h-4 w-4 opacity-60 transition-transform data-[state=open]:rotate-180" />
+                                <ChevronDown class="h-4 w-4 opacity-60 transition-transform group-data-[state=open]/button:rotate-180" />
                             </Button>
                         {/snippet}
                     </DropdownMenu.Trigger>
