@@ -13,3 +13,13 @@ RUN if command -v apk >/dev/null 2>&1; then \
     fi && \
     mkdir -p /run/sshd && \
     ssh-keygen -A
+
+RUN if command -v apk >/dev/null 2>&1; then \
+        SHELL_BIN=/bin/sh; [ -x /bin/bash ] && SHELL_BIN=/bin/bash; \
+        addgroup -g 2000 ctf-player && \
+        adduser -D -u 2000 -G ctf-player -s "$SHELL_BIN" ctf-player; \
+    else \
+        SHELL_BIN=/bin/sh; [ -x /bin/bash ] && SHELL_BIN=/bin/bash; \
+        groupadd -g 2000 ctf-player && \
+        useradd -m -u 2000 -g ctf-player -s "$SHELL_BIN" ctf-player; \
+    fi
