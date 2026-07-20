@@ -51,6 +51,23 @@ services:
       # handler does not need to be on the same network as the database
       - handler_net
 
+  migrate:
+    container_name: migrate_khi
+    build:
+      context: .
+      dockerfile: ./migrate/Dockerfile
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: ${PG_ADMIN_USER}
+      PG_PASSWORD: ${PG_ADMIN_PASSWORD}
+      PG_DATABASE: ${PG_DATABASE}
+    networks:
+      - app_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   app:
     container_name: web_khi
     restart: unless-stopped
