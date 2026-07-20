@@ -51,6 +51,18 @@ services:
       # handler does not need to be on the same network as the database
       - handler_net
 
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: docker_socket_proxy_khi
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      POST: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - docker_proxy_net
+
   migrate:
     container_name: migrate_khi
     build:
