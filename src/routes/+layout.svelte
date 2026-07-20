@@ -68,11 +68,11 @@
     // Link styling. `!` modifiers defeat the legacy global `a { color: ... !important }`
     // and `a:hover { text-decoration: underline !important }` rules from static/css/index.css.
     const linkBase =
-        "group/nav flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium no-underline! transition-colors";
+        "group/nav relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium no-underline! transition-colors";
     const linkIdle =
-        "text-muted-foreground! hover:bg-sidebar-accent hover:text-foreground! hover:no-underline!";
+        "text-muted-foreground! hover:bg-sidebar-accent/70 hover:text-foreground! hover:no-underline!";
     const linkActive =
-        "bg-sidebar-accent text-brand-green! hover:no-underline! shadow-[inset_2px_0_0_0] shadow-brand-green";
+        "bg-gradient-to-r from-brand-green/15 to-brand-blue/10 text-foreground! hover:no-underline! before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-gradient-to-b before:from-brand-green before:to-brand-blue";
 
 	let { data, children } = $props();
 </script>
@@ -109,38 +109,59 @@
         {/each}
     </nav>
 
-    <!-- Footer: theme + account -->
-    <div class="space-y-2 border-t border-sidebar-border px-3 py-4">
+    <!-- Footer: profile block pinned to the bottom (mirrors the reference) -->
+    <div class="mt-auto border-t border-sidebar-border px-3 py-3">
         {#if $session.data?.user}
-            <DropdownMenu.Root>
-                <DropdownMenu.Trigger>
-                    {#snippet child({ props })}
-                        <Button
-                            {...props}
-                            variant="ghost"
-                            class="w-full justify-between px-3 text-foreground! hover:no-underline!"
-                        >
-                            <span class="truncate font-mono text-sm">{$session.data?.user.name}</span>
-                            <ChevronDown class="h-4 w-4 opacity-60 transition-transform group-data-[state=open]/button:rotate-180" />
-                        </Button>
-                    {/snippet}
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content align="start" class="w-[13rem]">
-                    <DropdownMenu.Item onclick={handleLogout}>
-                        <LogOut class="h-4 w-4" />
-                        Logout
-                    </DropdownMenu.Item>
-                </DropdownMenu.Content>
-            </DropdownMenu.Root>
+            {@const user = $session.data.user}
+            <div class="flex items-center gap-3 rounded-lg px-2 py-2">
+                <div
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-blue font-mono text-sm font-bold text-[#08131f] select-none"
+                    aria-hidden="true"
+                >
+                    {(user.name ?? "?").trim().charAt(0).toUpperCase()}
+                </div>
+                <div class="min-w-0 flex-1 leading-tight">
+                    <p class="truncate text-sm font-semibold text-foreground">{user.name}</p>
+                    <p class="font-mono text-[0.6rem] tracking-widest text-brand-blue uppercase">
+                        {(user as { role?: string }).role ?? "member"}
+                    </p>
+                </div>
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger>
+                        {#snippet child({ props })}
+                            <Button
+                                {...props}
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Account menu"
+                                class="shrink-0 text-muted-foreground! hover:text-foreground!"
+                            >
+                                <ChevronDown class="h-4 w-4 transition-transform group-aria-expanded/button:rotate-180" />
+                            </Button>
+                        {/snippet}
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Content align="end" side="top" class="w-[12rem]">
+                        <DropdownMenu.Item onclick={handleLogout}>
+                            <LogOut class="h-4 w-4" />
+                            Logout
+                        </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                </DropdownMenu.Root>
+            </div>
         {:else}
-            <a href="/auth/login" class="{linkBase} {linkIdle} justify-center bg-brand-green/10 text-brand-green! hover:bg-brand-green/20 hover:text-brand-green!" onclick={() => (mobileMenuOpen = false)}>
+            <a
+                href="/auth/login"
+                class="{linkBase} justify-center bg-gradient-to-r from-brand-green to-brand-blue font-semibold text-[#08131f]! shadow-glow hover:no-underline! hover:brightness-105"
+                onclick={() => (mobileMenuOpen = false)}
+            >
                 <LogIn class="h-4 w-4" />
                 <span>Login</span>
             </a>
         {/if}
 
-        <div class="flex items-center justify-between px-1">
-            <span class="font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">theme</span>
+        <!-- Controls + version line at the very bottom -->
+        <div class="mt-2 flex items-center justify-between border-t border-sidebar-border/70 px-1 pt-2">
+            <span class="font-mono text-[0.6rem] tracking-widest text-muted-foreground uppercase">v2026.10</span>
             <ThemeToggle />
         </div>
     </div>
@@ -205,7 +226,9 @@
 {/if}
 
 <!-- Main content -->
-<div class="flex min-h-screen flex-col md:pl-60">
+<div
+    class="flex min-h-screen flex-col bg-background bg-[radial-gradient(120%_80%_at_50%_-10%,color-mix(in_oklch,var(--brand-blue)_9%,transparent),transparent_55%)] md:pl-60"
+>
     {#if data.error}
         <div
             class="mx-4 mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-sm text-destructive"

@@ -2,6 +2,12 @@
     import { onMount } from "svelte";
     import { Button } from "$lib/components/ui/button";
     import * as Accordion from "$lib/components/ui/accordion";
+    import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right";
+    import ArrowRight from "@lucide/svelte/icons/arrow-right";
+    import CalendarDays from "@lucide/svelte/icons/calendar-days";
+    import ShoppingBag from "@lucide/svelte/icons/shopping-bag";
+    import MessageSquare from "@lucide/svelte/icons/message-square";
+    import Wrench from "@lucide/svelte/icons/wrench";
 
     const { data } = $props();
 
@@ -55,68 +61,150 @@
 
     const linkClass =
         "font-medium text-brand-blue! underline underline-offset-4 decoration-brand-blue/40 hover:text-brand-green! hover:decoration-brand-green/60";
+
+    const quickLinks = [
+        {
+            href: "https://khe.io",
+            title: "KHE Hackathon",
+            description: "Our yearly HacKSU hackathon. Build something in a weekend.",
+            icon: CalendarDays,
+            external: true
+        },
+        {
+            href: "https://www.redbubble.com/people/KentStateCS/shop",
+            title: "Merch Store",
+            description: "Grab HacKSU gear and help support the club.",
+            icon: ShoppingBag,
+            external: true
+        },
+        {
+            href: "/discord",
+            title: "Community",
+            description: "Join the Discord for tips, teammates, and announcements.",
+            icon: MessageSquare,
+            external: true
+        },
+        {
+            href: "/tools",
+            title: "Tools",
+            description: "Handy utilities for working through CTF challenges.",
+            icon: Wrench,
+            external: true
+        }
+    ];
 </script>
 
-<main class="flex min-h-screen flex-col">
-    <!-- Hero Section -->
-    <section class="relative flex flex-1 flex-col items-center justify-center gap-6 overflow-hidden px-4 py-20 text-center sm:py-28">
-        <!-- Ambient terminal backdrop: faint grid + brand glow -->
+{#snippet eyebrow(label: string)}
+    <div class="mb-4 flex items-center gap-2.5">
+        <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
+        <span class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">{label}</span>
+    </div>
+{/snippet}
+
+<main class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 md:py-10">
+    <!-- Featured status panel (hero) -->
+    <section
+        class="relative overflow-hidden rounded-2xl border border-brand-blue/25 bg-gradient-to-br from-brand-green/12 via-card to-brand-blue/14 p-6 shadow-glow-blue sm:p-9"
+    >
+        <!-- Ambient brand glow + grid, kept subtle behind the content -->
         <div
             aria-hidden="true"
-            class="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,color-mix(in_oklch,var(--brand-green)_14%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklch,var(--brand-green)_14%,transparent)_1px,transparent_1px)] bg-[size:44px_44px] opacity-30 [mask-image:radial-gradient(ellipse_60%_60%_at_50%_40%,black,transparent)]"
+            class="pointer-events-none absolute -top-24 -right-16 h-80 w-80 rounded-full bg-brand-green/20 blur-[110px]"
         ></div>
         <div
             aria-hidden="true"
-            class="pointer-events-none absolute top-1/3 left-1/2 -z-10 h-72 w-[36rem] max-w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-green/15 blur-[100px]"
+            class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,color-mix(in_oklch,var(--brand-blue)_10%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklch,var(--brand-blue)_10%,transparent)_1px,transparent_1px)] bg-[size:46px_46px] opacity-40 [mask-image:radial-gradient(ellipse_70%_90%_at_15%_0%,black,transparent)]"
         ></div>
 
-        <!-- Terminal prompt eyebrow -->
-        <p class="font-mono text-sm text-muted-foreground">
-            <span class="text-brand-green">khi@hacksu</span><span class="text-muted-foreground">:</span><span class="text-brand-blue">~</span>
-            <span class="text-muted-foreground">$ ./register.sh --ctf {eventYear}</span>
-        </p>
-
-        <h1
-            class="bg-gradient-to-r from-[#61cf5a] to-[#4a9eff] bg-clip-text font-mono text-5xl font-extrabold tracking-tight text-transparent drop-shadow-[0_0_28px_rgba(97,207,90,0.25)] sm:text-6xl md:text-7xl"
-        >
-            KENT HACK IT
-        </h1>
-
-        <p class="max-w-md text-base text-muted-foreground">
-            A HacKSU Capture The Flag competition. Break in, capture flags, climb the board.
-        </p>
-
-        <Button
-            href="/auth/login"
-            size="lg"
-            class="mt-1 h-auto min-w-[220px] px-8 py-3.5 font-mono text-lg font-semibold text-primary-foreground! no-underline! shadow-glow hover:no-underline! sm:text-xl"
-        >
-            Register Here
-        </Button>
-
-        <div class="mt-4 flex flex-col items-center gap-2.5">
-            <p class="font-mono text-xs tracking-widest text-muted-foreground uppercase">// {countdownLabel}</p>
-            {#if showTimer}
-                <div
-                    class="inline-flex items-center gap-3 rounded-lg border border-brand-green/30 bg-[#0a0e14] px-6 py-3.5 shadow-glow"
+        <div class="relative max-w-2xl">
+            <div class="mb-4 flex flex-wrap items-center gap-3">
+                <span class="font-mono text-xs font-medium tracking-[0.2em] text-brand-blue uppercase">
+                    HacKSU CTF · {eventYear}
+                </span>
+                <span
+                    class="inline-flex items-center gap-1.5 rounded-full border border-brand-green/40 bg-brand-green/10 px-2.5 py-0.5 font-mono text-[0.65rem] font-medium tracking-wide text-brand-green uppercase"
                 >
-                    <span class="font-mono text-lg text-brand-blue select-none">$</span>
-                    <span class="font-mono text-2xl font-bold tracking-wide text-brand-green tabular-nums sm:text-3xl">
-                        {timeLeft}
+                    <span class="h-1.5 w-1.5 rounded-full bg-brand-green"></span>
+                    Registration open
+                </span>
+            </div>
+
+            <h1
+                class="bg-gradient-to-r from-[#61cf5a] to-[#4a9eff] bg-clip-text font-mono text-4xl font-extrabold tracking-tight text-transparent drop-shadow-[0_0_28px_rgba(97,207,90,0.2)] sm:text-6xl"
+            >
+                KENT HACK IT
+            </h1>
+
+            <p class="mt-4 max-w-lg text-base text-muted-foreground sm:text-lg">
+                A HacKSU Capture The Flag competition. Break in, capture flags, and climb the leaderboard.
+            </p>
+
+            <div class="mt-7 flex flex-col items-start gap-5 sm:flex-row sm:items-center">
+                <Button
+                    href="/auth/login"
+                    size="lg"
+                    class="h-auto bg-gradient-to-r from-brand-green to-brand-blue px-7 py-3 text-base font-semibold text-[#08131f]! no-underline! shadow-glow hover:no-underline! hover:brightness-110"
+                >
+                    <ArrowRight class="h-5 w-5" />
+                    Register Here
+                </Button>
+
+                <!-- Countdown: high-contrast pill -->
+                <div class="flex flex-col gap-1.5">
+                    <span class="font-mono text-[0.65rem] tracking-[0.2em] text-muted-foreground uppercase">
+                        {countdownLabel}
                     </span>
+                    {#if showTimer}
+                        <div
+                            class="inline-flex items-center gap-3 rounded-xl border border-brand-green/35 bg-[#070d16] px-5 py-2.5 shadow-glow"
+                        >
+                            <span class="font-mono text-lg text-brand-blue select-none">$</span>
+                            <span
+                                class="font-mono text-2xl font-bold tracking-wide text-brand-green tabular-nums sm:text-[1.7rem]"
+                            >
+                                {timeLeft}
+                            </span>
+                        </div>
+                    {/if}
                 </div>
-            {/if}
+            </div>
         </div>
     </section>
 
-    <!-- Main Content -->
-    <div class="mx-auto flex w-full max-w-4xl flex-col gap-16 px-4 pb-24 md:gap-20">
-        <!-- About Section -->
-        <section>
-            <p class="mb-2 text-center font-mono text-xs tracking-widest text-brand-blue uppercase">// about</p>
-            <h2 class="mb-6 text-center text-2xl font-bold text-brand-green sm:text-3xl">About KHI</h2>
+    <!-- Quick links: action cards -->
+    <section class="mt-12">
+        {@render eyebrow("Quick links")}
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {#each quickLinks as link (link.href)}
+                {@const Icon = link.icon}
+                <a
+                    href={link.href}
+                    target={link.external ? "_blank" : undefined}
+                    rel={link.external ? "noopener noreferrer" : undefined}
+                    class="group relative flex flex-col gap-3 rounded-xl border border-border bg-card p-5 no-underline! transition-colors hover:border-brand-blue/50 hover:bg-accent/40 hover:no-underline!"
+                >
+                    <div
+                        class="flex h-11 w-11 items-center justify-center rounded-lg border border-brand-blue/25 bg-gradient-to-br from-brand-green/15 to-brand-blue/15 text-brand-blue transition-colors group-hover:text-brand-green"
+                    >
+                        <Icon class="h-5 w-5" />
+                    </div>
+                    <ArrowUpRight
+                        class="absolute top-4 right-4 h-4 w-4 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-brand-green"
+                    />
+                    <div>
+                        <p class="font-semibold text-foreground!">{link.title}</p>
+                        <p class="mt-1 text-sm text-muted-foreground">{link.description}</p>
+                    </div>
+                </a>
+            {/each}
+        </div>
+    </section>
 
-            <div class="mx-auto max-w-3xl space-y-4 text-center text-base leading-relaxed sm:text-lg">
+    <!-- About Section -->
+    <section class="mt-14">
+        {@render eyebrow("About KHI")}
+        <div class="rounded-2xl border border-border bg-card p-6 sm:p-8">
+            <div class="max-w-3xl space-y-4 text-base leading-relaxed">
                 <p>
                     KHI is a <a href="https://hacksu.com/" class={linkClass}>HacKSU</a> sponsored Capture The Flag (CTF)
                     competition, where Computer Science and Cyber Security enthusiasts can connect with others and
@@ -127,26 +215,17 @@
                     KHI offers a variety of challenges that cater to all skill levels. Join us for an exciting week
                     of problem-solving, teamwork, and fun!
                 </p>
-                <p>Our {eventYear} Event will take place in {eventMonthLabel} October, more details to come soon!</p>
-            </div>
-
-            <div class="mt-10 grid gap-6 border-t border-border pt-8 md:grid-cols-2">
-                <p class="text-center text-sm sm:text-base">
-                    Interested in other HacKSU events? Check out our yearly hackathon
-                    <a href="https://khe.io" class={linkClass}>KHE</a>.
-                </p>
-                <p class="text-center text-sm sm:text-base">
-                    Want to help support HacKSU? Check out our
-                    <a href="https://www.redbubble.com/people/KentStateCS/shop" class={linkClass}>Merch Store</a>!
+                <p class="text-brand-green">
+                    Our {eventYear} event will take place in {eventMonthLabel} October. More details to come soon.
                 </p>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- FAQ Section -->
-        <section class="border-t border-border pt-14 md:pt-20">
-            <p class="mb-2 text-center font-mono text-xs tracking-widest text-brand-blue uppercase">// faq</p>
-            <h2 class="mb-6 text-center text-2xl font-bold text-foreground sm:text-3xl">Frequently Asked Questions</h2>
-
+    <!-- FAQ Section -->
+    <section class="mt-14 mb-8">
+        {@render eyebrow("FAQ")}
+        <div class="rounded-2xl border border-border bg-card px-6 py-2 sm:px-8">
             <Accordion.Root type="single" class="w-full">
                 <Accordion.Item value="faq-1">
                     <Accordion.Trigger>What is a Capture The Flag (CTF) competition?</Accordion.Trigger>
@@ -196,6 +275,6 @@
                     </Accordion.Content>
                 </Accordion.Item>
             </Accordion.Root>
-        </section>
-    </div>
+        </div>
+    </section>
 </main>

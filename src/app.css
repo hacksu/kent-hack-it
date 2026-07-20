@@ -117,30 +117,30 @@
 }
 
 .dark {
-	/* Dark-first: rich near-black slate with a faint blue-green cast */
-	--background: oklch(0.17 0.015 235);
-	--foreground: oklch(0.94 0.01 210);
-	--card: oklch(0.21 0.018 235);
-	--card-foreground: oklch(0.94 0.01 210);
-	--popover: oklch(0.2 0.018 235);
-	--popover-foreground: oklch(0.94 0.01 210);
+	/* Dark-first: deep navy / blue-black, tuned to the reference dashboard */
+	--background: oklch(0.155 0.032 262);
+	--foreground: oklch(0.95 0.012 230);
+	--card: oklch(0.205 0.038 262);
+	--card-foreground: oklch(0.95 0.012 230);
+	--popover: oklch(0.2 0.038 262);
+	--popover-foreground: oklch(0.95 0.012 230);
 	/* Neon brand accents */
 	--brand-green: #61cf5a;
 	--brand-blue: #4a9eff;
 	/* Primary = neon green; dark text keeps AA contrast on the bright fill */
 	--primary: #61cf5a;
 	--primary-foreground: oklch(0.19 0.03 150);
-	--secondary: oklch(0.25 0.02 235);
-	--secondary-foreground: oklch(0.94 0.01 210);
-	--muted: oklch(0.25 0.02 235);
-	--muted-foreground: oklch(0.72 0.025 215);
+	--secondary: oklch(0.25 0.038 262);
+	--secondary-foreground: oklch(0.95 0.012 230);
+	--muted: oklch(0.25 0.038 262);
+	--muted-foreground: oklch(0.72 0.03 245);
 	/* Neutral surface for component hovers (menus/accents) */
-	--accent: oklch(0.28 0.025 235);
-	--accent-foreground: oklch(0.94 0.01 210);
+	--accent: oklch(0.29 0.045 262);
+	--accent-foreground: oklch(0.95 0.012 230);
 	--destructive: oklch(0.704 0.191 22.216);
 	--destructive-foreground: oklch(0.985 0 0);
-	--border: oklch(0.4 0.03 220 / 35%);
-	--input: oklch(0.45 0.03 220 / 40%);
+	--border: oklch(0.5 0.04 255 / 26%);
+	--input: oklch(0.5 0.04 255 / 32%);
 	/* Focus ring = neon green glow */
 	--ring: #61cf5a;
 	--chart-1: oklch(0.696 0.17 162.48);
@@ -148,12 +148,18 @@
 	--chart-3: oklch(0.769 0.188 70.08);
 	--chart-4: oklch(0.627 0.265 303.9);
 	--chart-5: oklch(0.645 0.246 16.439);
-	--sidebar: oklch(0.19 0.017 238);
-	--sidebar-foreground: oklch(0.94 0.01 210);
+	--sidebar: oklch(0.175 0.035 264);
+	--sidebar-foreground: oklch(0.95 0.012 230);
 	--sidebar-primary: #61cf5a;
 	--sidebar-primary-foreground: oklch(0.19 0.03 150);
-	--sidebar-accent: oklch(0.26 0.022 235);
-	--sidebar-accent-foreground: oklch(0.94 0.01 210);
-	--sidebar-border: oklch(0.4 0.03 220 / 30%);
+	--sidebar-accent: oklch(0.28 0.045 262);
+	--sidebar-accent-foreground: oklch(0.95 0.012 230);
+	--sidebar-border: oklch(0.5 0.04 255 / 24%);
 	--sidebar-ring: #61cf5a;
+}
+
+/* App background: deep navy base with a subtle brand glow. Unlayered so it
+   overrides the legacy `body { background-color: #f8f9fa }` from index.css. */
+html {
+	background-color: var(--background);
 }
