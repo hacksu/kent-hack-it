@@ -170,3 +170,13 @@ export const instance_sessions = pgTable("instance_sessions", {
     created_at: timestamp("created_at").defaultNow().notNull(),
     challenge_id: integer("challenge_id").references(() => challenges.id),
 });
+
+export const ssh_instance_sessions = pgTable("ssh_instance_sessions", {
+    uid: text("uid").primaryKey().references(() => user.id),
+    challenge_id: integer("challenge_id").notNull().references(() => challenges.id),
+    container_id: text("container_id").notNull(),
+    port: integer("port").notNull(),
+    password: text("password").notNull(),
+    expires_at: timestamp("expires_at").notNull(),
+    created_at: timestamp("created_at").defaultNow().notNull(),
+});

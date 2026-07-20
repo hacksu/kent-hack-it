@@ -22,6 +22,13 @@
       "when": 1784585393714,
       "tag": "0002_dazzling_paper_doll",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784585502271,
+      "tag": "0003_next_kulan_gath",
+      "breakpoints": true
     }
   ]
 }
