@@ -71,7 +71,6 @@ const PointValues = {
     "extreme": 500,
 };
 
-// FORM DATA HANDLING ONLY - POSTS ARE HANDLED IN +server.ts
 export const actions = {
     // special form named-target
 	add_challenge: async ({ request }) => {
