@@ -21,6 +21,10 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
+        if [ -z "$$REGISTRY_USER" ] || [ -z "$$REGISTRY_PASSWORD" ]; then
+          echo "REGISTRY_USER and REGISTRY_PASSWORD must both be set" >&2
+          exit 1
+        fi
         apk add --no-cache apache2-utils > /dev/null
         mkdir -p /auth
         htpasswd -Bbn "$$REGISTRY_USER" "$$REGISTRY_PASSWORD" > /auth/htpasswd
