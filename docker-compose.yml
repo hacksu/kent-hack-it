@@ -133,3 +133,4 @@ volumes:
 networks:
   app_internal:
   handler_net:
+  docker_proxy_net:
