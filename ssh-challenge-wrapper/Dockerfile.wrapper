@@ -23,3 +23,6 @@ RUN if command -v apk >/dev/null 2>&1; then \
         groupadd -g 2000 ctf-player && \
         useradd -m -u 2000 -g ctf-player -s "$SHELL_BIN" ctf-player; \
     fi
+
+RUN CHALLENGE_HOME="$(pwd)" && \
+    sed -i "s#^\(ctf-player:[^:]*:[^:]*:[^:]*:[^:]*:\)[^:]*#\1${CHALLENGE_HOME}#" /etc/passwd
