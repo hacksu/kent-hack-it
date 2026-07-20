@@ -1,13 +1,22 @@
 <script lang="ts">
     import 'bootstrap/dist/css/bootstrap.min.css';
+    import '../app.css';
 
     import { authClient } from "$lib/client";
     import { goto } from "$app/navigation"
-	
+
+    import { ModeWatcher } from 'mode-watcher';
+    import ThemeToggle from '$lib/components/theme-toggle.svelte';
+    import { Button } from '$lib/components/ui/button';
+    import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+    import Menu from '@lucide/svelte/icons/menu';
+    import X from '@lucide/svelte/icons/x';
+    import ChevronDown from '@lucide/svelte/icons/chevron-down';
+
     import favicon from '$lib/assets/favicon.ico';
 	import logo from '$lib/assets/2026_KHI_Logo_Transparent.png';
     import apple_touch_icon from '$lib/assets/logo192.png';
-    
+
     import { browser } from '$app/environment';
     // only apply the boostrap js in the browser
     if (browser) {
@@ -20,18 +29,58 @@
     }
 
     const session = authClient.useSession();
-    let profDropOpen = $state(false);
-    let profDropElem = $state<HTMLElement|undefined>(undefined);
-    let profHovered = $state(false);
 
-    function handleClickOutside(e: any) {
-        if (profDropElem && !profDropElem.contains(e.target)) {
-            profDropOpen = false;
-        }
-    }
+    let mobileMenuOpen = $state(false);
+
+    const navLinkClass =
+        "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground! no-underline! transition-colors hover:bg-muted hover:text-foreground! hover:no-underline!";
 
 	let { data, children } = $props();
 </script>
+
+{#snippet navItems(mobile: boolean)}
+    <a href="/" class={navLinkClass + (mobile ? " block w-full" : "")} onclick={() => (mobileMenuOpen = false)}>
+        Home
+    </a>
+
+    {#if $session.data?.user.role === "admin"}
+        <a href="/admin" class={navLinkClass + (mobile ? " block w-full" : "")} onclick={() => (mobileMenuOpen = false)}>
+            Admin
+        </a>
+    {:else if $session.data?.user.role === "user" }
+        <a href="/team" class={navLinkClass + (mobile ? " block w-full" : "")} onclick={() => (mobileMenuOpen = false)}>
+            Team
+        </a>
+    {/if}
+
+    <a href="/gym" class={navLinkClass + (mobile ? " block w-full" : "")} onclick={() => (mobileMenuOpen = false)}>
+        Gym
+    </a>
+    <a href="/compete" class={navLinkClass + (mobile ? " block w-full" : "")} onclick={() => (mobileMenuOpen = false)}>
+        Compete
+    </a>
+    <a href="/leaderboard" class={navLinkClass + (mobile ? " block w-full" : "")} onclick={() => (mobileMenuOpen = false)}>
+        Leaderboard
+    </a>
+    <a
+        href="/tools"
+        target="_blank"
+        rel="noopener noreferrer"
+        class={navLinkClass + (mobile ? " block w-full" : "")}
+        onclick={() => (mobileMenuOpen = false)}
+    >
+        Tools
+    </a>
+    <a
+        href="/discord"
+        target="_blank"
+        rel="noopener noreferrer"
+        class={navLinkClass + (mobile ? " block w-full" : "")}
+        onclick={() => (mobileMenuOpen = false)}
+    >
+        Community
+    </a>
+{/snippet}
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
@@ -46,112 +95,77 @@
     <title>Kent Hack It</title>
 </svelte:head>
 
-<svelte:window onclick={handleClickOutside} />
+<ModeWatcher />
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-        <a class="navbar-brand d-flex align-items-center" href="/">
-            <img
-                src={logo}
-                alt="KHI Logo"
-                class="logo"
-                height="80"
-            />
+<nav class="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+    <div class="h-0.5 w-full bg-gradient-to-r from-[#61cf5a] to-[#4a9eff]"></div>
+
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2.5">
+        <a href="/" class="flex shrink-0 items-center">
+            <img src={logo} alt="KHI Logo" class="logo h-10 w-auto" />
         </a>
 
         {#if data.error}
-            <span style="
-                display: inline-block;
-                padding: 8px 14px;
-                background: #fef2f2;
-                color: #991b1b;
-                border: 0.5px solid #fca5a5;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 500;
-            ">
+            <div
+                class="order-last w-full rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-sm text-destructive md:order-none md:w-auto"
+            >
                 {data.error}
-            </span>
+            </div>
         {/if}
 
-        <button
-            class="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarNav"
-            aria-controls="navbarNav"
-            aria-expanded="false"
-            aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <div class="hidden items-center gap-1 md:flex">
+            {@render navItems(false)}
+        </div>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/">Home</a>
-                </li>
+        <div class="flex shrink-0 items-center gap-1">
+            <ThemeToggle />
 
-                {#if $session.data?.user.role === "admin"}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin">Admin</a>
-                    </li>
-                {:else if $session.data?.user.role === "user" }
-                    <li class="nav-item">
-                        <a class="nav-link" href="/team">Team</a>
-                    </li>
-                {/if}
+            {#if $session.data?.user}
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger>
+                        {#snippet child({ props })}
+                            <Button {...props} variant="ghost" class="gap-1.5">
+                                {$session.data?.user.name}
+                                <ChevronDown class="h-4 w-4 opacity-60 transition-transform data-[state=open]:rotate-180" />
+                            </Button>
+                        {/snippet}
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Content align="end">
+                        <DropdownMenu.Item onclick={handleLogout}>Logout</DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                </DropdownMenu.Root>
+            {:else}
+                <a href="/auth/login" class={navLinkClass}>Login</a>
+            {/if}
 
-                <li class="nav-item">
-                    <a class="nav-link" href="/gym">Gym</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/compete">Compete</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/leaderboard">Leaderboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/tools" target="_blank" rel="noopener noreferrer">Tools</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/discord" target="_blank" rel="noopener noreferrer">Community</a>
-                </li>
-
-                {#if $session.data?.user}
-                    <li class="nav-item" style="position: relative;" bind:this={profDropElem}>
-                        <button
-                            class="nav-link btn btn-link"
-                            onclick={() => profDropOpen = !profDropOpen}
-                        >
-                            {$session.data?.user.name} ▾
-                        </button>
-
-                        {#if profDropOpen}
-                            <ul class="dropdown-menu show" style="position: absolute; right: 0; top: 100%;">
-                                <li>
-                                    <button
-                                        class="dropdown-item"
-                                        style="background-color: {profHovered ? '#dce8f5' : 'aliceblue'};"
-                                        onmouseenter={() => profHovered = true}
-                                        onmouseleave={() => profHovered = false}
-                                        onclick={handleLogout}
-                                    >
-                                        Logout
-                                    </button>
-                                </li>
-                            </ul>
-                        {/if}
-                    </li>
+            <Button
+                variant="ghost"
+                size="icon"
+                class="md:hidden"
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={mobileMenuOpen}
+                onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
+            >
+                {#if mobileMenuOpen}
+                    <X class="h-5 w-5" />
                 {:else}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/auth/login">Login</a>
-                    </li>
+                    <Menu class="h-5 w-5" />
                 {/if}
-            </ul>
+            </Button>
         </div>
     </div>
+
+    {#if mobileMenuOpen}
+        <div class="border-t border-border/60 bg-background/95 backdrop-blur md:hidden">
+            <div class="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
+                {@render navItems(true)}
+            </div>
+        </div>
+    {/if}
 </nav>
 
 {@render children()}
 
-<footer>&copy HacKSU 2026</footer>
+<footer class="border-t border-border/60 bg-background px-4 py-6 text-center text-sm text-muted-foreground">
+    &copy HacKSU 2026
+</footer>
