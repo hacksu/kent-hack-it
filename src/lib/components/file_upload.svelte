@@ -2,6 +2,12 @@
     import Feedback from '$lib/components/feedback.svelte';
     import { handleFormResult } from "$lib/utilities";
     import { enhance } from "$app/forms";
+    import * as Card from "$lib/components/ui/card";
+    import { Input } from "$lib/components/ui/input";
+    import { Button } from "$lib/components/ui/button";
+    import ChevronDown from "@lucide/svelte/icons/chevron-down";
+    import LoaderCircle from "@lucide/svelte/icons/loader-circle";
+    import Trash2 from "@lucide/svelte/icons/trash-2";
 
     let {
         summaryText,
@@ -39,7 +45,7 @@
         const input = e.target as HTMLInputElement;
         const picked = Array.from(input.files ?? []);
 
-        
+
         if (zip_only) {
             const invalid = picked.filter(f => !f.name.endsWith(".zip"));
             if (invalid.length > 0) {
@@ -86,13 +92,17 @@
     }
 </script>
 
-<details>
-    <summary>{summaryText}</summary>
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class={`card shadow ${uploadsDisabled ? 'opacity-50' : ''}`}>
-                <div class="card-body">
-                    <h3 class="card-title text-center mb-4">{cardTitle}</h3>
+<details class="group">
+    <summary class="flex cursor-pointer list-none items-center justify-between rounded-lg border border-border bg-card px-3.5 py-2.5 font-mono text-sm font-medium text-foreground select-none [&::-webkit-details-marker]:hidden">
+        <span>{summaryText}</span>
+        <ChevronDown class="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+    </summary>
+
+    <div class="mt-4 flex justify-center">
+        <div class={`w-full max-w-md ${uploadsDisabled ? 'opacity-50' : ''}`}>
+            <Card.Root class="border border-border bg-card">
+                <Card.Content>
+                    <h3 class="mb-4 text-center font-mono text-lg font-bold text-foreground">{cardTitle}</h3>
 
                     <Feedback success={success} warning={warning} error={error} />
 
@@ -119,76 +129,72 @@
                         }}
                     >
                         <div class="mb-3">
-                            <input
+                            <Input
                                 name={fieldName}
                                 type="file"
-                                class="form-control"
                                 accept={zip_only ? ".zip" : ""}
                                 multiple
                                 oninput={handleFileInput}
                                 disabled={uploadsDisabled || uploading}
-                                bind:this={fileInput}
+                                bind:ref={fileInput}
+                                class="cursor-pointer"
                             />
 
                             {#if selectedFiles.length > 0}
-                                <small class="form-text text-muted mt-2">
+                                <small class="mt-2 block text-xs text-muted-foreground">
                                     Selected {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''}:
                                     {selectedFiles.map(f => f.name).join(', ')}
                                 </small>
                             {/if}
                         </div>
 
-                        <div class="d-grid">
-                            <button
-                                type="submit"
-                                class="btn btn-primary"
-                                disabled={uploadsDisabled || selectedFiles.length === 0 || uploading}
-                            >
-                                {uploading ? "Uploading..." : `Upload ${selectedFiles.length > 0 ? `${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}` : ''}`}
-                            </button>
-                        </div>
+                        <Button
+                            type="submit"
+                            class="w-full gap-2"
+                            disabled={uploadsDisabled || selectedFiles.length === 0 || uploading}
+                        >
+                            {#if uploading}
+                                <LoaderCircle class="h-4 w-4 animate-spin" />
+                            {/if}
+                            {uploading ? "Uploading..." : `Upload ${selectedFiles.length > 0 ? `${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}` : ''}`}
+                        </Button>
                     </form>
-                </div>
-            </div>
+                </Card.Content>
+            </Card.Root>
         </div>
     </div>
 
-    <div class="container mt-2">
-        <h3 style="padding: 5px;">Current Uploads</h3>
-        <div class="row justify-content-center">
-            <ul class="list-group w-auto">
+    <div class="mt-6">
+        <h3 class="mb-3 text-center font-mono text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+            Current Uploads
+        </h3>
+        <div class="flex justify-center">
+            <ul class="flex w-auto min-w-[300px] max-w-[600px] flex-col gap-2">
                 {#each uploaded_files as file}
                     <li
-                        class="list-group-item d-flex justify-content-between align-items-center px-3 py-2"
-                        style="font-size: 0.9rem; min-width: 300px; max-width: 600px;"
+                        class="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-sm"
                     >
                         <a
                             href={`/api/download/${file}?t=${ zip_only ? "archive" : "bin" }`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="text-decoration-none text-muted flex-grow-1 custom-hover-dark"
-                            style="margin-right: 1rem;"
+                            class="min-w-0 flex-1 truncate text-muted-foreground no-underline! transition-colors hover:text-brand-blue!"
                         >
                             {file}
                         </a>
 
-                        <button class="btn btn-sm btn-outline-danger flex-shrink-0" onclick={() => handleDelete(file)}>
-                            <i class="bi bi-trash"></i> Delete
-                        </button>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            class="shrink-0 gap-1.5"
+                            onclick={() => handleDelete(file)}
+                        >
+                            <Trash2 class="h-3.5 w-3.5" /> Delete
+                        </Button>
                     </li>
                 {/each}
             </ul>
-            <div style="padding-bottom: 4rem;"></div>
         </div>
+        <div class="pb-16"></div>
     </div>
 </details>
-
-<style>
-    .custom-hover-dark {
-        transition: color 0.2s ease-in-out, transform 0.2s ease-in-out, font-weight 0.2s ease-in-out;
-    }
-    .custom-hover-dark:hover {
-        color: rgb(36, 34, 34) !important;
-        transform: scale(1.15);
-    }
-</style>

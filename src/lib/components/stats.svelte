@@ -1,40 +1,42 @@
 <script lang="ts">
     import { slide } from 'svelte/transition';
     import PieChart from './pie_chart.svelte';
-    
+    import ChevronDown from '@lucide/svelte/icons/chevron-down';
+
     const { progressData, showAll } = $props();
-    
+
     let showTotal = $state(false);
     let showEvent = $state(false);
     let showTeam  = $state(false);
+
+    const toggleClass =
+        "m-[5px] flex w-[calc(100%-10px)] items-center justify-between rounded-lg border border-border bg-card px-3.5 py-2.5 font-mono text-sm font-medium text-foreground transition-colors select-none hover:border-brand-green/40 hover:bg-accent";
+    const panelClass = "mt-1.5 w-full rounded-xl border border-border bg-card";
 </script>
 
-<svelte:head>
-    <link rel="stylesheet" href="/css/stats.css">
-</svelte:head>
-
-<div class="stat-area">
+<div class="w-[90%]">
 
     <!-- Total Progress -->
-    <button style="margin: 5px;" class="stat-toggle" onclick={() => showTotal = !showTotal}>
+    <button class={toggleClass} onclick={() => showTotal = !showTotal}>
         <span>Total Progress</span>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="chevron" style:transform="rotate({showTotal ? 180 : 0}deg)" aria-hidden="true">
-            <polyline points="4 6 8 10 12 6"/>
-        </svg>
+        <ChevronDown
+            class="h-3.5 w-3.5 text-muted-foreground transition-transform duration-300"
+            style="transform: rotate({showTotal ? 180 : 0}deg)"
+        />
     </button>
     {#if showTotal}
-        <div class="stat-panel" transition:slide={{ duration: 350 }}>
+        <div class={panelClass} transition:slide={{ duration: 350 }}>
             {#each progressData.totalProg as stat}
-                <div class="stat-row">
-                    <div class="stat-header">
-                        <span class="stat-label">{stat.label}</span>
-                        <span class="stat-count">{stat.value} / {stat.total}</span>
+                <div class="m-[15px] flex flex-col gap-[7px]">
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-[13px] font-medium text-foreground">{stat.label}</span>
+                        <span class="text-xs text-muted-foreground">{stat.value} / {stat.total}</span>
                     </div>
-                    <div class="stat-track">
+                    <div class="h-1.5 overflow-hidden rounded-full bg-muted">
                         <div
-                            class="stat-fill"
+                            class="h-full rounded-full transition-[width] duration-400 ease-out"
                             style:width="{(stat.value / stat.total) * 100}%"
-                            style:background={stat.color ?? 'var(--accent, #6366f1)'}
+                            style:background={stat.color ?? 'var(--chart-2)'}
                         ></div>
                     </div>
                 </div>
@@ -43,25 +45,26 @@
     {/if}
 
     <!-- Event Progress -->
-    <button style="margin: 5px;" class="stat-toggle" onclick={() => showEvent = !showEvent}>
+    <button class={toggleClass} onclick={() => showEvent = !showEvent}>
         <span>Event Progress</span>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="chevron" style:transform="rotate({showEvent ? 180 : 0}deg)" aria-hidden="true">
-            <polyline points="4 6 8 10 12 6"/>
-        </svg>
+        <ChevronDown
+            class="h-3.5 w-3.5 text-muted-foreground transition-transform duration-300"
+            style="transform: rotate({showEvent ? 180 : 0}deg)"
+        />
     </button>
     {#if showEvent}
-        <div class="stat-panel" transition:slide={{ duration: 350 }}>
+        <div class={panelClass} transition:slide={{ duration: 350 }}>
             {#each progressData.eventProg as stat}
-                <div class="stat-row">
-                    <div class="stat-header">
-                        <span class="stat-label">{stat.label}</span>
-                        <span class="stat-count">{stat.value} / {stat.total}</span>
+                <div class="m-[15px] flex flex-col gap-[7px]">
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-[13px] font-medium text-foreground">{stat.label}</span>
+                        <span class="text-xs text-muted-foreground">{stat.value} / {stat.total}</span>
                     </div>
-                    <div class="stat-track">
+                    <div class="h-1.5 overflow-hidden rounded-full bg-muted">
                         <div
-                            class="stat-fill"
+                            class="h-full rounded-full transition-[width] duration-400 ease-out"
                             style:width="{(stat.value / stat.total) * 100}%"
-                            style:background={stat.color ?? '#72b35f'}
+                            style:background={stat.color ?? 'var(--chart-1)'}
                         ></div>
                     </div>
                 </div>
@@ -71,35 +74,36 @@
 
     <!-- Team Progress -->
     {#if showAll && progressData.teamProg}
-        <button style="margin: 5px;" class="stat-toggle" onclick={() => showTeam = !showTeam}>
+        <button class={toggleClass} onclick={() => showTeam = !showTeam}>
             <span>Team Progress</span>
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="chevron" style:transform="rotate({showTeam ? 180 : 0}deg)" aria-hidden="true">
-                <polyline points="4 6 8 10 12 6"/>
-            </svg>
+            <ChevronDown
+                class="h-3.5 w-3.5 text-muted-foreground transition-transform duration-300"
+                style="transform: rotate({showTeam ? 180 : 0}deg)"
+            />
         </button>
         {#if showTeam}
-            <div class="stat-panel" transition:slide={{ duration: 350 }}>
+            <div class={panelClass} transition:slide={{ duration: 350 }}>
                 {#each progressData.teamProg.bars as stat}
-                    <div class="stat-row">
-                        <div class="stat-header">
-                            <span class="stat-label">{stat.label}</span>
-                            <span class="stat-count">{stat.value} / {stat.total}</span>
+                    <div class="m-[15px] flex flex-col gap-[7px]">
+                        <div class="flex items-baseline justify-between">
+                            <span class="text-[13px] font-medium text-foreground">{stat.label}</span>
+                            <span class="text-xs text-muted-foreground">{stat.value} / {stat.total}</span>
                         </div>
-                        <div class="stat-track">
+                        <div class="h-1.5 overflow-hidden rounded-full bg-muted">
                             <div
-                                class="stat-fill"
+                                class="h-full rounded-full transition-[width] duration-400 ease-out"
                                 style:width="{(stat.value / stat.total) * 100}%"
-                                style:background={stat.color ?? '#f59e0b'}
+                                style:background={stat.color ?? 'var(--chart-4)'}
                             ></div>
                         </div>
                     </div>
                 {/each}
 
-                <div class="stat-row">
-                    <div class="stat-header">
-                        <span class="stat-label">Contributions</span>
+                <div class="m-[15px] flex flex-col gap-[7px]">
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-[13px] font-medium text-foreground">Contributions</span>
                     </div>
-                    
+
                     <PieChart progressData={progressData} showTeam={showTeam} />
                 </div>
             </div>
