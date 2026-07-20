@@ -15,6 +15,13 @@
       "when": 1784581104318,
       "tag": "0001_seed_event_config",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784585393714,
+      "tag": "0002_dazzling_paper_doll",
+      "breakpoints": true
     }
   ]
 }

@@ -168,4 +168,5 @@ export const instance_sessions = pgTable("instance_sessions", {
     sess_port: integer("sess_port").notNull(),
     cpid: integer("cpid").notNull(),
     created_at: timestamp("created_at").defaultNow().notNull(),
+    challenge_id: integer("challenge_id").references(() => challenges.id),
 });
