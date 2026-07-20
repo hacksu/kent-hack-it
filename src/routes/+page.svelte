@@ -53,29 +53,57 @@
     const eventYear = currentMonth < 9 ? currentYear : currentYear + 1;
     const eventMonthLabel = currentMonth < 9 ? "this" : "next";
 
-    const linkClass = "text-primary underline underline-offset-4 hover:text-primary/80";
+    const linkClass =
+        "font-medium text-brand-blue! underline underline-offset-4 decoration-brand-blue/40 hover:text-brand-green! hover:decoration-brand-green/60";
 </script>
 
 <main class="flex min-h-screen flex-col">
     <!-- Hero Section -->
-    <section class="flex flex-1 flex-col items-center justify-center gap-7 px-4 py-20 text-center sm:py-28">
+    <section class="relative flex flex-1 flex-col items-center justify-center gap-6 overflow-hidden px-4 py-20 text-center sm:py-28">
+        <!-- Ambient terminal backdrop: faint grid + brand glow -->
+        <div
+            aria-hidden="true"
+            class="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,color-mix(in_oklch,var(--brand-green)_14%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklch,var(--brand-green)_14%,transparent)_1px,transparent_1px)] bg-[size:44px_44px] opacity-30 [mask-image:radial-gradient(ellipse_60%_60%_at_50%_40%,black,transparent)]"
+        ></div>
+        <div
+            aria-hidden="true"
+            class="pointer-events-none absolute top-1/3 left-1/2 -z-10 h-72 w-[36rem] max-w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-green/15 blur-[100px]"
+        ></div>
+
+        <!-- Terminal prompt eyebrow -->
+        <p class="font-mono text-sm text-muted-foreground">
+            <span class="text-brand-green">khi@hacksu</span><span class="text-muted-foreground">:</span><span class="text-brand-blue">~</span>
+            <span class="text-muted-foreground">$ ./register.sh --ctf {eventYear}</span>
+        </p>
+
         <h1
-            class="bg-gradient-to-r from-[#61cf5a] to-[#4a9eff] bg-clip-text text-5xl font-extrabold tracking-tight text-transparent sm:text-6xl md:text-7xl"
+            class="bg-gradient-to-r from-[#61cf5a] to-[#4a9eff] bg-clip-text font-mono text-5xl font-extrabold tracking-tight text-transparent drop-shadow-[0_0_28px_rgba(97,207,90,0.25)] sm:text-6xl md:text-7xl"
         >
             KENT HACK IT
         </h1>
 
-        <Button href="/auth/login" size="lg" class="h-auto min-w-[220px] px-8 py-3.5 text-lg font-semibold sm:text-xl">
+        <p class="max-w-md text-base text-muted-foreground">
+            A HacKSU Capture The Flag competition. Break in, capture flags, climb the board.
+        </p>
+
+        <Button
+            href="/auth/login"
+            size="lg"
+            class="mt-1 h-auto min-w-[220px] px-8 py-3.5 font-mono text-lg font-semibold text-primary-foreground! no-underline! shadow-glow hover:no-underline! sm:text-xl"
+        >
             Register Here
         </Button>
 
-        <div class="mt-2 flex flex-col items-center gap-2.5">
-            <p class="text-sm font-medium tracking-wide text-muted-foreground uppercase">{countdownLabel}</p>
+        <div class="mt-4 flex flex-col items-center gap-2.5">
+            <p class="font-mono text-xs tracking-widest text-muted-foreground uppercase">// {countdownLabel}</p>
             {#if showTimer}
                 <div
-                    class="rounded-md border-2 border-accent bg-accent/5 px-6 py-3 font-mono text-2xl font-bold text-foreground sm:text-3xl dark:bg-accent/10"
+                    class="inline-flex items-center gap-3 rounded-lg border border-brand-green/30 bg-[#0a0e14] px-6 py-3.5 shadow-glow"
                 >
-                    {timeLeft}
+                    <span class="font-mono text-lg text-brand-blue select-none">$</span>
+                    <span class="font-mono text-2xl font-bold tracking-wide text-brand-green tabular-nums sm:text-3xl">
+                        {timeLeft}
+                    </span>
                 </div>
             {/if}
         </div>
@@ -85,7 +113,8 @@
     <div class="mx-auto flex w-full max-w-4xl flex-col gap-16 px-4 pb-24 md:gap-20">
         <!-- About Section -->
         <section>
-            <h2 class="mb-6 text-center text-2xl font-bold text-primary sm:text-3xl">About KHI</h2>
+            <p class="mb-2 text-center font-mono text-xs tracking-widest text-brand-blue uppercase">// about</p>
+            <h2 class="mb-6 text-center text-2xl font-bold text-brand-green sm:text-3xl">About KHI</h2>
 
             <div class="mx-auto max-w-3xl space-y-4 text-center text-base leading-relaxed sm:text-lg">
                 <p>
@@ -115,7 +144,8 @@
 
         <!-- FAQ Section -->
         <section class="border-t border-border pt-14 md:pt-20">
-            <h2 class="mb-6 text-center text-2xl font-bold sm:text-3xl">Frequently Asked Questions</h2>
+            <p class="mb-2 text-center font-mono text-xs tracking-widest text-brand-blue uppercase">// faq</p>
+            <h2 class="mb-6 text-center text-2xl font-bold text-foreground sm:text-3xl">Frequently Asked Questions</h2>
 
             <Accordion.Root type="single" class="w-full">
                 <Accordion.Item value="faq-1">
@@ -144,7 +174,7 @@
                         </p>
                         <p>
                             <strong>Some Challenges might use Kali Linux for completion!</strong> Check out our
-                            <a href="/kali-setup-guide">Kali Linux VM Setup Guide</a>.
+                            <a href="/kali-setup-guide" class={linkClass}>Kali Linux VM Setup Guide</a>.
                         </p>
                     </Accordion.Content>
                 </Accordion.Item>
