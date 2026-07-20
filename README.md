@@ -68,8 +68,8 @@ UPLOADS_DIR=
 
 Running the svelte application
 ```console
-npm install .
-npm run dev -- --open
+bun install
+bun run dev -- --open
 ```
 
 If you'd prefer running the compose locally
