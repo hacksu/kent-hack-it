@@ -18,6 +18,13 @@ services:
       start_period: 10s
     volumes:
       - registry_data:/var/lib/registry
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache apache2-utils > /dev/null
+        mkdir -p /auth
+        htpasswd -Bbn "$$REGISTRY_USER" "$$REGISTRY_PASSWORD" > /auth/htpasswd
+        exec /entrypoint.sh /etc/docker/registry/config.yml
 
 volumes:
   registry_data:
