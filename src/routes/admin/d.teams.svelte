@@ -18,7 +18,7 @@
 
     async function RemoveTeam(id: string, name: string) {
         if (window.confirm(`Are you sure you want to DELETE this team "${name}"?`)) {
-            const req = await fetch('/admin', {
+            const req = await fetch('/admin/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ context: 'team', action: 'delete', id })
