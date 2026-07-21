@@ -1635,6 +1635,9 @@ export async function StopInstance(uid: any) {
             return { success: false, error: "Failed to stop instance" };
         }
 
+        await db.delete(schema.instance_sessions)
+            .where(eq(schema.instance_sessions.uid, uid));
+
         return { success: true, message: "Instance stopped" };
     } catch (e: any) {
         console.error("[-] StopInstance:", e);
