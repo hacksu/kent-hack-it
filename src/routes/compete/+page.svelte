@@ -32,6 +32,7 @@
     let ssh_port = $state<number|undefined>(undefined);
     let ssh_password = $state("");
     let ssh_expires_at = $state<Date|undefined>(undefined);
+    let ssh_command = $derived(`ssh ctf-player@${ssh_host} -p ${ssh_port}`);
 
     function clearResult() {
         error = warning = success = "";
@@ -475,8 +476,8 @@
                                     {instanceLabel} {timeLeft}
                                 </div>
                                 <p class="mb-1 text-sm text-foreground">Connect to Instance</p>
-                                <code class="font-mono text-brand-green select-all">
-                                    $ {instance_infomation}
+                                <code class="font-mono text-brand-green">
+                                    <span class="select-none">$ </span><span class="select-all">{instance_infomation}</span>
                                 </code>
                                 <form method="POST" action="?/create_instance" class="mt-2" use:enhance={() => {
                                     return async ({ result, update }) => {
@@ -536,9 +537,10 @@
                                         Time Remaining: {sshTimeLeft}
                                     </div>
                                     Connect via SSH<br>
-                                    <code class="font-mono text-green-400 select-all">
-                                        $ ssh ctf-player@{ssh_host} -p {ssh_port}
-                                    </code><br>
+                                    <code class="font-mono text-green-400">
+                                        <span class="select-none">$ </span><span class="select-all">{ssh_command}</span>
+                                    </code>
+                                    <br>
                                     Password:
                                     <code class="font-mono text-green-400 select-all">
                                         {ssh_password}
