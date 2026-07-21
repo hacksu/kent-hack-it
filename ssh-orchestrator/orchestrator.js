@@ -16,6 +16,11 @@ const SSH_INSTANCES_NETWORK = process.env.SSH_INSTANCES_NETWORK ?? 'khi_ssh_inst
 const KHI_UID_LABEL = 'khi.uid';
 const KHI_EXPIRES_LABEL = 'khi.expires_at';
 
+// Read but not yet used -- registry-aware pulling lands in a later commit.
+const SSH_IMAGE_REGISTRY = process.env.SSH_IMAGE_REGISTRY;
+const SSH_REGISTRY_USER = process.env.SSH_REGISTRY_USER;
+const SSH_REGISTRY_PASSWORD = process.env.SSH_REGISTRY_PASSWORD;
+
 /**
  * List currently-running SSH instance containers via docker-socket-proxy.
  * Deliberately stateless -- always queries Docker fresh rather than
