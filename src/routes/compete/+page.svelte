@@ -500,6 +500,17 @@
                                         Launch SSH Instance
                                     </button>
                                 </form>
+                            {:else}
+                                <div>
+                                    Connect via SSH<br>
+                                    <code class="font-mono text-green-400 select-all">
+                                        $ ssh ctf-player@{ssh_host} -p {ssh_port}
+                                    </code><br>
+                                    Password:
+                                    <code class="font-mono text-green-400 select-all">
+                                        {ssh_password}
+                                    </code>
+                                </div>
                             {/if}
                         {/if}
 
