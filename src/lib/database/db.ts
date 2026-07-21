@@ -1644,3 +1644,53 @@ export async function StopInstance(uid: any) {
         return { success: false, error: "Error Occurred when stopping Instance" };
     }
 }
+
+/**
+ * Create a per-participant SSH challenge container via ssh-orchestrator,
+ * and persist the resulting session in ssh_instance_sessions.
+ *
+ * @param uid
+ * @param cid
+ * @returns
+ */
+export async function CreateSSHInstance(uid: any, cid: any) {
+    try {
+        const challenge_data = await db.select({
+            image_ref: schema.challenges.image_ref,
+        }).from(schema.challenges)
+        .where(eq(schema.challenges.id, cid)).limit(1);
+
+        if (challenge_data.length === 0) {
+            return { success: false, error: "Challenge Not Found" };
+        } else if (!challenge_data[0].image_ref) {
+            return { success: false, error: "SSH Instance Not Supported" };
+        }
+
+        console.log("[*] Fetching ssh-orchestrator create_instance...");
+        const res = await fetch("http://ssh-orchestrator:3000/create_instance", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid, image_ref: challenge_data[0].image_ref })
+        });
+        const instance_data = await res.json();
+
+        if (instance_data.success) {
+            await db.insert(schema.ssh_instance_sessions).values({
+                uid: uid,
+                challenge_id: cid,
+                container_id: instance_data.container_id,
+                port: instance_data.port,
+                password: instance_data.password,
+                expires_at: new Date(instance_data.expires_at),
+            });
+        }
+
+        return instance_data;
+    } catch (e: any) {
+        console.error("[-] SSH-Instance-Creation:", e);
+        return {
+            success: false,
+            error: "Error Occurred when creating SSH Instance"
+        }
+    }
+}
