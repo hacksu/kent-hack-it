@@ -130,3 +130,24 @@ export async function CreateSSHInstance(uid, image_ref) {
         password,
     };
 }
+
+/**
+ * Stop a running SSH instance container. AutoRemove was set at create
+ * time, so stopping it also removes it -- no DELETE call needed.
+ *
+ * @param {string} containerId
+ * @returns
+ */
+export async function StopInstance(containerId) {
+    if (!containerId) {
+        return { success: false, rc: 400, error: 'Missing container_id' };
+    }
+
+    const stopRes = await fetch(`${DOCKER_API}/containers/${containerId}/stop`, { method: 'POST' });
+    if (!stopRes.ok && stopRes.status !== 304 && stopRes.status !== 404) {
+        console.error("[-] container stop failed:", stopRes.status);
+        return { success: false, rc: 500, error: 'Failed to stop container' };
+    }
+
+    return { success: true, rc: 200, message: 'SSH Instance Stopped' };
+}

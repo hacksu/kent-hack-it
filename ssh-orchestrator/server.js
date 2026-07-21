@@ -1,6 +1,6 @@
 import express from 'express';
 import { exit } from 'process';
-import { CreateSSHInstance } from './orchestrator.js';
+import { CreateSSHInstance, StopInstance } from './orchestrator.js';
 
 const app = express();
 app.use(express.json());
@@ -23,6 +23,17 @@ app.post('/create_instance', async (req, res) => {
     } catch (err) {
         console.error("[-] create_instance error:", err);
         return res.status(500).json({ success: false, error: 'Failed to create SSH instance' });
+    }
+});
+
+app.post('/stop_instance', async (req, res) => {
+    try {
+        const { container_id } = req.body;
+        const result = await StopInstance(container_id);
+        return res.status(result.rc).json(result);
+    } catch (err) {
+        console.error("[-] stop_instance error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to stop SSH instance' });
     }
 });
 
