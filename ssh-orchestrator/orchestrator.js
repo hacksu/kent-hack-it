@@ -10,9 +10,11 @@ const SSH_MAX_PORT = Number(process.env.SSH_MAX_PORT);
 
 const SSH_INSTANCE_CPU_NANOS = Number(process.env.SSH_INSTANCE_CPU_NANOS ?? 1000000000);
 const SSH_INSTANCE_MEM_BYTES = Number(process.env.SSH_INSTANCE_MEM_BYTES ?? 268435456);
+const SSH_INSTANCE_MINUTES = Number(process.env.SSH_INSTANCE_MINUTES ?? 45);
 const SSH_INSTANCES_NETWORK = process.env.SSH_INSTANCES_NETWORK ?? 'khi_ssh_instances_net';
 
 const KHI_UID_LABEL = 'khi.uid';
+const KHI_EXPIRES_LABEL = 'khi.expires_at';
 
 /**
  * List currently-running SSH instance containers via docker-socket-proxy.
@@ -86,6 +88,7 @@ export async function CreateSSHInstance(uid, image_ref) {
     }
 
     const password = generatePassword();
+    const expiresAt = new Date(Date.now() + SSH_INSTANCE_MINUTES * 60 * 1000);
 
     const createRes = await fetch(`${DOCKER_API}/containers/create`, {
         method: 'POST',
@@ -96,6 +99,7 @@ export async function CreateSSHInstance(uid, image_ref) {
             Labels: {
                 [KHI_TYPE_LABEL]: KHI_TYPE_VALUE,
                 [KHI_UID_LABEL]: uid,
+                [KHI_EXPIRES_LABEL]: expiresAt.toISOString(),
             },
             ExposedPorts: { "22/tcp": {} },
             HostConfig: {
@@ -128,6 +132,7 @@ export async function CreateSSHInstance(uid, image_ref) {
         container_id: containerId,
         port,
         password,
+        expires_at: expiresAt.toISOString(),
     };
 }
 
