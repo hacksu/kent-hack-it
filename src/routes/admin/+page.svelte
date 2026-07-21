@@ -8,6 +8,7 @@
     import FileUploadTab from './d.upload.svelte';
     import ConfigTab from './d.config.svelte';
     import LogTab from './d.logs.svelte';
+    import InstancesTab from './d.instances.svelte';
 
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
@@ -31,6 +32,7 @@
         { title: "Upload",     value: "upload",   component: FileUploadTab,     props: () => ({ uploaded_files: data.files }) },
         { title: "Configuration",     value: "config",   component: ConfigTab,  props: () => ({ config: data.config }) },
         { title: "Logs",     value: "logs",   component: LogTab,                props: () => ({ entries: data.log_data }) },
+        { title: "Instances",     value: "instances",   component: InstancesTab, props: () => ({ nc_instances: data.nc_instances }) },
     ];
 
     let activeComponent = $derived(tabs.find(t => t.value === activeTab));
