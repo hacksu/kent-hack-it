@@ -1588,12 +1588,6 @@ export async function GetActiveInstance(uid: any) {
     }
 }
 
-/**
- * Fetch every active nc/nsjail instance for the admin Instances tab,
- * joined against player name and challenge name.
- *
- * @returns
- */
 export async function GetActiveNcInstances() {
     try {
         return await db.select({
@@ -1612,13 +1606,6 @@ export async function GetActiveNcInstances() {
     }
 }
 
-/**
- * Admin-initiated stop of a running nc/nsjail instance, called from the
- * Instances tab. Kills the process via handler's /kill endpoint.
- *
- * @param uid
- * @returns
- */
 export async function StopInstance(uid: any) {
     try {
         const [instance] = await db.select({ cpid: schema.instance_sessions.cpid })
@@ -1649,14 +1636,6 @@ export async function StopInstance(uid: any) {
     }
 }
 
-/**
- * Create a per-participant SSH challenge container via ssh-orchestrator,
- * and persist the resulting session in ssh_instance_sessions.
- *
- * @param uid
- * @param cid
- * @returns
- */
 export async function CreateSSHInstance(uid: any, cid: any) {
     try {
         // stop any existing SSH instance the participant already has
@@ -1714,12 +1693,6 @@ export async function CreateSSHInstance(uid: any, cid: any) {
     }
 }
 
-/**
- * Fetch the participant's currently-active SSH instance session, if any.
- *
- * @param uid
- * @returns
- */
 export async function GetActiveSSHInstance(uid: any) {
     try {
         const [instance] = await db.select({
@@ -1737,13 +1710,6 @@ export async function GetActiveSSHInstance(uid: any) {
     }
 }
 
-/**
- * Stop a participant's SSH instance via ssh-orchestrator and remove its
- * ssh_instance_sessions row.
- *
- * @param uid
- * @returns
- */
 export async function StopSSHInstance(uid: any) {
     try {
         const [instance] = await db.select({ container_id: schema.ssh_instance_sessions.container_id })
@@ -1774,12 +1740,6 @@ export async function StopSSHInstance(uid: any) {
     }
 }
 
-/**
- * Fetch every active instance (nc and SSH) for the unified admin
- * Instances tab.
- *
- * @returns
- */
 export async function GetActiveInstances() {
     const nc = await GetActiveNcInstances();
 

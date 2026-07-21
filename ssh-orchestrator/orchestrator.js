@@ -11,10 +11,12 @@ const SSH_MAX_PORT = Number(process.env.SSH_MAX_PORT);
 const SSH_INSTANCE_CPU_NANOS = Number(process.env.SSH_INSTANCE_CPU_NANOS ?? 1000000000);
 const SSH_INSTANCE_MEM_BYTES = Number(process.env.SSH_INSTANCE_MEM_BYTES ?? 268435456);
 const SSH_INSTANCE_MINUTES = Number(process.env.SSH_INSTANCE_MINUTES ?? 45);
-const SSH_INSTANCES_NETWORK = process.env.SSH_INSTANCES_NETWORK ?? 'khi_ssh_instances_net';
 
 const KHI_UID_LABEL = 'khi.uid';
 const KHI_EXPIRES_LABEL = 'khi.expires_at';
+const KHI_NETWORK_LABEL = 'khi.network';
+const KHI_NET_TYPE_LABEL = 'khi.type';
+const KHI_NET_TYPE_VALUE = 'ssh-instance-net';
 
 const SSH_IMAGE_REGISTRY = process.env.SSH_IMAGE_REGISTRY;
 const SSH_REGISTRY_USER = process.env.SSH_REGISTRY_USER;
@@ -22,25 +24,10 @@ const SSH_REGISTRY_PASSWORD = process.env.SSH_REGISTRY_PASSWORD;
 
 const SSH_IMAGE_PREFIX = process.env.SSH_IMAGE_PREFIX ?? 'khi-ssh/';
 
-/**
- * Allowlist check against the stored image_ref, run before any registry
- * prefix is applied -- keeps the security model unchanged regardless of
- * whether SSH_IMAGE_REGISTRY is set.
- *
- * @param {string} image_ref
- * @returns {boolean}
- */
 function isAllowedImage(image_ref) {
     return typeof image_ref === 'string' && image_ref.startsWith(SSH_IMAGE_PREFIX);
 }
 
-/**
- * List currently-running SSH instance containers via docker-socket-proxy.
- * Deliberately stateless -- always queries Docker fresh rather than
- * tracking allocations in memory, so it stays correct across restarts.
- *
- * @returns {Promise<any[]>}
- */
 export async function ListInstances() {
     const filters = encodeURIComponent(JSON.stringify({ label: [`${KHI_TYPE_LABEL}=${KHI_TYPE_VALUE}`] }));
     const res = await fetch(`${DOCKER_API}/containers/json?all=false&filters=${filters}`);
@@ -62,12 +49,6 @@ function hostPortOf(container) {
     return binding ? binding.PublicPort : null;
 }
 
-/**
- * Pick a free host port in SSH_MIN_PORT-SSH_MAX_PORT against the
- * currently-running instance list.
- *
- * @returns {Promise<number>} a free port, or -1 if none are available
- */
 export async function GetUnusedSSHPort() {
     const containers = await ListInstances();
     const usedPorts = new Set(containers.map(hostPortOf).filter(Boolean));
@@ -90,15 +71,6 @@ function generatePassword() {
 
 const expiryTimers = new Map();
 
-/**
- * Arm (or re-arm) the in-process timer that stops a container once its
- * khi.expires_at label elapses. Purely a convenience for prompt cleanup --
- * the label itself is the durable source of truth, re-read at boot by
- * reconciliation, not this map.
- *
- * @param {string} containerId
- * @param {Date|string} expiresAt
- */
 function armExpiryTimer(containerId, expiresAt) {
     const remainingMs = new Date(expiresAt).getTime() - Date.now();
     const timer = setTimeout(() => {
@@ -109,15 +81,6 @@ function armExpiryTimer(containerId, expiresAt) {
     expiryTimers.set(containerId, timer);
 }
 
-/**
- * Resolve the image to actually run. With SSH_IMAGE_REGISTRY unset, the
- * stored image_ref is used exactly as-is and must already exist locally.
- * With it set, SSH_IMAGE_REGISTRY is prepended and the image is pulled
- * through docker-socket-proxy before container creation.
- *
- * @param {string} image_ref
- * @returns {Promise<string>} the image reference to use for creation
- */
 async function resolveImage(image_ref) {
     if (!SSH_IMAGE_REGISTRY) {
         return image_ref;
@@ -145,13 +108,35 @@ async function resolveImage(image_ref) {
     return fullRef;
 }
 
-/**
- * Create and start a new SSH instance container for a participant.
- *
- * @param {string} uid
- * @param {string} image_ref
- * @returns
- */
+async function createInstanceNetwork() {
+    const name = `khi-ssh-inst-${crypto.randomUUID().replace(/-/g, '')}`;
+
+    const createRes = await fetch(`${DOCKER_API}/networks/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            Name: name,
+            Driver: 'bridge',
+            Labels: { [KHI_NET_TYPE_LABEL]: KHI_NET_TYPE_VALUE },
+        }),
+    });
+
+    if (!createRes.ok) {
+        throw new Error(`Network create failed: ${createRes.status}`);
+    }
+
+    return name;
+}
+
+async function removeInstanceNetwork(networkName) {
+    if (!networkName) return;
+    try {
+        await fetch(`${DOCKER_API}/networks/${networkName}`, { method: 'DELETE' });
+    } catch (e) {
+        console.error(`[-] failed to remove network ${networkName}:`, e);
+    }
+}
+
 export async function CreateSSHInstance(uid, image_ref) {
     if (!uid || !image_ref) {
         return { success: false, rc: 400, error: 'Missing uid or image_ref' };
@@ -174,6 +159,14 @@ export async function CreateSSHInstance(uid, image_ref) {
         return { success: false, rc: 500, error: 'Failed to pull image' };
     }
 
+    let networkName;
+    try {
+        networkName = await createInstanceNetwork();
+    } catch (e) {
+        console.error("[-] network creation failed:", e);
+        return { success: false, rc: 500, error: 'Failed to create network' };
+    }
+
     const password = generatePassword();
     const expiresAt = new Date(Date.now() + SSH_INSTANCE_MINUTES * 60 * 1000);
 
@@ -187,11 +180,12 @@ export async function CreateSSHInstance(uid, image_ref) {
                 [KHI_TYPE_LABEL]: KHI_TYPE_VALUE,
                 [KHI_UID_LABEL]: uid,
                 [KHI_EXPIRES_LABEL]: expiresAt.toISOString(),
+                [KHI_NETWORK_LABEL]: networkName,
             },
             ExposedPorts: { "22/tcp": {} },
             HostConfig: {
                 PortBindings: { "22/tcp": [{ HostPort: String(port) }] },
-                NetworkMode: SSH_INSTANCES_NETWORK,
+                NetworkMode: networkName,
                 AutoRemove: true,
                 NanoCpus: SSH_INSTANCE_CPU_NANOS,
                 Memory: SSH_INSTANCE_MEM_BYTES,
@@ -201,6 +195,7 @@ export async function CreateSSHInstance(uid, image_ref) {
 
     if (!createRes.ok) {
         console.error("[-] container create failed:", createRes.status, await createRes.text());
+        await removeInstanceNetwork(networkName);
         return { success: false, rc: 500, error: 'Failed to create container' };
     }
 
@@ -212,6 +207,7 @@ export async function CreateSSHInstance(uid, image_ref) {
         // AutoRemove only fires on stopping a container that actually started,
         // so a created-but-never-started container would otherwise linger
         await fetch(`${DOCKER_API}/containers/${containerId}?force=true`, { method: 'DELETE' });
+        await removeInstanceNetwork(networkName);
         return { success: false, rc: 500, error: 'Failed to start container' };
     }
 
@@ -228,13 +224,6 @@ export async function CreateSSHInstance(uid, image_ref) {
     };
 }
 
-/**
- * Stop a running SSH instance container. AutoRemove was set at create
- * time, so stopping it also removes it -- no DELETE call needed.
- *
- * @param {string} containerId
- * @returns
- */
 export async function StopInstance(containerId) {
     if (!containerId) {
         return { success: false, rc: 400, error: 'Missing container_id' };
@@ -244,20 +233,41 @@ export async function StopInstance(containerId) {
     if (timer) clearTimeout(timer);
     expiryTimers.delete(containerId);
 
+    let networkName;
+    const inspectRes = await fetch(`${DOCKER_API}/containers/${containerId}/json`);
+    if (inspectRes.ok) {
+        const info = await inspectRes.json();
+        networkName = info.Config?.Labels?.[KHI_NETWORK_LABEL];
+    }
+
     const stopRes = await fetch(`${DOCKER_API}/containers/${containerId}/stop`, { method: 'POST' });
     if (!stopRes.ok && stopRes.status !== 304 && stopRes.status !== 404) {
         console.error("[-] container stop failed:", stopRes.status);
         return { success: false, rc: 500, error: 'Failed to stop container' };
     }
 
+    await removeInstanceNetwork(networkName);
+
     return { success: true, rc: 200, message: 'SSH Instance Stopped' };
 }
 
-/**
- * Re-arm expiry timers for any already-running SSH instances at boot,
- * reading khi.expires_at directly off each container's own label --
- * so a redeploy of this service doesn't orphan running instances.
- */
+async function cleanupOrphanedNetworks() {
+    const filters = encodeURIComponent(JSON.stringify({ label: [`${KHI_NET_TYPE_LABEL}=${KHI_NET_TYPE_VALUE}`] }));
+    const res = await fetch(`${DOCKER_API}/networks?filters=${filters}`);
+    if (!res.ok) {
+        console.error("[-] failed to list networks for cleanup:", res.status);
+        return;
+    }
+
+    const networks = await res.json();
+    for (const network of networks) {
+        if (Object.keys(network.Containers || {}).length === 0) {
+            console.log(`[*] Removing orphaned network ${network.Name}...`);
+            await removeInstanceNetwork(network.Name);
+        }
+    }
+}
+
 export async function ReconcileOnBoot() {
     const containers = await ListInstances();
     console.log(`[*] Reconciling ${containers.length} running SSH instance(s)...`);
@@ -274,4 +284,6 @@ export async function ReconcileOnBoot() {
             armExpiryTimer(container.Id, expiresAtLabel);
         }
     }
+
+    await cleanupOrphanedNetworks();
 }

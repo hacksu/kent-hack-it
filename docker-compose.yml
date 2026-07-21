@@ -59,17 +59,11 @@ services:
       CONTAINERS: 1
       POST: 1
       IMAGES: 1
+      NETWORKS: 1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - docker_proxy_net
-
-  ssh-instances-net-anchor:
-    image: alpine:3.20
-    command: ["sleep", "infinity"]
-    restart: unless-stopped
-    networks:
-      - ssh_instances_net
 
   ssh-orchestrator:
     container_name: ssh_orchestrator_khi
@@ -85,7 +79,6 @@ services:
       SSH_INSTANCE_MINUTES: ${SSH_INSTANCE_MINUTES:-45}
       SSH_INSTANCE_CPU_NANOS: ${SSH_INSTANCE_CPU_NANOS:-1000000000}
       SSH_INSTANCE_MEM_BYTES: ${SSH_INSTANCE_MEM_BYTES:-268435456}
-      SSH_INSTANCES_NETWORK: khi_ssh_instances_net
       SSH_IMAGE_REGISTRY: ${SSH_IMAGE_REGISTRY:-}
       SSH_REGISTRY_USER: ${SSH_REGISTRY_USER:-}
       SSH_REGISTRY_PASSWORD: ${SSH_REGISTRY_PASSWORD:-}
@@ -179,5 +172,3 @@ networks:
   handler_net:
   docker_proxy_net:
   ssh_orch_net:
-  ssh_instances_net:
-    name: khi_ssh_instances_net
