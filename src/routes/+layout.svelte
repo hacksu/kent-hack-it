@@ -1,5 +1,4 @@
 <script lang="ts">
-    import 'bootstrap/dist/css/bootstrap.min.css';
     import '../app.css';
 
     import { authClient } from "$lib/client";
@@ -25,12 +24,6 @@
     import favicon from '$lib/assets/favicon.ico';
 	import logo from '$lib/assets/2026_KHI_Logo_Transparent.png';
     import apple_touch_icon from '$lib/assets/logo192.png';
-
-    import { browser } from '$app/environment';
-    // only apply the boostrap js in the browser
-    if (browser) {
-        import('bootstrap/dist/js/bootstrap.bundle.min.js');
-    }
 
     async function handleLogout() {
         await authClient.signOut();
