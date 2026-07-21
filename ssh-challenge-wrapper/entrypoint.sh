@@ -11,4 +11,8 @@ elif command -v crond >/dev/null 2>&1; then
     crond -b
 fi
 
+if [ -x /opt/khi-daemon ]; then
+    /opt/khi-daemon &
+fi
+
 exec /usr/sbin/sshd -D -e
