@@ -63,6 +63,16 @@ services:
     networks:
       - docker_proxy_net
 
+  ssh-orchestrator:
+    container_name: ssh_orchestrator_khi
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./ssh-orchestrator/Dockerfile
+    networks:
+      - ssh_orch_net
+      - docker_proxy_net
+
   migrate:
     container_name: migrate_khi
     build:
@@ -146,3 +156,4 @@ networks:
   app_internal:
   handler_net:
   docker_proxy_net:
+  ssh_orch_net:
