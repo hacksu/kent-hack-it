@@ -72,7 +72,7 @@
             <tbody>
                 {#each instances as instance (instance.uid)}
                     <tr>
-                        <td><span class="badge bg-secondary">nc</span></td>
+                        <td><span class="badge bg-secondary">{instance.type}</span></td>
                         <td>{instance.player_name}</td>
                         <td>{instance.challenge_name ?? "—"}</td>
                         <td>{instance.port}</td>
