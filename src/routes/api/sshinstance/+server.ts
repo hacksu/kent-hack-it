@@ -1,0 +1,37 @@
+import { error, redirect, json, isRedirect } from "@sveltejs/kit";
+import { env } from "$env/dynamic/private";
+import { auth } from "$lib/server/auth";
+import { GetActiveSSHInstance } from "$lib/database/db";
+import type { RequestHandler } from "./$types";
+
+export const GET: RequestHandler = async ({ request }) => {
+    try {
+        const session = await auth.api.getSession({
+            headers: request.headers,
+        });
+
+        // user not authenticated
+        if (!session) {
+            throw redirect(302, "/auth/login");
+        }
+
+        const CHALLENGE_HOST = process.env.CHALLENGE_HOST ?? env.CHALLENGE_HOST ?? "ctf.hacksu.com";
+
+        const data = await GetActiveSSHInstance(session.user.id);
+        const instance_info = data
+            ? {
+                active: true,
+                host: CHALLENGE_HOST,
+                port: data.port,
+                password: data.password,
+                expires_at: data.expires_at,
+            }
+            : { active: false };
+
+        return json(instance_info);
+    } catch (e: any) {
+        if (isRedirect(e)) throw e;
+        console.log("[-] Get-SSH-Instance-Error:", e);
+        throw error(404, "SSH Instance not found.");
+    }
+};
