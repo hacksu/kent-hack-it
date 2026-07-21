@@ -1583,3 +1583,27 @@ export async function GetActiveInstance(uid: any) {
         return undefined;
     }
 }
+
+/**
+ * Fetch every active nc/nsjail instance for the admin Instances tab,
+ * joined against player name and challenge name.
+ *
+ * @returns
+ */
+export async function GetActiveNcInstances() {
+    try {
+        return await db.select({
+            uid: schema.instance_sessions.uid,
+            player_name: schema.user.name,
+            challenge_name: schema.challenges.name,
+            port: schema.instance_sessions.sess_port,
+            cpid: schema.instance_sessions.cpid,
+            created_at: schema.instance_sessions.created_at,
+        }).from(schema.instance_sessions)
+        .innerJoin(schema.user, eq(schema.instance_sessions.uid, schema.user.id))
+        .leftJoin(schema.challenges, eq(schema.instance_sessions.challenge_id, schema.challenges.id));
+    } catch (e: any) {
+        console.error("[-] GetActiveNcInstances:", e);
+        return [];
+    }
+}
