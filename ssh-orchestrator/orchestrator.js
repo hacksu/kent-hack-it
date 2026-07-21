@@ -70,6 +70,27 @@ function generatePassword() {
     return crypto.randomUUID().replace(/-/g, '').slice(0, 20);
 }
 
+const expiryTimers = new Map();
+
+/**
+ * Arm (or re-arm) the in-process timer that stops a container once its
+ * khi.expires_at label elapses. Purely a convenience for prompt cleanup --
+ * the label itself is the durable source of truth, re-read at boot by
+ * reconciliation, not this map.
+ *
+ * @param {string} containerId
+ * @param {Date|string} expiresAt
+ */
+function armExpiryTimer(containerId, expiresAt) {
+    const remainingMs = new Date(expiresAt).getTime() - Date.now();
+    const timer = setTimeout(() => {
+        console.log(`[*] Expiry reached for ${containerId}, stopping...`);
+        StopInstance(containerId);
+    }, Math.max(remainingMs, 0));
+    timer.unref();
+    expiryTimers.set(containerId, timer);
+}
+
 /**
  * Create and start a new SSH instance container for a participant.
  *
@@ -125,6 +146,8 @@ export async function CreateSSHInstance(uid, image_ref) {
         return { success: false, rc: 500, error: 'Failed to start container' };
     }
 
+    armExpiryTimer(containerId, expiresAt);
+
     return {
         success: true,
         rc: 200,
@@ -147,6 +170,10 @@ export async function StopInstance(containerId) {
     if (!containerId) {
         return { success: false, rc: 400, error: 'Missing container_id' };
     }
+
+    const timer = expiryTimers.get(containerId);
+    if (timer) clearTimeout(timer);
+    expiryTimers.delete(containerId);
 
     const stopRes = await fetch(`${DOCKER_API}/containers/${containerId}/stop`, { method: 'POST' });
     if (!stopRes.ok && stopRes.status !== 304 && stopRes.status !== 404) {
