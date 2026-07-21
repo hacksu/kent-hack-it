@@ -28,6 +28,7 @@
         <table class="table table-hover align-middle">
             <thead>
                 <tr>
+                    <th>Type</th>
                     <th>Player</th>
                     <th>Challenge</th>
                     <th>Port</th>
@@ -37,6 +38,7 @@
             <tbody>
                 {#each nc_instances as instance (instance.uid)}
                     <tr>
+                        <td><span class="badge bg-secondary">nc</span></td>
                         <td>{instance.player_name}</td>
                         <td>{instance.challenge_name ?? "—"}</td>
                         <td>{instance.port}</td>
