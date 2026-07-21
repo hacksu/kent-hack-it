@@ -156,6 +156,7 @@ services:
     networks:
       - app_internal
       - handler_net
+      - ssh_orch_net
     depends_on:
       postgres:
         condition: service_healthy
