@@ -1607,3 +1607,37 @@ export async function GetActiveNcInstances() {
         return [];
     }
 }
+
+/**
+ * Admin-initiated stop of a running nc/nsjail instance, called from the
+ * Instances tab. Kills the process via handler's /kill endpoint.
+ *
+ * @param uid
+ * @returns
+ */
+export async function StopInstance(uid: any) {
+    try {
+        const [instance] = await db.select({ cpid: schema.instance_sessions.cpid })
+            .from(schema.instance_sessions)
+            .where(eq(schema.instance_sessions.uid, uid)).limit(1);
+
+        if (!instance) {
+            return { success: false, error: "Instance Not Found" };
+        }
+
+        const res = await fetch("http://handler:3000/kill", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cpid: instance.cpid })
+        });
+
+        if (!res.ok) {
+            return { success: false, error: "Failed to stop instance" };
+        }
+
+        return { success: true, message: "Instance stopped" };
+    } catch (e: any) {
+        console.error("[-] StopInstance:", e);
+        return { success: false, error: "Error Occurred when stopping Instance" };
+    }
+}

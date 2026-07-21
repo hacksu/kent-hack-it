@@ -4,6 +4,7 @@ import {
     DeleteAdmin,
     DeleteUser,
     RemoveTeam,
+    StopInstance,
 } from '$lib/database/db';
 import { json } from '@sveltejs/kit';
 
@@ -39,6 +40,10 @@ async function deleteUser(id: string) {
     } else {
         return json({ success: false , status: 200 });
     }
+}
+
+async function stopInstance(uid: string) {
+    return json(await StopInstance(uid));
 }
 
 async function deleteTeam(id: string) {
@@ -129,6 +134,13 @@ export const POST = async (event) => {
             handler = await delFile(true, data.file);
         } else if (data.action === 'del_bin') {
             handler = await delFile(false, data.file);
+        } else {
+            // unknown action
+            return json({ success: false, error: 'Unknown action' , status: 500 });
+        }
+    } else if (data.context === 'instance') {
+        if (data.action === 'stop') {
+            handler = await stopInstance(data.uid);
         } else {
             // unknown action
             return json({ success: false, error: 'Unknown action' , status: 500 });

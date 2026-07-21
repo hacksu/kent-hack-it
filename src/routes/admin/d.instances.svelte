@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { invalidateAll } from '$app/navigation';
+    import Feedback from '$lib/components/feedback.svelte';
+
     const { nc_instances } = $props();
 
     const NC_SESSION_MINUTES = 15;
@@ -12,11 +15,41 @@
         const seconds = Math.floor((remainingMs % 60000) / 1000);
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
+
+    function clearResult() {
+        error = success = "";
+    }
+
+    let error = $state("");
+    let success = $state("");
+
+    async function stopInstance(uid: string, playerName: string) {
+        if (!window.confirm(`Are you sure you want to STOP ${playerName}'s instance?`)) return;
+
+        const req = await fetch('/admin/api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ context: 'instance', action: 'stop', uid })
+        });
+
+        const response = await req.json();
+        if (response?.success) {
+            success = `Stopped ${playerName}'s instance`;
+        } else {
+            error = response?.error ?? "Failed to stop instance";
+        }
+
+        await invalidateAll();
+        setTimeout(clearResult, 5000);
+    }
 </script>
 
 <div class="instances-tab">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Active Instances</h5>
+
+        <Feedback success={success} warning={""} error={error} />
+
         <span class="badge bg-primary fs-6">
             {nc_instances.length} Instance{nc_instances.length !== 1 ? 's' : ''}
         </span>
@@ -45,7 +78,10 @@
                         <td>{instance.port}</td>
                         <td>{timeRemaining(instance.created_at)}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-danger">
+                            <button
+                                class="btn btn-sm btn-outline-danger"
+                                onclick={() => stopInstance(instance.uid, instance.player_name)}
+                            >
                                 <i class="bi bi-stop-fill me-1"></i> Stop
                             </button>
                         </td>
