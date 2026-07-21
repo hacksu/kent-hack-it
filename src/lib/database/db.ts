@@ -76,6 +76,7 @@ export interface ViewableChallengeData {
     is_gym: boolean | null;
     solves: number;
     bin_file: string | null;
+    image_ref: string | null;
 }
 
 // special select type used in challenge querying

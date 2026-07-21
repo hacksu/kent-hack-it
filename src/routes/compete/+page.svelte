@@ -27,6 +27,12 @@
 
     let instance_infomation = $state("");
 
+    let ssh_active = $state(false);
+    let ssh_host = $state("");
+    let ssh_port = $state<number|undefined>(undefined);
+    let ssh_password = $state("");
+    let ssh_expires_at = $state<Date|undefined>(undefined);
+
     function clearResult() {
         error = warning = success = "";
     }
@@ -270,6 +276,28 @@
             instanceStart = res.created_at;
         } catch {}
 
+        try {
+            // find ssh instance information to display
+            const sshReq = await fetch("/api/sshinstance", {
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                cache: "no-store"
+            });
+            const sshRes: {
+                active: boolean,
+                host?: string,
+                port?: number,
+                password?: string,
+                expires_at?: string
+            } = await sshReq.json();
+
+            ssh_active = sshRes.active;
+            ssh_host = sshRes.host ?? "";
+            ssh_port = sshRes.port;
+            ssh_password = sshRes.password ?? "";
+            ssh_expires_at = sshRes.expires_at ? new Date(sshRes.expires_at) : undefined;
+        } catch {}
+
         showPanel = challenge !== undefined;
     }
 
@@ -447,6 +475,32 @@
                                     </Button>
                                 </form>
                             </div>
+                        {/if}
+
+                        {#if challengeInfo.image_ref}
+                            {#if !ssh_active}
+                                <form method="POST" action="?/create_ssh_instance" use:enhance={() => {
+                                    return async ({ result, update }) => {
+                                        await update();
+
+                                        const formResult = await handleFormResult(result);
+                                        success = formResult.success;
+                                        warning = formResult.warning;
+                                        error = formResult.error;
+
+                                        // trigger the ssh instance to be rendered
+                                        viewChallenge(challengeInfo.id);
+
+                                        await invalidateAll();
+                                        setTimeout(clearResult, 5000);
+                                    };
+                                }}>
+                                    <input type="hidden" name="cid" value={challengeInfo.id} />
+                                    <button type="submit" class="btn btn-success">
+                                        Launch SSH Instance
+                                    </button>
+                                </form>
+                            {/if}
                         {/if}
 
                         <p class="mt-3 mb-1 text-sm text-foreground">⭐ {Number(challengeInfo.rating).toFixed(1)} / 5</p>

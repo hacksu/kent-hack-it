@@ -7,7 +7,7 @@ import {
     GetProgress, GetChallenges, CheckFlag,
     IsSiteActive, GetCompletions, GetSolversCount,
     SubmitRating, GetRated,
-    CreateInstance,
+    CreateInstance, CreateSSHInstance,
 } from "$lib/database/db";
 
 export const load = async ({ parent, setHeaders }) => {
@@ -154,6 +154,35 @@ export const actions = {
         } catch (e) {
             console.error(`[-] Create Instance -> ${e}`);
             return fail(500, { success: false, error: 'An error occurred while preparing Instance' });
+        }
+    },
+
+    create_ssh_instance: async ({ request }) => {
+        const session = await auth.api.getSession({
+                headers: request.headers,
+            });
+
+        // user not authenticated
+        if (!session) {
+            throw redirect(302, "/auth/login");
+        }
+
+        const form = await request.formData();
+        const { cid } = Object.fromEntries(form.entries()) as Record<string, string>;
+        const uid = session.user.id;
+
+        try {
+            if (!await IsSiteActive()) {
+                return { success: false, message: 'Cannot create Instances at this time, try again later!' };
+            } else {
+                console.log("[*] Attempting to prepare SSH Instance");
+                const instance_data = await CreateSSHInstance(uid, cid);
+                console.log(instance_data);
+                return instance_data;
+            }
+        } catch (e) {
+            console.error(`[-] Create SSH Instance -> ${e}`);
+            return fail(500, { success: false, error: 'An error occurred while preparing SSH Instance' });
         }
     },
 };
