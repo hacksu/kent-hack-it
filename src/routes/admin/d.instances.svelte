@@ -6,14 +6,22 @@
 
     const NC_SESSION_MINUTES = 15;
 
-    function timeRemaining(created_at: string | Date): string {
-        const expiresAt = new Date(created_at).getTime() + NC_SESSION_MINUTES * 60 * 1000;
+    function timeRemaining(instance: any): string {
+        const expiresAt = instance.type === 'ssh'
+            ? new Date(instance.expires_at).getTime()
+            : new Date(instance.created_at).getTime() + NC_SESSION_MINUTES * 60 * 1000;
         const remainingMs = expiresAt - Date.now();
         if (remainingMs <= 0) return "expired";
 
         const minutes = Math.floor(remainingMs / 60000);
         const seconds = Math.floor((remainingMs % 60000) / 1000);
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function shortId(instance: any): string {
+        return instance.type === 'ssh'
+            ? instance.container_id.slice(0, 12)
+            : instance.cpid;
     }
 
     function clearResult() {
@@ -64,19 +72,21 @@
                     <th>Type</th>
                     <th>Player</th>
                     <th>Challenge</th>
+                    <th>ID</th>
                     <th>Port</th>
-                    <th>Time Remaining (est.)</th>
+                    <th>Time Remaining</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
-                {#each instances as instance (instance.uid)}
+                {#each instances as instance (`${instance.type}-${instance.uid}`)}
                     <tr>
                         <td><span class="badge bg-secondary">{instance.type}</span></td>
                         <td>{instance.player_name}</td>
                         <td>{instance.challenge_name ?? "—"}</td>
+                        <td><code>{shortId(instance)}</code></td>
                         <td>{instance.port}</td>
-                        <td>{timeRemaining(instance.created_at)}</td>
+                        <td>{timeRemaining(instance)}</td>
                         <td>
                             <button
                                 class="btn btn-sm btn-outline-danger"
