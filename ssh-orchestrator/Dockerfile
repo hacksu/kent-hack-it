@@ -5,7 +5,7 @@ WORKDIR /app
 COPY ./ssh-orchestrator/package.json ./ssh-orchestrator/bun.lock ./
 RUN bun install --frozen-lockfile
 
-COPY ./ssh-orchestrator/server.js ./
+COPY ./ssh-orchestrator/server.js ./ssh-orchestrator/orchestrator.js ./
 
 USER bun
 CMD ["bun", "server.js"]
