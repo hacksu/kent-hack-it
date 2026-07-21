@@ -334,9 +334,32 @@
         timeLeft = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
     }
 
+    let sshTimeLeft = $state("00:00");
+    let sshTimer: NodeJS.Timeout|undefined = undefined;
+
+    function updateSSHTimer() {
+        if (!ssh_expires_at) return;
+
+        const distance = new Date(ssh_expires_at).getTime() - Date.now();
+
+        if (distance <= 0) {
+            sshTimeLeft = "00:00";
+            return;
+        }
+
+        const totalSeconds = Math.floor(distance / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        sshTimeLeft = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
     onMount(() => {
         updateInstanceTimer();
         timer = setInterval(updateInstanceTimer, 1000);
+
+        updateSSHTimer();
+        sshTimer = setInterval(updateSSHTimer, 1000);
     });
 
     // Styling helper: maps a challenge difficulty to a badge color, mirroring
@@ -502,6 +525,11 @@
                                 </form>
                             {:else}
                                 <div>
+                                    <div
+                                        style="border-style: solid; border-radius: 3px; border-color: orange; border-radius: 8px; padding: 5px;"
+                                    >
+                                        Time Remaining: {sshTimeLeft}
+                                    </div>
                                     Connect via SSH<br>
                                     <code class="font-mono text-green-400 select-all">
                                         $ ssh ctf-player@{ssh_host} -p {ssh_port}
