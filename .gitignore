@@ -26,12 +26,7 @@ vite.config.ts.timestamp-*
 .vscode/
 uploads/
 ctf/
-khi_web_logs/<<<<<<< ours
+khi_web_logs/
 docs/superpowers/
 .superpowers/
-||||||| original
-
-=======
 .gstack/
-
->>>>>>> theirs

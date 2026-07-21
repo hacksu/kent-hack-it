@@ -16,7 +16,6 @@ const SSH_INSTANCES_NETWORK = process.env.SSH_INSTANCES_NETWORK ?? 'khi_ssh_inst
 const KHI_UID_LABEL = 'khi.uid';
 const KHI_EXPIRES_LABEL = 'khi.expires_at';
 
-// Read but not yet used -- registry-aware pulling lands in a later commit.
 const SSH_IMAGE_REGISTRY = process.env.SSH_IMAGE_REGISTRY;
 const SSH_REGISTRY_USER = process.env.SSH_REGISTRY_USER;
 const SSH_REGISTRY_PASSWORD = process.env.SSH_REGISTRY_PASSWORD;
@@ -111,6 +110,42 @@ function armExpiryTimer(containerId, expiresAt) {
 }
 
 /**
+ * Resolve the image to actually run. With SSH_IMAGE_REGISTRY unset, the
+ * stored image_ref is used exactly as-is and must already exist locally.
+ * With it set, SSH_IMAGE_REGISTRY is prepended and the image is pulled
+ * through docker-socket-proxy before container creation.
+ *
+ * @param {string} image_ref
+ * @returns {Promise<string>} the image reference to use for creation
+ */
+async function resolveImage(image_ref) {
+    if (!SSH_IMAGE_REGISTRY) {
+        return image_ref;
+    }
+
+    const fullRef = `${SSH_IMAGE_REGISTRY}/${image_ref}`;
+    const authHeader = Buffer.from(JSON.stringify({
+        username: SSH_REGISTRY_USER,
+        password: SSH_REGISTRY_PASSWORD,
+        serveraddress: SSH_IMAGE_REGISTRY,
+    })).toString('base64');
+
+    const pullRes = await fetch(`${DOCKER_API}/images/create?fromImage=${encodeURIComponent(fullRef)}`, {
+        method: 'POST',
+        headers: { 'X-Registry-Auth': authHeader },
+    });
+
+    // drain the streamed JSON-lines pull progress body
+    await pullRes.text();
+
+    if (!pullRes.ok) {
+        throw new Error(`Image pull failed: ${pullRes.status}`);
+    }
+
+    return fullRef;
+}
+
+/**
  * Create and start a new SSH instance container for a participant.
  *
  * @param {string} uid
@@ -131,6 +166,14 @@ export async function CreateSSHInstance(uid, image_ref) {
         return { success: false, rc: 500, error: 'No free SSH ports available' };
     }
 
+    let resolvedImage;
+    try {
+        resolvedImage = await resolveImage(image_ref);
+    } catch (e) {
+        console.error("[-] image resolution failed:", e);
+        return { success: false, rc: 500, error: 'Failed to pull image' };
+    }
+
     const password = generatePassword();
     const expiresAt = new Date(Date.now() + SSH_INSTANCE_MINUTES * 60 * 1000);
 
@@ -138,7 +181,7 @@ export async function CreateSSHInstance(uid, image_ref) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            Image: image_ref,
+            Image: resolvedImage,
             Env: [`CTF_PASSWORD=${password}`],
             Labels: {
                 [KHI_TYPE_LABEL]: KHI_TYPE_VALUE,
@@ -166,6 +209,9 @@ export async function CreateSSHInstance(uid, image_ref) {
     const startRes = await fetch(`${DOCKER_API}/containers/${containerId}/start`, { method: 'POST' });
     if (!startRes.ok && startRes.status !== 304) {
         console.error("[-] container start failed:", startRes.status);
+        // AutoRemove only fires on stopping a container that actually started,
+        // so a created-but-never-started container would otherwise linger
+        await fetch(`${DOCKER_API}/containers/${containerId}?force=true`, { method: 'DELETE' });
         return { success: false, rc: 500, error: 'Failed to start container' };
     }
 
@@ -189,6 +235,24 @@ export async function CreateSSHInstance(uid, image_ref) {
  * @param {string} containerId
  * @returns
  */
+export async function StopInstance(containerId) {
+    if (!containerId) {
+        return { success: false, rc: 400, error: 'Missing container_id' };
+    }
+
+    const timer = expiryTimers.get(containerId);
+    if (timer) clearTimeout(timer);
+    expiryTimers.delete(containerId);
+
+    const stopRes = await fetch(`${DOCKER_API}/containers/${containerId}/stop`, { method: 'POST' });
+    if (!stopRes.ok && stopRes.status !== 304 && stopRes.status !== 404) {
+        console.error("[-] container stop failed:", stopRes.status);
+        return { success: false, rc: 500, error: 'Failed to stop container' };
+    }
+
+    return { success: true, rc: 200, message: 'SSH Instance Stopped' };
+}
+
 /**
  * Re-arm expiry timers for any already-running SSH instances at boot,
  * reading khi.expires_at directly off each container's own label --
@@ -210,22 +274,4 @@ export async function ReconcileOnBoot() {
             armExpiryTimer(container.Id, expiresAtLabel);
         }
     }
-}
-
-export async function StopInstance(containerId) {
-    if (!containerId) {
-        return { success: false, rc: 400, error: 'Missing container_id' };
-    }
-
-    const timer = expiryTimers.get(containerId);
-    if (timer) clearTimeout(timer);
-    expiryTimers.delete(containerId);
-
-    const stopRes = await fetch(`${DOCKER_API}/containers/${containerId}/stop`, { method: 'POST' });
-    if (!stopRes.ok && stopRes.status !== 304 && stopRes.status !== 404) {
-        console.error("[-] container stop failed:", stopRes.status);
-        return { success: false, rc: 500, error: 'Failed to stop container' };
-    }
-
-    return { success: true, rc: 200, message: 'SSH Instance Stopped' };
 }

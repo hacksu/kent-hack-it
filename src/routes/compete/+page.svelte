@@ -360,6 +360,11 @@
 
         updateSSHTimer();
         sshTimer = setInterval(updateSSHTimer, 1000);
+
+        return () => {
+            clearInterval(timer);
+            clearInterval(sshTimer);
+        };
     });
 
     // Styling helper: maps a challenge difficulty to a badge color, mirroring

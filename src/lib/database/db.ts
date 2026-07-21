@@ -1663,7 +1663,12 @@ export async function CreateSSHInstance(uid: any, cid: any) {
         const existing = await GetActiveSSHInstance(uid);
         if (existing) {
             console.log("[*] Stopping existing SSH instance before creating a new one...");
-            await StopSSHInstance(uid);
+            const stopResult = await StopSSHInstance(uid);
+            if (!stopResult.success) {
+                // uid is the primary key of ssh_instance_sessions -- proceeding
+                // here would insert-conflict against the row we just failed to clear
+                return stopResult;
+            }
         }
 
         const challenge_data = await db.select({
@@ -1686,14 +1691,17 @@ export async function CreateSSHInstance(uid: any, cid: any) {
         const instance_data = await res.json();
 
         if (instance_data.success) {
-            await db.insert(schema.ssh_instance_sessions).values({
-                uid: uid,
+            const row = {
                 challenge_id: cid,
                 container_id: instance_data.container_id,
                 port: instance_data.port,
                 password: instance_data.password,
                 expires_at: new Date(instance_data.expires_at),
-            });
+            };
+            // upsert as defense-in-depth against a stale row with this uid,
+            // even though the stop-and-check above should already prevent one
+            await db.insert(schema.ssh_instance_sessions).values({ uid, ...row })
+                .onConflictDoUpdate({ target: schema.ssh_instance_sessions.uid, set: row });
         }
 
         return instance_data;
