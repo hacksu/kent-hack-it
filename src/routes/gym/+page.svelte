@@ -8,16 +8,25 @@
     import { type ViewableChallengeData } from '$lib/database/db.js';
     import { handleFormResult } from "$lib/utilities.js";
 
+    import { Button } from "$lib/components/ui/button";
+    import { Badge } from "$lib/components/ui/badge";
+    import { Input } from "$lib/components/ui/input";
+    import { Label } from "$lib/components/ui/label";
+    import { Separator } from "$lib/components/ui/separator";
+    import * as Select from "$lib/components/ui/select";
+    import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
+    import X from "@lucide/svelte/icons/x";
+
     let error = $state("");
     let warning = $state("");
     let success = $state("");
-    
+
     function clearResult() {
         error = warning = success = "";
     }
 
     const { data } = $props();
-    
+
     let currentPage = $state(1);
     const challengesPerPage = 20;
 
@@ -203,6 +212,21 @@
         challengeInfo = challenge;
         showPanel = challenge !== undefined;
     }
+
+    // Styling helper: maps a challenge difficulty to a badge color, mirroring
+    // the previous Bootstrap bg-danger/bg-warning/bg-info/bg-success ramp.
+    function difficultyBadgeClass(difficulty: string) {
+        switch (difficulty) {
+            case 'Extreme': return 'border-destructive/30 bg-destructive/15 text-destructive';
+            case 'Hard': return 'border-amber-400/30 bg-amber-400/15 text-amber-400';
+            case 'Medium': return 'border-brand-blue/30 bg-brand-blue/15 text-brand-blue';
+            case 'Easy': return 'border-brand-green/30 bg-brand-green/15 text-brand-green';
+            default: return 'border-border bg-muted text-muted-foreground';
+        }
+    }
+
+    const ratingLabel = (rating: string) =>
+        `${rating}+ ⭐ (${rating === '4.0' ? 'Excellent' : rating === '3.0' ? 'Good' : rating === '2.0' ? 'Fair' : 'Any'})`;
 </script>
 
 <svelte:head>
@@ -212,58 +236,63 @@
 <!-- START OF PANEL -->
 {#if showPanel}
     <div class="challenge-overlay" role="presentation" onclick={() => showPanel = false}>
-        <div>
+        <div style="background: transparent; padding: 0; border-radius: 0;">
             {#if challengeInfo}
                 <Feedback success={success} warning={warning} error={error}  />
 
-                <div role="presentation" class="card shadow" style="min-width: 400px; max-width: 550px;"
+                <div
+                    role="presentation"
+                    class="w-full max-w-[550px] overflow-hidden rounded-2xl border border-border bg-card! shadow-xl"
                     onclick={(e) => e.stopPropagation()}
                 >
                     <!-- Header banner -->
-                    <div class="card-header d-flex justify-content-between align-items-start"
-                        style="background: linear-gradient(135deg, #61a7e8, #3a80c2); color: white;">
+                    <div class="flex items-start justify-between gap-3 bg-gradient-to-br from-brand-blue to-[#2e5c87] px-5 py-4">
                         <div>
-                            <h5 class="mb-1">{challengeInfo.name}</h5>
-                            <p class="mb-1" style="font-size: 12px">Created By: {challengeInfo.written_by}</p>
-                            <span class="badge bg-secondary me-1">{challengeInfo.category}</span>
-                            <span class="badge {
-                                challengeInfo.difficulty === 'Extreme' ? 'bg-danger' :
-                                challengeInfo.difficulty === 'Hard' ? 'bg-warning text-dark' :
-                                challengeInfo.difficulty === 'Medium' ? 'bg-info text-dark' :
-                                challengeInfo.difficulty === 'Easy' ? 'bg-success' : 'bg-light text-dark'
-                            }">{challengeInfo.difficulty}</span>
+                            <h5 class="mb-1 text-base font-semibold text-white!">{challengeInfo.name}</h5>
+                            <p class="mb-1.5 text-xs text-white/80!">Created By: {challengeInfo.written_by}</p>
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <Badge variant="secondary" class="border-white/20 bg-white/15 text-white!">{challengeInfo.category}</Badge>
+                                <Badge class={difficultyBadgeClass(challengeInfo.difficulty)}>{challengeInfo.difficulty}</Badge>
+                            </div>
                         </div>
-                        <button title="Close Panel" class="btn btn-sm btn-close btn-close-white" onclick={() => showPanel = false}></button>
+                        <button
+                            title="Close Panel"
+                            aria-label="Close panel"
+                            class="rounded-md p-1 text-white/80! transition-colors hover:bg-white/10 hover:text-white!"
+                            onclick={() => showPanel = false}
+                        >
+                            <X class="h-4 w-4" />
+                        </button>
                     </div>
 
-                   <div class="card-body p-2">
+                    <div class="p-4">
                         {#if !challengeInfo.is_active}
-                            <p>Challenge is currently Out-of-Order and will be back online soon!</p>
+                            <p class="mb-2 text-sm text-amber-400">Challenge is currently Out-of-Order and will be back online soon!</p>
                         {/if}
 
                         {#if challengeInfo.description}
-                            <div class="mb-2">
-                                <p class="card-text small text-muted" style="font-size: 0.75rem">
-                                    {challengeInfo.description}
-                                </p>
-                            </div>
+                            <p class="mb-3 text-xs text-muted-foreground">
+                                {challengeInfo.description}
+                            </p>
                         {/if}
-                        
-                        <p class="card-text small mb-1">⭐ {Number(challengeInfo.rating).toFixed(1)} / 5</p>
-                        
-                        <details class="hints-section">
-                            <summary>Hints</summary>
-                            {#each challengeInfo.hints as hint}
-                                <span>{hint}</span>
-                            {/each}
+
+                        <p class="mb-1 text-sm text-foreground">⭐ {Number(challengeInfo.rating).toFixed(1)} / 5</p>
+
+                        <details class="mt-2 rounded-lg border border-border p-3">
+                            <summary class="cursor-pointer text-xs font-medium text-muted-foreground select-none">Hints</summary>
+                            <div class="mt-2 space-y-1.5">
+                                {#each challengeInfo.hints as hint}
+                                    <span class="block rounded-md border border-border bg-muted px-2.5 py-1.5 text-xs text-foreground">{hint}</span>
+                                {/each}
+                            </div>
                         </details>
-                        
-                        <p class="card-text small p-1">Points: {challengeInfo.points}</p>
-                        <p class="card-text small">{challengeInfo.solves} Solves</p>
+
+                        <p class="mt-3 text-sm text-foreground">Points: {challengeInfo.points}</p>
+                        <p class="text-sm text-muted-foreground">{challengeInfo.solves} Solves</p>
                     </div>
 
                     <!-- Footer action -->
-                    <div class="card-footer d-grid">
+                    <div class="border-t border-border p-4">
                         <form method="POST" action="/compete?/submit_flag" use:enhance={() => {
                             return async ({ result, update }) => {
                                 await update();
@@ -278,17 +307,17 @@
                             };
                         }}>
                             <input type="hidden" name="cid" value={challengeInfo.id} />
-                            <div class="input-group mt-2">
-                                <input
+                            <div class="flex gap-2">
+                                <Input
                                     name="flag_value"
                                     type="text"
-                                    class="form-control"
                                     placeholder="Enter Flag"
                                     required
+                                    class="flex-1"
                                 />
-                                <button type="submit" class="btn btn-primary">
+                                <Button type="submit">
                                     Submit
-                                </button>
+                                </Button>
                             </div>
                         </form>
 
@@ -309,45 +338,39 @@
                                 <input type="hidden" name="cid" value={challengeInfo.id} />
                                 <input type="hidden" name="rating" value={selectedRating} />
 
-                                <div class="star-rating mt-2">
-                                    {#each [1, 2, 3, 4, 5] as star}
-                                        <button
-                                            type="button"
-                                            class="star"
-                                            class:active={star <= selectedRating}
-                                            class:hovered={star <= hoveredRating}
-                                            onmouseenter={() => hoveredRating = star}
-                                            onmouseleave={() => hoveredRating = 0}
-                                            onclick={() => selectedRating = star}
-                                            aria-label="Rate {star} star{star !== 1 ? 's' : ''}"
-                                        >
-                                            ★
-                                        </button>
-                                    {/each}
+                                <div class="mt-3 flex items-center gap-3">
+                                    <div class="flex items-center gap-1">
+                                        {#each [1, 2, 3, 4, 5] as star}
+                                            <button
+                                                type="button"
+                                                class="text-2xl leading-none transition-transform hover:scale-110 {star <= selectedRating || star <= hoveredRating ? 'text-amber-400' : 'text-muted-foreground/30'}"
+                                                onmouseenter={() => hoveredRating = star}
+                                                onmouseleave={() => hoveredRating = 0}
+                                                onclick={() => selectedRating = star}
+                                                aria-label="Rate {star} star{star !== 1 ? 's' : ''}"
+                                            >
+                                                ★
+                                            </button>
+                                        {/each}
+                                    </div>
 
-                                    <button
+                                    <Button
                                         type="submit"
-                                        class="btn btn-primary btn-sm ms-3"
+                                        size="sm"
                                         disabled={selectedRating === 0}
                                     >
                                         Submit Rating
-                                    </button>
+                                    </Button>
                                 </div>
                             </form>
                         {/if}
 
                     </div>
-                    
+
                 </div>
             {:else}
-                <div class="card h-100 shadow-sm p-2" style="position: relative">
-                    <div class="card-body p-2">
-                        <div class="view-feedback">
-                            <div class="view-alert view-err">
-                                Error getting challenge info.
-                            </div>
-                        </div>
-                    </div>
+                <div class="rounded-2xl border border-border bg-card! p-4">
+                    <p class="text-sm text-destructive">Error getting challenge info.</p>
                 </div>
             {/if}
 
@@ -357,246 +380,241 @@
 
 <!-- END OF PANEL -->
 
-<main >
-    <div class="container-fluid mt-4">
+<main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
 
-        <div class="row align-items-center mb-4">
-            <Stats progressData={ data.progressData } showAll={ false } />
+    <div class="mb-6">
+        <Stats progressData={ data.progressData } showAll={ false } />
 
-            <div class="col-12 text-center">
-                <h2 class="mb-0">Welcome to the Gym</h2>
+        <div class="mt-4 text-center">
+            <h2 class="font-mono text-2xl font-bold text-foreground">Welcome to the Gym</h2>
 
-                <details>
-                    <summary class="fw-thin fs-5">
-                        What's here?
-                    </summary>
+            <details class="mx-auto mt-2 max-w-2xl text-left">
+                <summary class="cursor-pointer text-center text-sm font-light text-muted-foreground select-none">
+                    What's here?
+                </summary>
 
-                    <div class="mt-3 text-muted" style="background-color: #aaaaaa22; border-radius: 10px;">
-                        <p class="mb-2">
-                            The Gym is a place for practicing, learning, and improving your skills.
-                        </p>
+                <div class="mt-3 rounded-xl bg-muted/30 p-4 text-sm text-muted-foreground">
+                    <p class="mb-2">
+                        The Gym is a place for practicing, learning, and improving your skills.
+                    </p>
 
-                        <p class="mb-2">
-                            After events end event challenges are retired here, so you can continue solving them at your own pace.
-                        </p>
+                    <p class="mb-2">
+                        After events end event challenges are retired here, so you can continue solving them at your own pace.
+                    </p>
 
-                        <p class="mb-0">
-                            Think of it as an archive of past KHI challenges learning and skill development.
-                        </p>
+                    <p class="mb-0">
+                        Think of it as an archive of past KHI challenges learning and skill development.
+                    </p>
 
-                        <p class="mb-0">
-                            <i>
-                                If you were on a team for KHI your teams completions are not counted here, meaning this page will show you
-                                what challenges you either have or have not completed.
-                            </i>
-                            Feel free to communicate on our Discord or view our <a href="https://github.com/hacksu/Kent-Hack-It-Released" target="_blank">author's solutions</a> if you looking for help!
-                        </p>
-                    </div>
-                </details>
-            </div>
+                    <p class="mb-0">
+                        <i>
+                            If you were on a team for KHI your teams completions are not counted here, meaning this page will show you
+                            what challenges you either have or have not completed.
+                        </i>
+                        Feel free to communicate on our Discord or view our
+                        <a
+                            href="https://github.com/hacksu/Kent-Hack-It-Released"
+                            target="_blank"
+                            class="text-brand-blue! underline underline-offset-4 hover:text-brand-green!"
+                        >author's solutions</a> if you looking for help!
+                    </p>
+                </div>
+            </details>
         </div>
+    </div>
 
-        <div class="row" style="position: relative; min-height: calc(100vh - 200px)">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
 
-            <!-- Filter Sidebar -->
-            <div class="col-md-3 col-lg-2">
-                <div class="card p-3 mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0" style="color: black; text-align: center">Filters</h5>
-                        <button
-                            class="btn btn-sm btn-outline-secondary d-md-none"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#filterCollapse"
-                            aria-expanded="false"
-                            aria-controls="filterCollapse"
-                        >
-                            Filter Options
-                        </button>
-                    </div>
+        <!-- Filter Sidebar -->
+        <aside class="rounded-2xl border border-border bg-card p-4 lg:h-fit">
+            <h5 class="mb-3 font-mono text-xs font-semibold tracking-widest text-muted-foreground uppercase">Filters</h5>
 
-                    <div class="collapse d-md-block" id="filterCollapse">
+            <div class="space-y-4">
 
-                        <!-- Search -->
-                        <div class="mb-3">
-                            <label for="search-text" class="form-label">Search</label>
-                            <input
-                                type="text"
-                                class="form-control form-control-sm"
-                                placeholder="Search challenges..."
-                                bind:value={filters.searchText}
-                            />
-                        </div>
-
-                        <!-- Category -->
-                        <div class="mb-3">
-                            <label for="catagory-search" class="form-label">Category</label>
-                            <select class="form-select form-select-sm" bind:value={filters.category}>
-                                <option value="">All Categories</option>
-                                {#each availableCategories as category}
-                                    <option value={category}>{category}</option>
-                                {/each}
-                            </select>
-                        </div>
-
-                        <!-- Difficulty -->
-                        <div class="mb-3">
-                            <label for="difficulty-search" class="form-label">Difficulty</label>
-                            <select class="form-select form-select-sm" bind:value={filters.difficulty}>
-                                <option value="">All Difficulties</option>
-                                {#each availableDifficulties() as difficulty}
-                                    <option value={difficulty}>{difficulty}</option>
-                                {/each}
-                            </select>
-                        </div>
-
-                        <!-- Rating -->
-                        <div class="mb-3">
-                            <label for="rating-search" class="form-label">Minimum Rating</label>
-                            <select class="form-select form-select-sm" bind:value={filters.rating}>
-                                <option value="">All Ratings</option>
-                                {#each availableRatings as rating}
-                                    <option value={rating}>
-                                        {rating}+ ⭐ ({rating === '4.0' ? 'Excellent' : rating === '3.0' ? 'Good' : rating === '2.0' ? 'Fair' : 'Any'})
-                                    </option>
-                                {/each}
-                            </select>
-                        </div>
-
-                        <!-- Author -->
-                        <div class="mb-3">
-                            <label for="author-search" class="form-label">Author</label>
-                            <select class="form-select form-select-sm" bind:value={filters.author}>
-                                <option value="">All Authors</option>
-                                {#each availableAuthors as author}
-                                    <option value={author}>{author}</option>
-                                {/each}
-                            </select>
-                        </div>
-
-                        <!-- Individual Completion -->
-                        <div class="mb-3">
-                            <label for="completion-search" class="form-label">Individual Progress</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="showCompleted"
-                                    bind:checked={filters.showCompleted}
-                                />
-                                <label class="form-check-label" for="showCompleted">
-                                    My Completed
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="showUncompleted"
-                                    bind:checked={filters.showUncompleted}
-                                />
-                                <label class="form-check-label" for="showUncompleted">
-                                    My Uncompleted
-                                </label>
-                            </div>
-                        </div>
-
-                        <button class="btn btn-sm btn-outline-secondary w-100 mb-3" onclick={clearFilters}>
-                            Clear Filters
-                        </button>
-
-                        <div class="mt-4">
-                            <hr class="mb-3" />
-                            <a class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" href="/challenge_help">
-                                Challenge Help
-                            </a>
-                        </div>
-
-                    </div>
+                <!-- Search -->
+                <div>
+                    <Label for="search-text" class="mb-1.5 block text-xs text-muted-foreground">Search</Label>
+                    <Input
+                        id="search-text"
+                        type="text"
+                        placeholder="Search challenges..."
+                        bind:value={filters.searchText}
+                    />
                 </div>
-            </div>
 
-            <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 d-flex flex-column">
-                <div class="flex-grow-1" style="position: relative">
-                    {#if currentChallenges.length > 0}
-                        <div class="row">
-                            {#each currentChallenges as challenge, idx (challenge.id ?? idx)}
-                                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-3">
-                                    <button
-                                        class="text-decoration-none text-dark"
-                                        style="border: none; background-color: #00000000;"
-                                        onclick={ () => { viewChallenge(challenge.id) } }
-                                    >
-                                        <div class="card h-100 shadow-sm p-2" style="position: relative">
-                                            <div class="card-body p-2">
-
-                                                {#if !challenge.is_active}
-                                                    <div class="border border-warning-subtle bg-warning-subtle rounded p-3 mb-3">
-                                                        <div class="d-flex align-items-start gap-2">
-                                                            <i class="ti ti-alert-circle text-warning fs-4"></i>
-
-                                                            <div>
-                                                                <div class="fw-semibold text-warning-emphasis">
-                                                                    Challenge Offline
-                                                                </div>
-
-                                                                <small class="text-muted">
-                                                                    This challenge is currently out-of-order and will return soon.
-                                                                </small>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                {/if}
-
-                                                <div class="{!challenge.is_active ? 'opacity-50' : ''}">
-                                                    <div style="display: flex; justify-content: center; align-items: center; gap: 10px">
-                                                        <h6 class="card-title mb-1">{challenge.name}</h6>
-                                                    </div>
-    
-                                                    <small class="text-muted">
-                                                        {challenge.category} | Difficulty: {challenge.difficulty}
-                                                    </small>
-                                                    <div class="mb-1">
-                                                        <small class="text-info">
-                                                            By: {challenge.written_by || 'Unknown Author'}
-                                                        </small>
-                                                    </div>
-                                                    {#if challenge.description}
-                                                        <div class="mb-2">
-                                                            <p class="card-text small text-muted" style="font-size: 0.75rem">
-                                                                {challenge.description}
-                                                            </p>
-                                                        </div>
-                                                    {/if}
-                                                    <p class="card-text small mb-1">⭐ {Number(challenge.rating).toFixed(1)} / 5</p>
-                                                    <p class="card-text small">Points: {challenge.points}</p>
-                                                    <p class="card-text small">{challenge.solves} Solves</p>
-                                                </div>
-                                                
-                                            </div>
-                                        </div>
-                                    </button>
-                                </div>
+                <!-- Category -->
+                <div>
+                    <Label for="catagory-search" class="mb-1.5 block text-xs text-muted-foreground">Category</Label>
+                    <Select.Root type="single" bind:value={filters.category}>
+                        <Select.Trigger id="catagory-search" class="w-full">
+                            {filters.category || "All Categories"}
+                        </Select.Trigger>
+                        <Select.Content>
+                            <Select.Item value="">All Categories</Select.Item>
+                            {#each availableCategories as category}
+                                <Select.Item value={category}>{category}</Select.Item>
                             {/each}
-                        </div>
-                    {:else}
-                        <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center">
-                            <div class="text-center">
-                                <h4 class="text-muted">No challenges found</h4>
-                                <p class="text-muted">Try adjusting your filters to see more challenges.</p>
-                            </div>
-                        </div>
-                    {/if}
+                        </Select.Content>
+                    </Select.Root>
                 </div>
+
+                <!-- Difficulty -->
+                <div>
+                    <Label for="difficulty-search" class="mb-1.5 block text-xs text-muted-foreground">Difficulty</Label>
+                    <Select.Root type="single" bind:value={filters.difficulty}>
+                        <Select.Trigger id="difficulty-search" class="w-full">
+                            {filters.difficulty || "All Difficulties"}
+                        </Select.Trigger>
+                        <Select.Content>
+                            <Select.Item value="">All Difficulties</Select.Item>
+                            {#each availableDifficulties() as difficulty}
+                                <Select.Item value={difficulty}>{difficulty}</Select.Item>
+                            {/each}
+                        </Select.Content>
+                    </Select.Root>
+                </div>
+
+                <!-- Rating -->
+                <div>
+                    <Label for="rating-search" class="mb-1.5 block text-xs text-muted-foreground">Minimum Rating</Label>
+                    <Select.Root type="single" bind:value={filters.rating}>
+                        <Select.Trigger id="rating-search" class="w-full">
+                            {filters.rating ? ratingLabel(filters.rating) : "All Ratings"}
+                        </Select.Trigger>
+                        <Select.Content>
+                            <Select.Item value="">All Ratings</Select.Item>
+                            {#each availableRatings as rating}
+                                <Select.Item value={rating}>{ratingLabel(rating)}</Select.Item>
+                            {/each}
+                        </Select.Content>
+                    </Select.Root>
+                </div>
+
+                <!-- Author -->
+                <div>
+                    <Label for="author-search" class="mb-1.5 block text-xs text-muted-foreground">Author</Label>
+                    <Select.Root type="single" bind:value={filters.author}>
+                        <Select.Trigger id="author-search" class="w-full">
+                            {filters.author || "All Authors"}
+                        </Select.Trigger>
+                        <Select.Content>
+                            <Select.Item value="">All Authors</Select.Item>
+                            {#each availableAuthors as author}
+                                <Select.Item value={author}>{author}</Select.Item>
+                            {/each}
+                        </Select.Content>
+                    </Select.Root>
+                </div>
+
+                <!-- Individual Completion -->
+                <div class="space-y-2">
+                    <Label class="block text-xs text-muted-foreground">Individual Progress</Label>
+                    <label class="flex items-center gap-2 text-sm text-foreground">
+                        <input
+                            type="checkbox"
+                            class="h-4 w-4 rounded border-border accent-brand-green"
+                            bind:checked={filters.showCompleted}
+                        />
+                        My Completed
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-foreground">
+                        <input
+                            type="checkbox"
+                            class="h-4 w-4 rounded border-border accent-brand-green"
+                            bind:checked={filters.showUncompleted}
+                        />
+                        My Uncompleted
+                    </label>
+                </div>
+
+                <Button variant="outline" size="sm" class="w-full" onclick={clearFilters}>
+                    Clear Filters
+                </Button>
+
+                <Separator />
+
+                <Button
+                    href="/challenge_help"
+                    class="w-full bg-gradient-to-r from-brand-green to-brand-blue text-[#08131f]! hover:brightness-105"
+                >
+                    Challenge Help
+                </Button>
+
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex flex-col">
+            <div class="flex-1">
+                {#if currentChallenges.length > 0}
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {#each currentChallenges as challenge, idx (challenge.id ?? idx)}
+                            <button
+                                type="button"
+                                class="h-full rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-brand-blue/40"
+                                onclick={ () => { viewChallenge(challenge.id) } }
+                            >
+                                {#if !challenge.is_active}
+                                    <div class="mb-3 flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3">
+                                        <TriangleAlert class="h-4.5 w-4.5 shrink-0 text-amber-400" />
+
+                                        <div>
+                                            <div class="text-sm font-semibold text-amber-300">
+                                                Challenge Offline
+                                            </div>
+
+                                            <p class="text-xs text-muted-foreground">
+                                                This challenge is currently out-of-order and will return soon.
+                                            </p>
+                                        </div>
+                                    </div>
+                                {/if}
+
+                                <div class={!challenge.is_active ? 'opacity-50' : ''}>
+                                    <div class="flex items-center justify-center gap-2.5">
+                                        <h6 class="text-sm font-semibold text-foreground">{challenge.name}</h6>
+                                    </div>
+
+                                    <p class="mt-1 text-xs text-muted-foreground">
+                                        {challenge.category} | Difficulty: {challenge.difficulty}
+                                    </p>
+                                    <p class="mt-0.5 text-xs text-brand-blue">
+                                        By: {challenge.written_by || 'Unknown Author'}
+                                    </p>
+                                    {#if challenge.description}
+                                        <p class="mt-2 text-xs text-muted-foreground">
+                                            {challenge.description}
+                                        </p>
+                                    {/if}
+                                    <p class="mt-2 text-xs text-foreground">⭐ {Number(challenge.rating).toFixed(1)} / 5</p>
+                                    <p class="text-xs text-foreground">Points: {challenge.points}</p>
+                                    <p class="text-xs text-muted-foreground">{challenge.solves} Solves</p>
+                                </div>
+                            </button>
+                        {/each}
+                    </div>
+                {:else}
+                    <div class="flex min-h-[300px] items-center justify-center text-center">
+                        <div>
+                            <h4 class="text-lg font-medium text-muted-foreground">No challenges found</h4>
+                            <p class="text-sm text-muted-foreground">Try adjusting your filters to see more challenges.</p>
+                        </div>
+                    </div>
+                {/if}
             </div>
 
             <!-- Pagination -->
-            <div class="mt-3 py-3">
-                <div class="d-flex justify-content-center align-items-center gap-4">
-                    <button class="btn btn-sm btn-primary" onclick={prevPage} disabled={currentPage === 1}>
+            <div class="mt-4 py-3">
+                <div class="flex items-center justify-center gap-4">
+                    <Button variant="outline" size="sm" onclick={prevPage} disabled={currentPage === 1}>
                         ← Prev
-                    </button>
-                    <span class="fw-semibold text-muted">
+                    </Button>
+                    <span class="text-sm font-semibold text-muted-foreground">
                         Page {currentPage} of {totalPages}
                     </span>
-                    <button class="btn btn-sm btn-primary" onclick={nextPage} disabled={indexOfLast >= challenges.length}>
+                    <Button variant="outline" size="sm" onclick={nextPage} disabled={indexOfLast >= challenges.length}>
                         Next →
-                    </button>
+                    </Button>
                 </div>
             </div>
 

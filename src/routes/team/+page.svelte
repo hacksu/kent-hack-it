@@ -1,9 +1,17 @@
 <script lang="ts">
     import { enhance } from "$app/forms";
     import { invalidateAll } from '$app/navigation';
-    
+
     import Feedback from '$lib/components/feedback.svelte';
     import { handleFormResult } from "$lib/utilities.js";
+
+    import { Button } from "$lib/components/ui/button";
+    import { Badge } from "$lib/components/ui/badge";
+    import { Input } from "$lib/components/ui/input";
+    import { Label } from "$lib/components/ui/label";
+    import * as Card from "$lib/components/ui/card";
+    import Crown from "@lucide/svelte/icons/crown";
+    import LogOut from "@lucide/svelte/icons/log-out";
 
     function clearResult() {
         error = warning = success = "";
@@ -54,159 +62,148 @@
     }
 
     const { data } = $props();
+
+    const sectionLabelClass = "mb-2 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase";
+    const panelHeaderClass = "border-b border-border px-4 py-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase";
 </script>
 
 {#if data.team}
-<div class="container-fluid py-4">
+<div class="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6">
     <Feedback success={success} warning={warning} error={error}  />
 
-    <div class="d-flex justify-content-center align-items-start min-vh-100 pt-5">
+    <Card.Root class="overflow-hidden border border-border bg-card">
+        <div class="flex items-center justify-between border-b border-border px-4 py-3">
+            <span class="font-medium text-foreground">{data.team.name}</span>
+            <Badge variant="secondary">{data.team.members.length + 1} / 4 members</Badge>
+        </div>
 
-        <div class="card border rounded-3 overflow-hidden w-100" style="max-width: 800px">
-
-            <div class="card-header d-flex align-items-center justify-content-between bg-white border-bottom py-2 px-3">
-                <span class="fw-medium">{data.team.name}</span>
-                <span class="badge text-bg-secondary">{data.team.members.length + 1} / 4 members</span>
-            </div>
-
-            <div class="px-3 pt-3 pb-2 border-bottom">
-                <p class="text-muted mb-2" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;">Leader</p>
-                <div class="d-flex align-items-center gap-2">
-                    {#if data.team.leader.image}
-                        <img
-                            src={data.team.leader.image}
-                            alt={data.team.leader.name}
-                            class="rounded-circle"
-                            width="32" height="32"
-                            style="object-fit: cover;"
-                            referrerpolicy="no-referrer"
-                            crossorigin="anonymous"    
-                        />
-                    {:else}
-                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-medium" style="width:32px; height:32px; font-size:12px;">
-                            {data.team.leader.name.slice(0, 2).toUpperCase()}
-                        </div>
-                    {/if}
-                    <div>
-                        <p class="mb-0 small fw-medium">{data.team.leader.name}</p>
-                        <p class="mb-0 text-muted" style="font-size: 11px;">Team leader</p>
-                    </div>
-                    <i class="ti ti-crown ms-auto" style="color: #BA7517;"></i>
-                </div>
-            </div>
-
-            <div class="px-3 pt-3 pb-2 border-bottom">
-                <p class="text-muted mb-2" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;">Members</p>
-                {#if data.team.members.length === 0}
-                    <p class="text-muted small mb-2">No other members yet.</p>
+        <div class="border-b border-border px-4 pt-4 pb-3">
+            <p class={sectionLabelClass}>Leader</p>
+            <div class="flex items-center gap-2">
+                {#if data.team.leader.image}
+                    <img
+                        src={data.team.leader.image}
+                        alt={data.team.leader.name}
+                        class="h-8 w-8 rounded-full border border-border object-cover"
+                        referrerpolicy="no-referrer"
+                        crossorigin="anonymous"
+                    />
                 {:else}
-                    <div class="d-flex flex-column gap-2 mb-1">
-                        {#each data.team.members as member}
-                            <div class="d-flex align-items-center gap-4">
-                                {#if member.image}
-                                    <img
-                                        src={member.image}
-                                        alt={member.name}
-                                        class="rounded-circle"
-                                        width="32" height="32"
-                                        style="object-fit: cover;"
-                                        referrerpolicy="no-referrer"
-                                        crossorigin="anonymous"    
-                                    />
-                                {:else}
-                                    <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center fw-medium" style="width:32px; height:32px; font-size:12px;">
-                                        {member.name.slice(0, 2).toUpperCase()}
-                                    </div>
-                                {/if}
-                                
-                                <div>
-                                    <p class="mb-0 small fw-medium">{member.name}</p>
-                                </div>
-
-                                <!-- only leader can see this -->
-                                {#if data.is_leader}
-                                    <button
-                                        class="btn btn-outline-danger btn-sm"
-                                        style="margin-left: 15px"
-                                        onclick={ () => { RemoveMember(member.id, member.name, data.team.id) } }
-                                    >
-                                        Remove
-                                    </button>
-                                {/if}
-                            </div>
-                        {/each}
+                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-blue text-xs font-medium text-[#08131f]">
+                        {data.team.leader.name.slice(0, 2).toUpperCase()}
                     </div>
                 {/if}
+                <div>
+                    <p class="text-sm font-medium text-foreground">{data.team.leader.name}</p>
+                    <p class="text-xs text-muted-foreground">Team leader</p>
+                </div>
+                <Crown class="ml-auto h-4 w-4 text-[#BA7517]" />
             </div>
+        </div>
 
-            <!-- only leader can see this -->
-            {#if data.is_leader}
-                <div class="px-3 pt-3 pb-2 border-bottom">
-                    <p class="text-muted mb-2" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500;">Join Requests</p>
-                    {#each data.team.requests as req}
-                        <div class="d-flex align-items-center gap-2">
-                            {#if req.image}
+        <div class="border-b border-border px-4 pt-4 pb-3">
+            <p class={sectionLabelClass}>Members</p>
+            {#if data.team.members.length === 0}
+                <p class="text-sm text-muted-foreground">No other members yet.</p>
+            {:else}
+                <div class="flex flex-col gap-2.5">
+                    {#each data.team.members as member}
+                        <div class="flex items-center gap-4">
+                            {#if member.image}
                                 <img
-                                    src={req.image}
-                                    alt={req.name}
-                                    class="rounded-circle"
-                                    width="32" height="32"
-                                    style="object-fit: cover;"
+                                    src={member.image}
+                                    alt={member.name}
+                                    class="h-8 w-8 rounded-full border border-border object-cover"
                                     referrerpolicy="no-referrer"
                                     crossorigin="anonymous"
                                 />
                             {:else}
-                                <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center fw-medium" style="width:32px; height:32px; font-size:12px;">
-                                    {req.name.slice(0, 2).toUpperCase()}
+                                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-medium text-secondary-foreground">
+                                    {member.name.slice(0, 2).toUpperCase()}
                                 </div>
                             {/if}
 
-                            <div>
-                                <p class="mb-0 small">{req.name}</p>
-                            </div>
+                            <p class="text-sm font-medium text-foreground">{member.name}</p>
 
-                            <button
-                                class="btn btn-outline-primary btn-sm"
-                                style="margin-left: 15px"
-                                onclick={ () => { AcceptRequest(req.id, req.checksum, req.name) } }
-                            >
-                                Accept
-                            </button>
+                            <!-- only leader can see this -->
+                            {#if data.is_leader}
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    class="ml-auto"
+                                    onclick={ () => { RemoveMember(member.id, member.name, data.team.id) } }
+                                >
+                                    Remove
+                                </Button>
+                            {/if}
                         </div>
                     {/each}
                 </div>
             {/if}
-
-            <div class="px-3 py-2 d-flex justify-content-end">
-                <form method="POST" action="?/leave_team" use:enhance>
-                    <input type="hidden" name="team_id" value={data.team.id} />
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                        <i class="ti ti-logout"></i> Leave team
-                    </button>
-                </form>
-            </div>
-
         </div>
-    </div>
+
+        <!-- only leader can see this -->
+        {#if data.is_leader}
+            <div class="border-b border-border px-4 pt-4 pb-3">
+                <p class={sectionLabelClass}>Join Requests</p>
+                {#each data.team.requests as req}
+                    <div class="flex items-center gap-2 py-1">
+                        {#if req.image}
+                            <img
+                                src={req.image}
+                                alt={req.name}
+                                class="h-8 w-8 rounded-full border border-border object-cover"
+                                referrerpolicy="no-referrer"
+                                crossorigin="anonymous"
+                            />
+                        {:else}
+                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-medium text-secondary-foreground">
+                                {req.name.slice(0, 2).toUpperCase()}
+                            </div>
+                        {/if}
+
+                        <p class="text-sm text-foreground">{req.name}</p>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="ml-auto"
+                            onclick={ () => { AcceptRequest(req.id, req.checksum, req.name) } }
+                        >
+                            Accept
+                        </Button>
+                    </div>
+                {/each}
+            </div>
+        {/if}
+
+        <div class="flex justify-end px-4 py-3">
+            <form method="POST" action="?/leave_team" use:enhance>
+                <input type="hidden" name="team_id" value={data.team.id} />
+                <Button type="submit" variant="outline" size="sm" class="gap-1.5">
+                    <LogOut class="h-3.5 w-3.5" /> Leave team
+                </Button>
+            </form>
+        </div>
+
+    </Card.Root>
 </div>
 {:else}
-<div class="container-fluid py-4">
+<div class="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
     <Feedback success={success} warning={warning} error={error}  />
 
-    <div class="row border rounded-3 overflow-hidden mx-0" style="min-height: 480px;">
+    <div class="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-2">
 
-        <div class="col-6 p-0 border-end d-flex flex-column">
-            <div class="px-3 py-2 border-bottom bg-light">
-                <span class="text-muted small fw-medium">Join a team</span>
-            </div>
-            <div class="overflow-y-auto flex-grow-1" style="max-height: 440px;">
+        <div class="flex flex-col border-b border-border sm:border-r sm:border-b-0">
+            <div class={panelHeaderClass}>Join a team</div>
+            <div class="max-h-[440px] flex-1 overflow-y-auto">
                 {#each data.teams as team}
-                    <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
-                        <span class="small">{team.name}</span>
+                    <div class="flex items-center justify-between border-b border-border px-4 py-2.5">
+                        <span class="text-sm text-foreground">{team.name}</span>
                         <form method="POST" action="?/request_join" use:enhance={() => {
                             return async ({ result, update }) => {
                                 await update();
-                                
+
                                 const formResult = await handleFormResult(result);
                                 success = formResult.success;
                                 warning = formResult.warning;
@@ -217,12 +214,12 @@
                             };
                         }}>
                             {#if team.pending}
-                                <span class="btn-sm">Pending</span>
+                                <span class="text-xs text-muted-foreground">Pending</span>
                             {:else}
                                 <input type="hidden" name="team_id" value={team.id} />
-                                <button class="btn btn-outline-secondary btn-sm" type="submit">
+                                <Button variant="outline" size="sm" type="submit">
                                     Request to join
-                                </button>
+                                </Button>
                             {/if}
                         </form>
                     </div>
@@ -230,19 +227,17 @@
             </div>
         </div>
 
-        <div class="col-6 p-0 d-flex flex-column">
-            <div class="px-3 py-2 border-bottom bg-light">
-                <span class="text-muted small fw-medium">Create a team</span>
-            </div>
-            <div class="p-3 d-flex flex-column flex-grow-1">
+        <div class="flex flex-col">
+            <div class={panelHeaderClass}>Create a team</div>
+            <div class="flex flex-1 flex-col p-4">
                 <form
                     method="POST"
                     action="?/create_team"
-                    class="d-flex flex-column gap-3 flex-grow-1"
+                    class="flex flex-1 flex-col gap-4"
                     use:enhance={() => {
                         return async ({ result, update }) => {
                             await update();
-                            
+
                             const formResult = await handleFormResult(result);
                             success = formResult.success;
                             warning = formResult.warning;
@@ -253,18 +248,22 @@
                         };
                     }}
                 >
-                    <div>
-                        <label for="team-name" class="form-label small fw-medium text-muted">Team name</label>
-                        <input
+                    <div class="space-y-1.5">
+                        <Label for="team-name" class="text-muted-foreground">Team name</Label>
+                        <Input
                             type="text"
                             id="team-name"
                             name="name"
-                            class="form-control form-control-sm"
                             placeholder="Enter team name" required
                         />
                     </div>
                     <div class="mt-auto">
-                        <button class="btn btn-primary w-100 btn-sm" type="submit">Create team</button>
+                        <Button
+                            type="submit"
+                            class="w-full bg-gradient-to-r from-brand-green to-brand-blue font-semibold text-[#08131f]! hover:brightness-105"
+                        >
+                            Create team
+                        </Button>
                     </div>
                 </form>
             </div>
