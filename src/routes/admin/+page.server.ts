@@ -106,6 +106,7 @@ export const actions = {
                 hlinks: attached_files,
                 hints,
                 bin_file: formData.bin_file,
+                image_ref: formData.image_ref || null,
             };
 
             await AddChallenge(data);
@@ -155,6 +156,7 @@ export const actions = {
                 hlinks: attached_files,
                 hints,
                 bin_file: formData.bin_file,
+                image_ref: formData.image_ref || null,
             }, formData.id);
 
             return { success: true, message: 'Challenge updated!' };

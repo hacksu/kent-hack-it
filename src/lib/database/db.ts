@@ -40,6 +40,7 @@ export interface ChallengeForm {
     hlinks: string[] | null;
     hints: string[] | null;
     bin_file: string | null;
+    image_ref: string | null;
 };
 
 export interface ChallengeData {
@@ -92,6 +93,7 @@ const publicChallengeData = {
     is_active: schema.challenges.is_active,
     is_gym: schema.challenges.is_gym,
     bin_file: schema.challenges.bin_file,
+    image_ref: schema.challenges.image_ref,
 };
 
 /**
