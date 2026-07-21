@@ -37,6 +37,7 @@
     );
 
     let binaryFile = $state<string|undefined>(challenge?.bin_file || undefined);
+    let imageRef = $state<string>(challenge?.image_ref || "");
     let binFileSearch = $state("");
     let filterBinaries = $derived(
         uploaded_files.bins.filter(file =>
@@ -231,6 +232,18 @@
 
                         <hr class="my-2 border-border" />
                     {/if}
+                </div>
+
+                <!-- SSH Instance Image -->
+                <div class="mb-3 space-y-1.5">
+                    <Label for="image-ref" class="font-semibold">SSH Instance Image</Label>
+                    <Input
+                        type="text"
+                        id="image-ref"
+                        name="image_ref"
+                        bind:value={imageRef}
+                        placeholder="e.g. khi-ssh/go1:latest"
+                    />
                 </div>
 
                 <!-- Challenge Hints -->

@@ -57,6 +57,7 @@ export interface ChallengeData {
     is_active: boolean | null;
     is_gym: boolean | null;
     bin_file: string | null;
+    image_ref: string | null;
 };
 
 export interface ViewableChallengeData {
