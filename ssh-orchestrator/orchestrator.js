@@ -166,6 +166,29 @@ export async function CreateSSHInstance(uid, image_ref) {
  * @param {string} containerId
  * @returns
  */
+/**
+ * Re-arm expiry timers for any already-running SSH instances at boot,
+ * reading khi.expires_at directly off each container's own label --
+ * so a redeploy of this service doesn't orphan running instances.
+ */
+export async function ReconcileOnBoot() {
+    const containers = await ListInstances();
+    console.log(`[*] Reconciling ${containers.length} running SSH instance(s)...`);
+
+    for (const container of containers) {
+        const expiresAtLabel = container.Labels?.[KHI_EXPIRES_LABEL];
+        if (!expiresAtLabel) continue;
+
+        const remainingMs = new Date(expiresAtLabel).getTime() - Date.now();
+        if (remainingMs <= 0) {
+            console.log(`[*] ${container.Id} already past expiry, stopping...`);
+            await StopInstance(container.Id);
+        } else {
+            armExpiryTimer(container.Id, expiresAtLabel);
+        }
+    }
+}
+
 export async function StopInstance(containerId) {
     if (!containerId) {
         return { success: false, rc: 400, error: 'Missing container_id' };

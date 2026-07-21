@@ -1,6 +1,6 @@
 import express from 'express';
 import { exit } from 'process';
-import { CreateSSHInstance, StopInstance } from './orchestrator.js';
+import { CreateSSHInstance, StopInstance, ReconcileOnBoot } from './orchestrator.js';
 
 const app = express();
 app.use(express.json());
@@ -37,6 +37,7 @@ app.post('/stop_instance', async (req, res) => {
     }
 });
 
-app.listen(port, "0.0.0.0", () => {
+app.listen(port, "0.0.0.0", async () => {
     console.log("SSH Orchestrator listening on port", port);
+    await ReconcileOnBoot();
 });
