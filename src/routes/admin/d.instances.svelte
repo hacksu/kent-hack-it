@@ -31,13 +31,13 @@
     let error = $state("");
     let success = $state("");
 
-    async function stopInstance(uid: string, playerName: string) {
+    async function stopInstance(uid: string, playerName: string, type: string) {
         if (!window.confirm(`Are you sure you want to STOP ${playerName}'s instance?`)) return;
 
         const req = await fetch('/admin/api', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ context: 'instance', action: 'stop', uid })
+            body: JSON.stringify({ context: 'instance', action: 'stop', uid, type })
         });
 
         const response = await req.json();
@@ -90,7 +90,7 @@
                         <td>
                             <button
                                 class="btn btn-sm btn-outline-danger"
-                                onclick={() => stopInstance(instance.uid, instance.player_name)}
+                                onclick={() => stopInstance(instance.uid, instance.player_name, instance.type)}
                             >
                                 <i class="bi bi-stop-fill me-1"></i> Stop
                             </button>

@@ -5,6 +5,7 @@ import {
     DeleteUser,
     RemoveTeam,
     StopInstance,
+    StopSSHInstance,
 } from '$lib/database/db';
 import { json } from '@sveltejs/kit';
 
@@ -42,8 +43,8 @@ async function deleteUser(id: string) {
     }
 }
 
-async function stopInstance(uid: string) {
-    return json(await StopInstance(uid));
+async function stopInstance(uid: string, type: string) {
+    return json(type === 'ssh' ? await StopSSHInstance(uid) : await StopInstance(uid));
 }
 
 async function deleteTeam(id: string) {
@@ -140,7 +141,7 @@ export const POST = async (event) => {
         }
     } else if (data.context === 'instance') {
         if (data.action === 'stop') {
-            handler = await stopInstance(data.uid);
+            handler = await stopInstance(data.uid, data.type);
         } else {
             // unknown action
             return json({ success: false, error: 'Unknown action' , status: 500 });
