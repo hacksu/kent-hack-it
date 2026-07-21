@@ -1765,3 +1765,34 @@ export async function StopSSHInstance(uid: any) {
         return { success: false, error: "Error Occurred when stopping SSH Instance" };
     }
 }
+
+/**
+ * Fetch every active instance (nc and SSH) for the unified admin
+ * Instances tab.
+ *
+ * @returns
+ */
+export async function GetActiveInstances() {
+    const nc = await GetActiveNcInstances();
+
+    let ssh: any[] = [];
+    try {
+        ssh = await db.select({
+            uid: schema.ssh_instance_sessions.uid,
+            player_name: schema.user.name,
+            challenge_name: schema.challenges.name,
+            port: schema.ssh_instance_sessions.port,
+            container_id: schema.ssh_instance_sessions.container_id,
+            expires_at: schema.ssh_instance_sessions.expires_at,
+        }).from(schema.ssh_instance_sessions)
+        .innerJoin(schema.user, eq(schema.ssh_instance_sessions.uid, schema.user.id))
+        .leftJoin(schema.challenges, eq(schema.ssh_instance_sessions.challenge_id, schema.challenges.id));
+    } catch (e: any) {
+        console.error("[-] GetActiveInstances (ssh):", e);
+    }
+
+    return [
+        ...nc.map(row => ({ type: 'nc' as const, ...row })),
+        ...ssh.map(row => ({ type: 'ssh' as const, ...row })),
+    ];
+}

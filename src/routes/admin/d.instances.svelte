@@ -2,7 +2,7 @@
     import { invalidateAll } from '$app/navigation';
     import Feedback from '$lib/components/feedback.svelte';
 
-    const { nc_instances } = $props();
+    const { instances } = $props();
 
     const NC_SESSION_MINUTES = 15;
 
@@ -51,11 +51,11 @@
         <Feedback success={success} warning={""} error={error} />
 
         <span class="badge bg-primary fs-6">
-            {nc_instances.length} Instance{nc_instances.length !== 1 ? 's' : ''}
+            {instances.length} Instance{instances.length !== 1 ? 's' : ''}
         </span>
     </div>
 
-    {#if nc_instances.length === 0}
+    {#if instances.length === 0}
         <p class="text-muted fst-italic">No active instances.</p>
     {:else}
         <table class="table table-hover align-middle">
@@ -70,7 +70,7 @@
                 </tr>
             </thead>
             <tbody>
-                {#each nc_instances as instance (instance.uid)}
+                {#each instances as instance (instance.uid)}
                     <tr>
                         <td><span class="badge bg-secondary">nc</span></td>
                         <td>{instance.player_name}</td>

@@ -7,7 +7,7 @@ import {
     GetConfiguration,
     UpdateConfiguration,
     GetFlagHash,
-    GetActiveNcInstances
+    GetActiveInstances
 } from "$lib/database/db";
 
 import ParseLog from '$lib/parse_log';
@@ -52,7 +52,7 @@ export const load = async ({ parent }) => {
     let config = await GetConfiguration();
     let solvers = await GetSolvers();
     let log_data = await ParseLog();
-    let nc_instances = await GetActiveNcInstances();
+    let instances = await GetActiveInstances();
 
     return {
         user, challenges,
@@ -62,7 +62,7 @@ export const load = async ({ parent }) => {
         config,
         solvers,
         log_data,
-        nc_instances,
+        instances,
     }
 };
 
