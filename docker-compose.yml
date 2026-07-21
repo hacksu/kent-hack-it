@@ -63,12 +63,28 @@ services:
     networks:
       - docker_proxy_net
 
+  ssh-instances-net-anchor:
+    image: alpine:3.20
+    command: ["sleep", "infinity"]
+    restart: unless-stopped
+    networks:
+      - ssh_instances_net
+
   ssh-orchestrator:
     container_name: ssh_orchestrator_khi
     restart: unless-stopped
     build:
       context: .
       dockerfile: ./ssh-orchestrator/Dockerfile
+    environment:
+      DOCKER_PROXY_HOST: docker-socket-proxy
+      DOCKER_PROXY_PORT: 2375
+      SSH_MIN_PORT: ${SSH_MIN_PORT}
+      SSH_MAX_PORT: ${SSH_MAX_PORT}
+      SSH_INSTANCE_MINUTES: ${SSH_INSTANCE_MINUTES:-45}
+      SSH_INSTANCE_CPU_NANOS: ${SSH_INSTANCE_CPU_NANOS:-1000000000}
+      SSH_INSTANCE_MEM_BYTES: ${SSH_INSTANCE_MEM_BYTES:-268435456}
+      SSH_INSTANCES_NETWORK: khi_ssh_instances_net
     networks:
       - ssh_orch_net
       - docker_proxy_net
@@ -157,3 +173,5 @@ networks:
   handler_net:
   docker_proxy_net:
   ssh_orch_net:
+  ssh_instances_net:
+    name: khi_ssh_instances_net

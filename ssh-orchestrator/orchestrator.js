@@ -8,6 +8,12 @@ const KHI_TYPE_VALUE = 'ssh-instance';
 const SSH_MIN_PORT = Number(process.env.SSH_MIN_PORT);
 const SSH_MAX_PORT = Number(process.env.SSH_MAX_PORT);
 
+const SSH_INSTANCE_CPU_NANOS = Number(process.env.SSH_INSTANCE_CPU_NANOS ?? 1000000000);
+const SSH_INSTANCE_MEM_BYTES = Number(process.env.SSH_INSTANCE_MEM_BYTES ?? 268435456);
+const SSH_INSTANCES_NETWORK = process.env.SSH_INSTANCES_NETWORK ?? 'khi_ssh_instances_net';
+
+const KHI_UID_LABEL = 'khi.uid';
+
 /**
  * List currently-running SSH instance containers via docker-socket-proxy.
  * Deliberately stateless -- always queries Docker fresh rather than
@@ -56,4 +62,71 @@ export async function GetUnusedSSHPort() {
         if (!usedPorts.has(port)) return port;
     }
     return -1;
+}
+
+function generatePassword() {
+    return crypto.randomUUID().replace(/-/g, '').slice(0, 20);
+}
+
+/**
+ * Create and start a new SSH instance container for a participant.
+ *
+ * @param {string} uid
+ * @param {string} image_ref
+ * @returns
+ */
+export async function CreateSSHInstance(uid, image_ref) {
+    if (!uid || !image_ref) {
+        return { success: false, rc: 400, error: 'Missing uid or image_ref' };
+    }
+
+    const port = await GetUnusedSSHPort();
+    if (port === -1) {
+        return { success: false, rc: 500, error: 'No free SSH ports available' };
+    }
+
+    const password = generatePassword();
+
+    const createRes = await fetch(`${DOCKER_API}/containers/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            Image: image_ref,
+            Env: [`CTF_PASSWORD=${password}`],
+            Labels: {
+                [KHI_TYPE_LABEL]: KHI_TYPE_VALUE,
+                [KHI_UID_LABEL]: uid,
+            },
+            ExposedPorts: { "22/tcp": {} },
+            HostConfig: {
+                PortBindings: { "22/tcp": [{ HostPort: String(port) }] },
+                NetworkMode: SSH_INSTANCES_NETWORK,
+                AutoRemove: true,
+                NanoCpus: SSH_INSTANCE_CPU_NANOS,
+                Memory: SSH_INSTANCE_MEM_BYTES,
+            },
+        }),
+    });
+
+    if (!createRes.ok) {
+        console.error("[-] container create failed:", createRes.status, await createRes.text());
+        return { success: false, rc: 500, error: 'Failed to create container' };
+    }
+
+    const { Id: containerId } = await createRes.json();
+
+    const startRes = await fetch(`${DOCKER_API}/containers/${containerId}/start`, { method: 'POST' });
+    if (!startRes.ok && startRes.status !== 304) {
+        console.error("[-] container start failed:", startRes.status);
+        return { success: false, rc: 500, error: 'Failed to start container' };
+    }
+
+    return {
+        success: true,
+        rc: 200,
+        message: 'SSH Instance Created!',
+        container_id: containerId,
+        port,
+        password,
+    };
 }
