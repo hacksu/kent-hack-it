@@ -21,6 +21,20 @@ const SSH_IMAGE_REGISTRY = process.env.SSH_IMAGE_REGISTRY;
 const SSH_REGISTRY_USER = process.env.SSH_REGISTRY_USER;
 const SSH_REGISTRY_PASSWORD = process.env.SSH_REGISTRY_PASSWORD;
 
+const SSH_IMAGE_PREFIX = process.env.SSH_IMAGE_PREFIX ?? 'khi-ssh/';
+
+/**
+ * Allowlist check against the stored image_ref, run before any registry
+ * prefix is applied -- keeps the security model unchanged regardless of
+ * whether SSH_IMAGE_REGISTRY is set.
+ *
+ * @param {string} image_ref
+ * @returns {boolean}
+ */
+function isAllowedImage(image_ref) {
+    return typeof image_ref === 'string' && image_ref.startsWith(SSH_IMAGE_PREFIX);
+}
+
 /**
  * List currently-running SSH instance containers via docker-socket-proxy.
  * Deliberately stateless -- always queries Docker fresh rather than
@@ -106,6 +120,10 @@ function armExpiryTimer(containerId, expiresAt) {
 export async function CreateSSHInstance(uid, image_ref) {
     if (!uid || !image_ref) {
         return { success: false, rc: 400, error: 'Missing uid or image_ref' };
+    }
+
+    if (!isAllowedImage(image_ref)) {
+        return { success: false, rc: 403, error: 'Image not allowed' };
     }
 
     const port = await GetUnusedSSHPort();

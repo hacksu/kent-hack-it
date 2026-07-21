@@ -89,6 +89,7 @@ services:
       SSH_IMAGE_REGISTRY: ${SSH_IMAGE_REGISTRY:-}
       SSH_REGISTRY_USER: ${SSH_REGISTRY_USER:-}
       SSH_REGISTRY_PASSWORD: ${SSH_REGISTRY_PASSWORD:-}
+      SSH_IMAGE_PREFIX: ${SSH_IMAGE_PREFIX:-khi-ssh/}
     networks:
       - ssh_orch_net
       - docker_proxy_net
