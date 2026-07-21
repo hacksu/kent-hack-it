@@ -7,7 +7,8 @@ import {
     GetConfiguration,
     UpdateConfiguration,
     GetFlagHash,
-    GetActiveInstances
+    GetActiveInstances,
+    EnsureWebInstance, RedeployWebInstance
 } from "$lib/database/db";
 
 import ParseLog from '$lib/parse_log';
@@ -107,9 +108,13 @@ export const actions = {
                 hints,
                 bin_file: formData.bin_file,
                 image_ref: formData.image_ref || null,
+                web_image_ref: formData.web_image_ref || null,
             };
 
-            await AddChallenge(data);
+            const newId = await AddChallenge(data);
+            if (newId && data.web_image_ref) {
+                await EnsureWebInstance(newId);
+            }
             return { success: true, message: 'Challenge added!' };
         } catch (e) {
             console.error(`[-] Add_Challenge -> ${e}`);
@@ -145,7 +150,7 @@ export const actions = {
         try {
             console.log("[!] Admin is modifying a challenge");
 
-            await UpdateChallenge({
+            const updatedId = await UpdateChallenge({
                 name: formData.name,
                 description: formData.description,
                 written_by: formData.written_by,
@@ -157,7 +162,12 @@ export const actions = {
                 hints,
                 bin_file: formData.bin_file,
                 image_ref: formData.image_ref || null,
+                web_image_ref: formData.web_image_ref || null,
             }, formData.id);
+
+            if (updatedId && formData.web_image_ref) {
+                await RedeployWebInstance(updatedId);
+            }
 
             return { success: true, message: 'Challenge updated!' };
         } catch (e) {

@@ -36,6 +36,13 @@
       "when": 1784585521436,
       "tag": "0004_cooing_kabuki",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784671320967,
+      "tag": "0005_sleepy_celestials",
+      "breakpoints": true
     }
   ]
 }

@@ -41,6 +41,7 @@ export interface ChallengeForm {
     hints: string[] | null;
     bin_file: string | null;
     image_ref: string | null;
+    web_image_ref: string | null;
 };
 
 export interface ChallengeData {
@@ -59,6 +60,7 @@ export interface ChallengeData {
     is_gym: boolean | null;
     bin_file: string | null;
     image_ref: string | null;
+    web_image_ref: string | null;
 };
 
 export interface ViewableChallengeData {
@@ -77,6 +79,7 @@ export interface ViewableChallengeData {
     solves: number;
     bin_file: string | null;
     image_ref: string | null;
+    web_image_ref: string | null;
 }
 
 // special select type used in challenge querying
@@ -95,6 +98,7 @@ const publicChallengeData = {
     is_gym: schema.challenges.is_gym,
     bin_file: schema.challenges.bin_file,
     image_ref: schema.challenges.image_ref,
+    web_image_ref: schema.challenges.web_image_ref,
 };
 
 /**
@@ -106,7 +110,7 @@ export async function AddChallenge(data: ChallengeForm) {
     try {
         const [row] = await db.insert(schema.challenges).values(data).returning();
         console.log(`[*] AddChallenge -> inserted ${row.id}`);
-        return true;
+        return row.id;
     } catch (error) {
         console.error('Failed to insert challenge:', error);
         return false;
@@ -126,7 +130,7 @@ export async function UpdateChallenge(data: ChallengeForm, id: any) {
                         .set(data)
                         .where(eq(schema.challenges.id, id)).returning();
         console.log(`[*] UpdateChallenge -> updated ${row.id}`);
-        return true;
+        return row.id;
     } catch (error) {
         console.error('Failed to update challenge:', error);
         return false;
@@ -1763,4 +1767,90 @@ export async function GetActiveInstances() {
         ...nc.map(row => ({ type: 'nc' as const, ...row })),
         ...ssh.map(row => ({ type: 'ssh' as const, ...row })),
     ];
+}
+
+export async function EnsureWebInstance(cid: any) {
+    try {
+        const [existing] = await db.select({
+            container_id: schema.web_instances.container_id,
+            port: schema.web_instances.port,
+        }).from(schema.web_instances)
+        .where(eq(schema.web_instances.challenge_id, cid)).limit(1);
+
+        if (existing) {
+            return { success: true, port: existing.port };
+        }
+
+        const challenge_data = await db.select({
+            web_image_ref: schema.challenges.web_image_ref,
+        }).from(schema.challenges)
+        .where(eq(schema.challenges.id, cid)).limit(1);
+
+        if (challenge_data.length === 0) {
+            return { success: false, error: "Challenge Not Found" };
+        } else if (!challenge_data[0].web_image_ref) {
+            return { success: false, error: "Web Instance Not Supported" };
+        }
+
+        const res = await fetch("http://ssh-orchestrator:3000/create_web_instance", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ challenge_id: cid, image_ref: challenge_data[0].web_image_ref })
+        });
+        const instance_data = await res.json();
+
+        if (instance_data.success) {
+            await db.insert(schema.web_instances).values({
+                challenge_id: cid,
+                container_id: instance_data.container_id,
+                port: instance_data.port,
+            }).onConflictDoUpdate({
+                target: schema.web_instances.challenge_id,
+                set: { container_id: instance_data.container_id, port: instance_data.port },
+            });
+        }
+
+        return instance_data;
+    } catch (e: any) {
+        console.error("[-] EnsureWebInstance:", e);
+        return { success: false, error: "Error Occurred when creating Web Instance" };
+    }
+}
+
+export async function GetWebInstance(cid: any) {
+    try {
+        const [instance] = await db.select({
+            port: schema.web_instances.port,
+        }).from(schema.web_instances)
+        .where(eq(schema.web_instances.challenge_id, cid)).limit(1);
+
+        return instance;
+    } catch (e: any) {
+        console.error("[-] GetWebInstance:", e);
+        return undefined;
+    }
+}
+
+export async function RedeployWebInstance(cid: any) {
+    try {
+        const [existing] = await db.select({
+            container_id: schema.web_instances.container_id,
+        }).from(schema.web_instances)
+        .where(eq(schema.web_instances.challenge_id, cid)).limit(1);
+
+        if (existing) {
+            await fetch("http://ssh-orchestrator:3000/stop_web_instance", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ container_id: existing.container_id })
+            });
+            await db.delete(schema.web_instances)
+                .where(eq(schema.web_instances.challenge_id, cid));
+        }
+
+        return await EnsureWebInstance(cid);
+    } catch (e: any) {
+        console.error("[-] RedeployWebInstance:", e);
+        return { success: false, error: "Error Occurred when redeploying Web Instance" };
+    }
 }

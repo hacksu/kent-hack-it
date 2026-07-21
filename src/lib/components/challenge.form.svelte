@@ -38,6 +38,7 @@
 
     let binaryFile = $state<string|undefined>(challenge?.bin_file || undefined);
     let imageRef = $state<string>(challenge?.image_ref || "");
+    let webImageRef = $state<string>(challenge?.web_image_ref || "");
     let binFileSearch = $state("");
     let filterBinaries = $derived(
         uploaded_files.bins.filter(file =>
@@ -243,6 +244,19 @@
                         name="image_ref"
                         bind:value={imageRef}
                         placeholder="e.g. khi-ssh/go1:latest"
+                    />
+                </div>
+
+                <!-- Web Instance Image -->
+                <div class="mb-3">
+                    <label for="web-image-ref" class="form-label fw-semibold">Web Instance Image</label>
+                    <input
+                        id="web-image-ref"
+                        type="text"
+                        class="form-control"
+                        name="web_image_ref"
+                        bind:value={webImageRef}
+                        placeholder="e.g. khi-web/profilepeek:latest"
                     />
                 </div>
 

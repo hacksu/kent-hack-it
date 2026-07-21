@@ -1,6 +1,10 @@
 import express from 'express';
 import { exit } from 'process';
-import { CreateSSHInstance, StopInstance, ReconcileOnBoot } from './orchestrator.js';
+import {
+    CreateSSHInstance, StopInstance,
+    CreateWebInstance, StopWebInstance,
+    ReconcileOnBoot,
+} from './orchestrator.js';
 
 const app = express();
 app.use(express.json());
@@ -8,6 +12,11 @@ const port = 3000;
 
 if (!process.env.SSH_MIN_PORT || !process.env.SSH_MAX_PORT) {
     console.error("[-] Missing values for SSH_MIN_PORT and SSH_MAX_PORT!");
+    exit(1);
+}
+
+if (!process.env.WEB_MIN_PORT || !process.env.WEB_MAX_PORT) {
+    console.error("[-] Missing values for WEB_MIN_PORT and WEB_MAX_PORT!");
     exit(1);
 }
 
@@ -34,6 +43,28 @@ app.post('/stop_instance', async (req, res) => {
     } catch (err) {
         console.error("[-] stop_instance error:", err);
         return res.status(500).json({ success: false, error: 'Failed to stop SSH instance' });
+    }
+});
+
+app.post('/create_web_instance', async (req, res) => {
+    try {
+        const { challenge_id, image_ref } = req.body;
+        const result = await CreateWebInstance(challenge_id, image_ref);
+        return res.status(result.rc).json(result);
+    } catch (err) {
+        console.error("[-] create_web_instance error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to create web instance' });
+    }
+});
+
+app.post('/stop_web_instance', async (req, res) => {
+    try {
+        const { container_id } = req.body;
+        const result = await StopWebInstance(container_id);
+        return res.status(result.rc).json(result);
+    } catch (err) {
+        console.error("[-] stop_web_instance error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to stop web instance' });
     }
 });
 

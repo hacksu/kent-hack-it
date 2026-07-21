@@ -34,6 +34,11 @@
     let ssh_expires_at = $state<Date|undefined>(undefined);
     let ssh_command = $derived(`ssh ctf-player@${ssh_host} -p ${ssh_port}`);
 
+    let web_active = $state(false);
+    let web_host = $state("");
+    let web_port = $state<number|undefined>(undefined);
+    let web_url = $derived(`http://${web_host}:${web_port}`);
+
     function clearResult() {
         error = warning = success = "";
     }
@@ -297,6 +302,23 @@
             ssh_port = sshRes.port;
             ssh_password = sshRes.password ?? "";
             ssh_expires_at = sshRes.expires_at ? new Date(sshRes.expires_at) : undefined;
+        } catch {}
+
+        try {
+            const webReq = await fetch(`/api/webinstance?cid=${cid}`, {
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                cache: "no-store"
+            });
+            const webRes: {
+                active: boolean,
+                host?: string,
+                port?: number,
+            } = await webReq.json();
+
+            web_active = webRes.active;
+            web_host = webRes.host ?? "";
+            web_port = webRes.port;
         } catch {}
 
         showPanel = challenge !== undefined;
@@ -568,6 +590,22 @@
                                     </form>
                                 </div>
                             {/if}
+                        {/if}
+
+                        {#if challengeInfo.web_image_ref}
+                            <div class="mb-2">
+                                {#if web_active}
+                                    <div
+                                        style="border-style: solid; border-radius: 3px; border-color: orange; border-radius: 8px; padding: 5px;"
+                                    >
+                                        Web Challenge
+                                    </div>
+                                    Visit:<br>
+                                    <code class="font-mono text-green-400 select-all">{web_url}</code>
+                                {:else}
+                                    <div class="text-muted-foreground">Instance not available yet.</div>
+                                {/if}
+                            </div>
                         {/if}
 
                         <p class="mt-3 mb-1 text-sm text-foreground">⭐ {Number(challengeInfo.rating).toFixed(1)} / 5</p>
