@@ -538,6 +538,27 @@
                                     <code class="font-mono text-green-400 select-all">
                                         {ssh_password}
                                     </code>
+                                    <form method="POST" action="?/create_ssh_instance" use:enhance={() => {
+                                        return async ({ result, update }) => {
+                                            await update();
+
+                                            const formResult = await handleFormResult(result);
+                                            success = formResult.success;
+                                            warning = formResult.warning;
+                                            error = formResult.error;
+
+                                            // trigger the ssh instance to be re-rendered
+                                            viewChallenge(challengeInfo.id);
+
+                                            await invalidateAll();
+                                            setTimeout(clearResult, 5000);
+                                        };
+                                    }}>
+                                        <input type="hidden" name="cid" value={challengeInfo.id} />
+                                        <button type="submit" class="btn btn-success">
+                                            Restart SSH Instance
+                                        </button>
+                                    </form>
                                 </div>
                             {/if}
                         {/if}
