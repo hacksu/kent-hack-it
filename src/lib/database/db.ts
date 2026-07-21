@@ -1655,6 +1655,13 @@ export async function StopInstance(uid: any) {
  */
 export async function CreateSSHInstance(uid: any, cid: any) {
     try {
+        // stop any existing SSH instance the participant already has
+        const existing = await GetActiveSSHInstance(uid);
+        if (existing) {
+            console.log("[*] Stopping existing SSH instance before creating a new one...");
+            await StopSSHInstance(uid);
+        }
+
         const challenge_data = await db.select({
             image_ref: schema.challenges.image_ref,
         }).from(schema.challenges)
@@ -1692,5 +1699,65 @@ export async function CreateSSHInstance(uid: any, cid: any) {
             success: false,
             error: "Error Occurred when creating SSH Instance"
         }
+    }
+}
+
+/**
+ * Fetch the participant's currently-active SSH instance session, if any.
+ *
+ * @param uid
+ * @returns
+ */
+export async function GetActiveSSHInstance(uid: any) {
+    try {
+        const [instance] = await db.select({
+            container_id: schema.ssh_instance_sessions.container_id,
+            port: schema.ssh_instance_sessions.port,
+            password: schema.ssh_instance_sessions.password,
+            expires_at: schema.ssh_instance_sessions.expires_at,
+        }).from(schema.ssh_instance_sessions)
+        .where(eq(schema.ssh_instance_sessions.uid, uid)).limit(1);
+
+        return instance;
+    } catch (e: any) {
+        console.error("[-] GetActiveSSHInstance:", e);
+        return undefined;
+    }
+}
+
+/**
+ * Stop a participant's SSH instance via ssh-orchestrator and remove its
+ * ssh_instance_sessions row.
+ *
+ * @param uid
+ * @returns
+ */
+export async function StopSSHInstance(uid: any) {
+    try {
+        const [instance] = await db.select({ container_id: schema.ssh_instance_sessions.container_id })
+            .from(schema.ssh_instance_sessions)
+            .where(eq(schema.ssh_instance_sessions.uid, uid)).limit(1);
+
+        if (!instance) {
+            return { success: false, error: "SSH Instance Not Found" };
+        }
+
+        const res = await fetch("http://ssh-orchestrator:3000/stop_instance", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ container_id: instance.container_id })
+        });
+
+        if (!res.ok) {
+            return { success: false, error: "Failed to stop SSH instance" };
+        }
+
+        await db.delete(schema.ssh_instance_sessions)
+            .where(eq(schema.ssh_instance_sessions.uid, uid));
+
+        return { success: true, message: "SSH Instance stopped" };
+    } catch (e: any) {
+        console.error("[-] StopSSHInstance:", e);
+        return { success: false, error: "Error Occurred when stopping SSH Instance" };
     }
 }
