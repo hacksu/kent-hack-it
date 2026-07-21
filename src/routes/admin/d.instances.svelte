@@ -33,6 +33,7 @@
                     <th>Challenge</th>
                     <th>Port</th>
                     <th>Time Remaining (est.)</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -43,6 +44,11 @@
                         <td>{instance.challenge_name ?? "—"}</td>
                         <td>{instance.port}</td>
                         <td>{timeRemaining(instance.created_at)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-stop-fill me-1"></i> Stop
+                            </button>
+                        </td>
                     </tr>
                 {/each}
             </tbody>
