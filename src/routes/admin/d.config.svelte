@@ -25,8 +25,6 @@
     let success = $state("");
 
     const { config } = $props();
-    // seeded once from the initial `config` prop; `resync()` is the explicit,
-    // deliberate re-sync point after a save, not a reactive $derived
     let activation_status = $state(untrack(() => config?.site_active ?? false));
 
     let originalStart = $state(untrack(() => config?.event_start ? (() => {

@@ -1,6 +1,10 @@
 <script lang="ts">
     import { invalidateAll } from '$app/navigation';
     import Feedback from '$lib/components/feedback.svelte';
+    import { Button } from '$lib/components/ui/button';
+    import { Badge } from '$lib/components/ui/badge';
+    import * as Table from '$lib/components/ui/table';
+    import CircleStop from '@lucide/svelte/icons/circle-stop';
 
     const { instances } = $props();
 
@@ -22,6 +26,12 @@
         return instance.type === 'ssh'
             ? instance.container_id.slice(0, 12)
             : instance.cpid;
+    }
+
+    function typeBadgeClass(type: string) {
+        return type === 'ssh'
+            ? 'border-brand-blue/40 bg-brand-blue/10 text-brand-blue'
+            : 'border-brand-green/40 bg-brand-green/10 text-brand-green';
     }
 
     function clearResult() {
@@ -52,52 +62,63 @@
     }
 </script>
 
-<div class="instances-tab">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Active Instances</h5>
+<div>
+    <div class="mb-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+            <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
+            <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Active Instances</h2>
+        </div>
 
-        <Feedback success={success} warning={""} error={error} />
+        <Feedback {success} warning={""} {error} />
 
-        <span class="badge bg-primary fs-6">
+        <Badge variant="secondary">
             {instances.length} Instance{instances.length !== 1 ? 's' : ''}
-        </span>
+        </Badge>
     </div>
 
     {#if instances.length === 0}
-        <p class="text-muted fst-italic">No active instances.</p>
+        <p class="text-sm text-muted-foreground italic">No active instances.</p>
     {:else}
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Type</th>
-                    <th>Player</th>
-                    <th>Challenge</th>
-                    <th>ID</th>
-                    <th>Port</th>
-                    <th>Time Remaining</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each instances as instance (`${instance.type}-${instance.uid}`)}
-                    <tr>
-                        <td><span class="badge bg-secondary">{instance.type}</span></td>
-                        <td>{instance.player_name}</td>
-                        <td>{instance.challenge_name ?? "—"}</td>
-                        <td><code>{shortId(instance)}</code></td>
-                        <td>{instance.port}</td>
-                        <td>{timeRemaining(instance)}</td>
-                        <td>
-                            <button
-                                class="btn btn-sm btn-outline-danger"
-                                onclick={() => stopInstance(instance.uid, instance.player_name, instance.type)}
-                            >
-                                <i class="bi bi-stop-fill me-1"></i> Stop
-                            </button>
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
+        <div class="overflow-x-auto rounded-lg border border-border">
+            <Table.Root>
+                <Table.Header>
+                    <Table.Row class="hover:bg-transparent">
+                        <Table.Head>Type</Table.Head>
+                        <Table.Head>Player</Table.Head>
+                        <Table.Head>Challenge</Table.Head>
+                        <Table.Head>ID</Table.Head>
+                        <Table.Head>Port</Table.Head>
+                        <Table.Head>Time Remaining</Table.Head>
+                        <Table.Head></Table.Head>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    {#each instances as instance (`${instance.type}-${instance.uid}`)}
+                        <Table.Row>
+                            <Table.Cell>
+                                <Badge variant="outline" class={typeBadgeClass(instance.type)}>{instance.type}</Badge>
+                            </Table.Cell>
+                            <Table.Cell class="text-foreground">{instance.player_name}</Table.Cell>
+                            <Table.Cell class="text-muted-foreground">{instance.challenge_name ?? "—"}</Table.Cell>
+                            <Table.Cell class="font-mono text-xs text-muted-foreground">{shortId(instance)}</Table.Cell>
+                            <Table.Cell class="font-mono text-xs text-muted-foreground">{instance.port}</Table.Cell>
+                            <Table.Cell class="font-mono text-xs {timeRemaining(instance) === 'expired' ? 'text-destructive' : 'text-foreground'}">
+                                {timeRemaining(instance)}
+                            </Table.Cell>
+                            <Table.Cell class="text-right">
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onclick={() => stopInstance(instance.uid, instance.player_name, instance.type)}
+                                >
+                                    <CircleStop class="h-3.5 w-3.5" />
+                                    Stop
+                                </Button>
+                            </Table.Cell>
+                        </Table.Row>
+                    {/each}
+                </Table.Body>
+            </Table.Root>
+        </div>
     {/if}
 </div>
