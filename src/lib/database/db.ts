@@ -1791,9 +1791,24 @@ export async function GetActiveInstances() {
         console.error("[-] GetActiveInstances (ssh):", e);
     }
 
+    let web: any[] = [];
+    try {
+        web = await db.select({
+            challenge_id: schema.web_instances.challenge_id,
+            challenge_name: schema.challenges.name,
+            port: schema.web_instances.port,
+            container_id: schema.web_instances.container_id,
+            created_at: schema.web_instances.created_at,
+        }).from(schema.web_instances)
+        .leftJoin(schema.challenges, eq(schema.web_instances.challenge_id, schema.challenges.id));
+    } catch (e: any) {
+        console.error("[-] GetActiveInstances (web):", e);
+    }
+
     return [
         ...nc.map(row => ({ type: 'nc' as const, ...row })),
         ...ssh.map(row => ({ type: 'ssh' as const, ...row })),
+        ...web.map(row => ({ type: 'web' as const, ...row })),
     ];
 }
 
@@ -1880,5 +1895,35 @@ export async function RedeployWebInstance(cid: any) {
     } catch (e: any) {
         console.error("[-] RedeployWebInstance:", e);
         return { success: false, error: "Error Occurred when redeploying Web Instance" };
+    }
+}
+
+export async function StopWebInstance(cid: any) {
+    try {
+        const [instance] = await db.select({ container_id: schema.web_instances.container_id })
+            .from(schema.web_instances)
+            .where(eq(schema.web_instances.challenge_id, cid)).limit(1);
+
+        if (!instance) {
+            return { success: false, error: "Web Instance Not Found" };
+        }
+
+        const res = await fetch("http://ssh-orchestrator:3000/stop_web_instance", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ container_id: instance.container_id })
+        });
+
+        if (!res.ok) {
+            return { success: false, error: "Failed to stop web instance" };
+        }
+
+        await db.delete(schema.web_instances)
+            .where(eq(schema.web_instances.challenge_id, cid));
+
+        return { success: true, message: "Web Instance stopped" };
+    } catch (e: any) {
+        console.error("[-] StopWebInstance:", e);
+        return { success: false, error: "Error Occurred when stopping Web Instance" };
     }
 }
