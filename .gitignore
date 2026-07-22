@@ -27,3 +27,5 @@ vite.config.ts.timestamp-*
 uploads/
 ctf/
 khi_web_logs/
+docs/superpowers/
+.superpowers/
