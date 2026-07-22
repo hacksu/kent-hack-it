@@ -114,9 +114,13 @@ export const actions = {
                 web_image_ref: formData.web_image_ref || null,
             };
 
-            const newId = await AddChallenge(data);
-            if (newId && data.web_image_ref) {
-                await EnsureWebInstance(newId);
+            const result = await AddChallenge(data);
+            if (!result.success) {
+                return fail(409, { error: result.error });
+            }
+
+            if (data.web_image_ref) {
+                await EnsureWebInstance(result.id);
             }
             return { success: true, message: 'Challenge added!' };
         } catch (e) {
@@ -153,7 +157,7 @@ export const actions = {
         try {
             console.log("[!] Admin is modifying a challenge");
 
-            const updatedId = await UpdateChallenge({
+            const result = await UpdateChallenge({
                 name: formData.name,
                 description: formData.description,
                 written_by: formData.written_by,
@@ -168,8 +172,12 @@ export const actions = {
                 web_image_ref: formData.web_image_ref || null,
             }, formData.id);
 
-            if (updatedId && formData.web_image_ref) {
-                await RedeployWebInstance(updatedId);
+            if (!result.success) {
+                return fail(409, { error: result.error });
+            }
+
+            if (formData.web_image_ref) {
+                await RedeployWebInstance(result.id);
             }
 
             return { success: true, message: 'Challenge updated!' };

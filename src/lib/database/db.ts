@@ -101,19 +101,27 @@ const publicChallengeData = {
     web_image_ref: schema.challenges.web_image_ref,
 };
 
-/**
- * Insert challenge data into the challenges table (register new challenge)
- * 
- * @param data
- */
+function uniqueConstraintName(error: any): string | undefined {
+    const code = error?.code ?? error?.cause?.code;
+    if (code !== '23505') return undefined;
+    return error?.constraint_name ?? error?.cause?.constraint_name;
+}
+
 export async function AddChallenge(data: ChallengeForm) {
     try {
         const [row] = await db.insert(schema.challenges).values(data).returning();
         console.log(`[*] AddChallenge -> inserted ${row.id}`);
-        return row.id;
-    } catch (error) {
+        return { success: true as const, id: row.id };
+    } catch (error: any) {
         console.error('Failed to insert challenge:', error);
-        return false;
+        const constraint = uniqueConstraintName(error);
+        if (constraint === 'challenges_flag_unique') {
+            return { success: false as const, error: 'A challenge with this flag already exists' };
+        }
+        if (constraint === 'challenges_name_unique') {
+            return { success: false as const, error: 'A challenge with this name already exists' };
+        }
+        return { success: false as const, error: 'Failed to add challenge' };
     }
 }
 
@@ -130,10 +138,17 @@ export async function UpdateChallenge(data: ChallengeForm, id: any) {
                         .set(data)
                         .where(eq(schema.challenges.id, id)).returning();
         console.log(`[*] UpdateChallenge -> updated ${row.id}`);
-        return row.id;
-    } catch (error) {
+        return { success: true as const, id: row.id };
+    } catch (error: any) {
         console.error('Failed to update challenge:', error);
-        return false;
+        const constraint = uniqueConstraintName(error);
+        if (constraint === 'challenges_flag_unique') {
+            return { success: false as const, error: 'A challenge with this flag already exists' };
+        }
+        if (constraint === 'challenges_name_unique') {
+            return { success: false as const, error: 'A challenge with this name already exists' };
+        }
+        return { success: false as const, error: 'Failed to update challenge' };
     }
 }
 

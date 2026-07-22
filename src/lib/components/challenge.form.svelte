@@ -113,6 +113,14 @@
                                 error: data.error ?? 'An error occurred'
                             }
                         );
+                    } else if (result.type === 'failure') {
+                        const data = result.data as { error?: string } | undefined;
+                        onSubmit?.({
+                            success: false,
+                            error: data?.error ?? 'An error occurred'
+                        });
+                    } else if (result.type === 'error') {
+                        onSubmit?.({ success: false, error: 'An error occurred' });
                     }
                 };
             }}>
