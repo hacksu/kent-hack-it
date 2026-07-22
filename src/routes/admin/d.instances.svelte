@@ -9,6 +9,43 @@
 
     const { instances } = $props();
 
+    const TYPES = ['nc', 'ssh', 'web'] as const;
+    let activeTypes = $state<Set<string>>(new Set(TYPES));
+
+    function toggleType(type: string) {
+        const next = new Set(activeTypes);
+        if (next.has(type)) {
+            next.delete(type);
+        } else {
+            next.add(type);
+        }
+        activeTypes = next;
+    }
+
+    let typeCounts = $derived(
+        Object.fromEntries(TYPES.map(t => [t, instances.filter((i: any) => i.type === t).length]))
+    );
+
+    let filteredInstances = $derived(
+        instances.filter((i: any) => activeTypes.has(i.type))
+    );
+
+    function chipClass(type: string) {
+        const active = activeTypes.has(type);
+        const colors: Record<string, string> = {
+            nc: active
+                ? 'border-brand-green/40 bg-brand-green/10 text-brand-green'
+                : 'border-border text-muted-foreground hover:border-brand-green/30 hover:text-brand-green',
+            ssh: active
+                ? 'border-brand-blue/40 bg-brand-blue/10 text-brand-blue'
+                : 'border-border text-muted-foreground hover:border-brand-blue/30 hover:text-brand-blue',
+            web: active
+                ? 'border-amber-500/40 bg-amber-500/10 text-amber-500'
+                : 'border-border text-muted-foreground hover:border-amber-500/30 hover:text-amber-500',
+        };
+        return colors[type];
+    }
+
     const NC_SESSION_MINUTES = 15;
 
     function timeRemaining(instance: any): string {
@@ -103,12 +140,28 @@
         <Feedback {success} warning={""} {error} />
 
         <Badge variant="secondary">
-            {instances.length} Instance{instances.length !== 1 ? 's' : ''}
+            {filteredInstances.length}{activeTypes.size < TYPES.length ? ` / ${instances.length}` : ''} Instance{filteredInstances.length !== 1 ? 's' : ''}
         </Badge>
+    </div>
+
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+        {#each TYPES as type}
+            <button
+                type="button"
+                class="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors {chipClass(type)}"
+                aria-pressed={activeTypes.has(type)}
+                onclick={() => toggleType(type)}
+            >
+                {type}
+                <span class="text-[0.65rem] tabular-nums opacity-70">{typeCounts[type]}</span>
+            </button>
+        {/each}
     </div>
 
     {#if instances.length === 0}
         <p class="text-sm text-muted-foreground italic">No active instances.</p>
+    {:else if filteredInstances.length === 0}
+        <p class="text-sm text-muted-foreground italic">No instances match the current filter.</p>
     {:else}
         <div class="overflow-x-auto rounded-lg border border-border">
             <Table.Root>
@@ -124,7 +177,7 @@
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                    {#each instances as instance (`${instance.type}-${instance.uid ?? instance.challenge_id}`)}
+                    {#each filteredInstances as instance (`${instance.type}-${instance.uid ?? instance.challenge_id}`)}
                         <Table.Row>
                             <Table.Cell>
                                 <Badge variant="outline" class={typeBadgeClass(instance.type)}>{instance.type}</Badge>
