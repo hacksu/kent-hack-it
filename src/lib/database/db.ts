@@ -502,7 +502,7 @@ export async function GetCompletions(uid: any) {
                 .from(schema.team_members)
                 .where(eq(schema.team_members.team_id, membership.team_id));
     
-            if (!members.length) return [];
+            if (!members.length) return { user: user.completions, team: [] };
     
             const member_ids = members.map(m => m.user_id);
     

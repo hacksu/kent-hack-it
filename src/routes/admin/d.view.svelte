@@ -22,7 +22,7 @@
         result = undefined;
     }
 
-    async function toggleChallenge(id: string, name: string, data: { is_active: boolean, is_gym: boolean }) {
+    async function toggleChallenge(id: number, name: string, data: { is_active: boolean, is_gym: boolean }) {
         try {
             const req = await fetch('/admin/api', {
                 method: 'POST',
@@ -49,7 +49,7 @@
         setTimeout(clearResult, 5000);
     }
 
-    async function deleteChallenge(id: string, name: string) {
+    async function deleteChallenge(id: number, name: string) {
         if (window.confirm(`Are you sure you want to DELETE the challenge "${name}"?`)) {
             const req = await fetch('/admin/api', {
                 method: 'POST',
@@ -57,8 +57,8 @@
                 body: JSON.stringify({ context: 'challenge', action: 'delete', id })
             });
 
-            result = await req.json();
-            result.message = `"${name}" has been deleted`;
+            const json = await req.json();
+            result = { ...json, message: `"${name}" has been deleted` };
 
             // re-run the load in +page.server.ts updating the challenges collection
             await invalidateAll();
@@ -72,25 +72,12 @@
     function openPanel(entry: ChallengeData) { originalData = entry; showEditPanel = true; }
     function exitPanel() { showEditPanel = false; }
 
-    const { uploaded_files, challenges, form } : {
+    const { uploaded_files, challenges = [], form } : {
         uploaded_files: {
             archives: string[];
             bins: string[];
         },
-        challenges: {
-        id: number;
-        name: string;
-        description: string;
-        category: string;
-        difficulty: string;
-        written_by: string | null;
-        points: number;
-        rating: string | null;
-        hlinks: string[] | null;
-        hints: string[] | null;
-        is_active: boolean | null;
-        is_gym: boolean | null;
-        }[] | undefined,
+        challenges: ChallengeData[] | undefined,
         form: any
     } = $props();
 </script>
@@ -164,7 +151,7 @@
                         variant="outline"
                         size="sm"
                         class={challenge.is_active ? 'border-destructive/40 text-destructive hover:bg-destructive/10' : 'border-brand-green/40 text-brand-green hover:bg-brand-green/10'}
-                        onclick={() => { toggleChallenge(challenge.id, challenge.name, { is_active: !challenge.is_active, is_gym: challenge.is_gym }) }}
+                        onclick={() => { toggleChallenge(challenge.id, challenge.name, { is_active: !challenge.is_active, is_gym: challenge.is_gym ?? false }) }}
                     >
                         <Power class="h-3.5 w-3.5" />
                         {challenge.is_active ? 'Disable' : 'Enable'}
@@ -175,7 +162,7 @@
                         variant="outline"
                         size="sm"
                         class={challenge.is_gym ? 'text-muted-foreground' : 'border-brand-blue/40 text-brand-blue hover:bg-brand-blue/10'}
-                        onclick={() => { toggleChallenge(challenge.id, challenge.name, { is_active: challenge.is_active, is_gym: !challenge.is_gym }) }}
+                        onclick={() => { toggleChallenge(challenge.id, challenge.name, { is_active: challenge.is_active ?? false, is_gym: !challenge.is_gym }) }}
                     >
                         {#if challenge.is_gym}
                             <Rss class="h-3.5 w-3.5" />

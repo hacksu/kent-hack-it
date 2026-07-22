@@ -1,5 +1,6 @@
 <script lang="ts">
     import { enhance } from "$app/forms";
+    import { untrack } from "svelte";
     import type { ChallengeData } from "$lib/database/db";
     import * as Card from "$lib/components/ui/card";
     import { Input } from "$lib/components/ui/input";
@@ -28,7 +29,9 @@
         requireFlag: boolean
     } = $props();
 
-    let archiveFiles = $state<string[]>(challenge?.hlinks || []);
+    // form fields are seeded once from the initial `challenge` prop (create vs.
+    // edit), then locally editable - not meant to track the prop reactively
+    let archiveFiles = $state<string[]>(untrack(() => challenge?.hlinks || []));
     let archiveSearch = $state("");
     let filteredArchives = $derived(
         uploaded_files.archives.filter(file =>
@@ -36,9 +39,9 @@
         )
     );
 
-    let binaryFile = $state<string|undefined>(challenge?.bin_file || undefined);
-    let imageRef = $state<string>(challenge?.image_ref || "");
-    let webImageRef = $state<string>(challenge?.web_image_ref || "");
+    let binaryFile = $state<string|undefined>(untrack(() => challenge?.bin_file || undefined));
+    let imageRef = $state<string>(untrack(() => challenge?.image_ref || ""));
+    let webImageRef = $state<string>(untrack(() => challenge?.web_image_ref || ""));
     let binFileSearch = $state("");
     let filterBinaries = $derived(
         uploaded_files.bins.filter(file =>
@@ -47,9 +50,9 @@
     );
 
     let hints = $state<string[]>(
-        challenge?.hints?.length
+        untrack(() => challenge?.hints?.length
             ? [...challenge.hints]
-            : [""]
+            : [""])
     );
 
     function addHint() {

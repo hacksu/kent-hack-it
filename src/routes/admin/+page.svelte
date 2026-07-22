@@ -63,7 +63,9 @@
     <div class="rounded-2xl border border-border bg-card p-4 sm:p-6">
         {#if activeComponent}
             {@const Comp = activeComponent.component}
-            <Comp {...activeComponent.props()} />
+            <!-- each tab pairs its own component with its own props at definition (line 26-35);
+                 TS can't correlate that link back through tabs.find(), hence the cast -->
+            <Comp {...(activeComponent.props() as any)} />
         {/if}
     </div>
 </main>

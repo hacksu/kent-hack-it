@@ -1,6 +1,7 @@
 <script lang="ts">
     import { enhance } from "$app/forms";
     import { invalidateAll } from '$app/navigation';
+    import { untrack } from 'svelte';
 
     import Feedback from '$lib/components/feedback.svelte';
     import { handleFormResult } from "$lib/utilities";
@@ -24,18 +25,20 @@
     let success = $state("");
 
     const { config } = $props();
-    let activation_status = $state(config?.site_active ?? false);
+    // seeded once from the initial `config` prop; `resync()` is the explicit,
+    // deliberate re-sync point after a save, not a reactive $derived
+    let activation_status = $state(untrack(() => config?.site_active ?? false));
 
-    let originalStart = $state(config?.event_start ? (() => {
+    let originalStart = $state(untrack(() => config?.event_start ? (() => {
         const d = new Date(config.event_start);
         d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
         return d.toISOString().slice(0, 16);
-    })() : '');
-    let originalLength = $state(config?.event_length ?? 7);
-    let originalActive = $state(config?.site_active ?? false);
+    })() : ''));
+    let originalLength = $state(untrack(() => config?.event_length ?? 7));
+    let originalActive = $state(untrack(() => config?.site_active ?? false));
 
-    let currentStart  = $state(originalStart);
-    let currentLength = $state(originalLength);
+    let currentStart  = $state(untrack(() => originalStart));
+    let currentLength = $state(untrack(() => originalLength));
 
     let isDirty = $derived(
         currentStart !== originalStart ||

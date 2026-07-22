@@ -8,6 +8,7 @@ import {
     IsSiteActive, GetCompletions, GetSolversCount,
     SubmitRating, GetRated,
     CreateInstance, CreateSSHInstance,
+    type ViewableChallengeData,
 } from "$lib/database/db";
 
 export const load = async ({ parent, setHeaders }) => {
@@ -17,7 +18,7 @@ export const load = async ({ parent, setHeaders }) => {
     // redirect unauthenticated users to login
     if (!user) throw redirect(303, '/auth/login');
 
-    let challenges = await GetChallenges(false, 1); // only fetch event/live challenges
+    let challenges = await GetChallenges(false, 1) as ViewableChallengeData[] | undefined; // only fetch event/live challenges
     const completions = await GetCompletions(user.id);
     const rated = await GetRated(user.id);
     const progressData = await GetProgress(user.id);

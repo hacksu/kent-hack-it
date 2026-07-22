@@ -467,6 +467,7 @@
 
                         {#if instance_infomation.length === 0}
                             {#if challengeInfo && (challengeInfo.bin_file != null && challengeInfo.bin_file.length > 0)}
+                                {@const cid = challengeInfo.id}
                                 <form method="POST" action="?/create_instance" use:enhance={() => {
                                     return async ({ result, update }) => {
                                         await update();
@@ -477,7 +478,7 @@
                                         error = formResult.error;
 
                                         // trigger the instance to be rendered
-                                        viewChallenge(challengeInfo.id);
+                                        viewChallenge(cid);
 
                                         await invalidateAll();
                                         setTimeout(clearResult, 5000);
@@ -493,6 +494,7 @@
                                 </form>
                             {/if}
                         {:else}
+                            {@const cid = challengeInfo.id}
                             <div>
                                 <div class="mb-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-sm text-foreground">
                                     {instanceLabel} {timeLeft}
@@ -511,7 +513,7 @@
                                         error = formResult.error;
 
                                         // trigger the instance to be rendered
-                                        viewChallenge(challengeInfo.id);
+                                        viewChallenge(cid);
 
                                         await invalidateAll();
                                         setTimeout(clearResult, 5000);
@@ -530,6 +532,7 @@
 
                         {#if challengeInfo.image_ref}
                             {#if !ssh_active}
+                                {@const cid = challengeInfo.id}
                                 <form method="POST" action="?/create_ssh_instance" use:enhance={() => {
                                     return async ({ result, update }) => {
                                         await update();
@@ -540,7 +543,7 @@
                                         error = formResult.error;
 
                                         // trigger the ssh instance to be rendered
-                                        viewChallenge(challengeInfo.id);
+                                        viewChallenge(cid);
 
                                         await invalidateAll();
                                         setTimeout(clearResult, 5000);
@@ -552,6 +555,7 @@
                                     </button>
                                 </form>
                             {:else}
+                                {@const cid = challengeInfo.id}
                                 <div>
                                     <div
                                         style="border-style: solid; border-radius: 3px; border-color: orange; border-radius: 8px; padding: 5px;"
@@ -577,7 +581,7 @@
                                             error = formResult.error;
 
                                             // trigger the ssh instance to be re-rendered
-                                            viewChallenge(challengeInfo.id);
+                                            viewChallenge(cid);
 
                                             await invalidateAll();
                                             setTimeout(clearResult, 5000);
