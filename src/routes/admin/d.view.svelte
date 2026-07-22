@@ -59,7 +59,9 @@
             });
 
             const json = await req.json();
-            result = { ...json, message: `"${name}" has been deleted` };
+            result = json.success
+                ? { success: true, message: `"${name}" has been deleted` }
+                : { success: false, error: json.error ?? `Failed to delete "${name}"` };
 
             // re-run the load in +page.server.ts updating the challenges collection
             await invalidateAll();

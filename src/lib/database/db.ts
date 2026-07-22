@@ -249,6 +249,24 @@ export async function GetChallenge(id: any) {
  */
 export async function DeleteChallenge(id: any) {
     try {
+        const [webInstance] = await db.select({ challenge_id: schema.web_instances.challenge_id })
+            .from(schema.web_instances).where(eq(schema.web_instances.challenge_id, id)).limit(1);
+        if (webInstance) {
+            await StopWebInstance(id);
+        }
+
+        const sshSessions = await db.select({ uid: schema.ssh_instance_sessions.uid })
+            .from(schema.ssh_instance_sessions).where(eq(schema.ssh_instance_sessions.challenge_id, id));
+        for (const session of sshSessions) {
+            await StopSSHInstance(session.uid);
+        }
+
+        const ncSessions = await db.select({ uid: schema.instance_sessions.uid })
+            .from(schema.instance_sessions).where(eq(schema.instance_sessions.challenge_id, id));
+        for (const session of ncSessions) {
+            await StopInstance(session.uid);
+        }
+
         const [row] = await db.delete(schema.challenges)
             .where(eq(schema.challenges.id, id))
             .returning();
@@ -271,10 +289,10 @@ export async function DeleteChallenge(id: any) {
             );
 
         console.log(`[*] DeleteChallenge -> deleted ${row.id}`);
-        return true;
-    } catch (error) {
+        return { success: true as const };
+    } catch (error: any) {
         console.error('Failed to delete challenge:', error);
-        return false;
+        return { success: false as const, error: 'Failed to delete challenge' };
     }
 }
 
@@ -1773,6 +1791,8 @@ export async function StopSSHInstance(uid: any) {
 }
 
 export async function GetActiveInstances() {
+    await ReconcileInstances();
+
     const nc = await GetActiveNcInstances();
 
     let ssh: any[] = [];
@@ -1812,6 +1832,59 @@ export async function GetActiveInstances() {
     ];
 }
 
+async function isContainerAlive(containerId: string, listPath: string): Promise<boolean> {
+    try {
+        const res = await fetch(`http://ssh-orchestrator:3000/${listPath}`);
+        if (!res.ok) return true;
+        const { container_ids } = await res.json() as { container_ids: string[] };
+        return container_ids.includes(containerId);
+    } catch (e) {
+        console.error(`[-] isContainerAlive (${listPath}):`, e);
+        return true;
+    }
+}
+
+export async function ReconcileInstances() {
+    try {
+        const [sshRes, webRes] = await Promise.all([
+            fetch("http://ssh-orchestrator:3000/list_instances"),
+            fetch("http://ssh-orchestrator:3000/list_web_instances"),
+        ]);
+
+        if (sshRes.ok) {
+            const { container_ids } = await sshRes.json() as { container_ids: string[] };
+            const rows = await db.select({
+                uid: schema.ssh_instance_sessions.uid,
+                container_id: schema.ssh_instance_sessions.container_id,
+            }).from(schema.ssh_instance_sessions);
+
+            for (const row of rows) {
+                if (!container_ids.includes(row.container_id)) {
+                    console.log(`[*] Reconcile: removing orphaned SSH session for uid ${row.uid}`);
+                    await db.delete(schema.ssh_instance_sessions).where(eq(schema.ssh_instance_sessions.uid, row.uid));
+                }
+            }
+        }
+
+        if (webRes.ok) {
+            const { container_ids } = await webRes.json() as { container_ids: string[] };
+            const rows = await db.select({
+                challenge_id: schema.web_instances.challenge_id,
+                container_id: schema.web_instances.container_id,
+            }).from(schema.web_instances);
+
+            for (const row of rows) {
+                if (!container_ids.includes(row.container_id)) {
+                    console.log(`[*] Reconcile: removing orphaned web instance for challenge ${row.challenge_id}`);
+                    await db.delete(schema.web_instances).where(eq(schema.web_instances.challenge_id, row.challenge_id));
+                }
+            }
+        }
+    } catch (e) {
+        console.error("[-] ReconcileInstances:", e);
+    }
+}
+
 export async function EnsureWebInstance(cid: any) {
     try {
         const [existing] = await db.select({
@@ -1821,7 +1894,11 @@ export async function EnsureWebInstance(cid: any) {
         .where(eq(schema.web_instances.challenge_id, cid)).limit(1);
 
         if (existing) {
-            return { success: true, port: existing.port };
+            if (await isContainerAlive(existing.container_id, 'list_web_instances')) {
+                return { success: true, port: existing.port };
+            }
+            console.log(`[*] Web instance for challenge ${cid} is orphaned (container gone) - recreating...`);
+            await db.delete(schema.web_instances).where(eq(schema.web_instances.challenge_id, cid));
         }
 
         const challenge_data = await db.select({

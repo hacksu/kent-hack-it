@@ -3,7 +3,7 @@ import { exit } from 'process';
 import {
     CreateSSHInstance, StopInstance,
     CreateWebInstance, StopWebInstance,
-    ReconcileOnBoot,
+    ReconcileOnBoot, ListInstances, ListWebInstances,
 } from './orchestrator.js';
 
 const app = express();
@@ -65,6 +65,26 @@ app.post('/stop_web_instance', async (req, res) => {
     } catch (err) {
         console.error("[-] stop_web_instance error:", err);
         return res.status(500).json({ success: false, error: 'Failed to stop web instance' });
+    }
+});
+
+app.get('/list_instances', async (req, res) => {
+    try {
+        const containers = await ListInstances();
+        return res.status(200).json({ container_ids: containers.map(c => c.Id) });
+    } catch (err) {
+        console.error("[-] list_instances error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to list SSH instances' });
+    }
+});
+
+app.get('/list_web_instances', async (req, res) => {
+    try {
+        const containers = await ListWebInstances();
+        return res.status(200).json({ container_ids: containers.map(c => c.Id) });
+    } catch (err) {
+        console.error("[-] list_web_instances error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to list web instances' });
     }
 });
 

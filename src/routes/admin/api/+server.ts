@@ -22,11 +22,7 @@ async function toggleChallenge(id: string, is_active: boolean, is_gym: boolean) 
 }
 
 async function deleteChallenge(id: string) {
-    if ( await DeleteChallenge(id) ) {
-        return json({ success: true , status: 200 });
-    } else {
-        return json({ success: false , status: 200 });
-    }
+    return json(await DeleteChallenge(id));
 }
 
 async function deleteAdmin(id: string) {

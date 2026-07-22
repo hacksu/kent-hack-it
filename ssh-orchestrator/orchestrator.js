@@ -139,18 +139,36 @@ async function resolveImage(image_ref) {
     return image_ref;
 }
 
+async function getResourceLimits(image) {
+    const res = await fetch(`${DOCKER_API}/images/${encodeURIComponent(image)}/json`);
+    if (!res.ok) {
+        return { pidsLimit: WEB_INSTANCE_PIDS_LIMIT, memBytes: WEB_INSTANCE_MEM_BYTES };
+    }
+    const info = await res.json();
+    const labels = info.Config?.Labels ?? {};
+    const pidsLimit = labels['khi.pids_limit'] ? Number(labels['khi.pids_limit']) : WEB_INSTANCE_PIDS_LIMIT;
+    const memBytes = labels['khi.mem_bytes'] ? Number(labels['khi.mem_bytes']) : WEB_INSTANCE_MEM_BYTES;
+    return { pidsLimit, memBytes };
+}
+
 async function getExposedContainerPort(image) {
     const res = await fetch(`${DOCKER_API}/images/${encodeURIComponent(image)}/json`);
     if (!res.ok) {
         throw new Error(`Image inspect failed: ${res.status}`);
     }
     const info = await res.json();
+
+    const labelPort = info.Config?.Labels?.['khi.port'];
+    if (labelPort) {
+        return `${labelPort}/tcp`;
+    }
+
     const exposed = Object.keys(info.Config?.ExposedPorts ?? {});
     if (exposed.length === 0) {
         throw new Error('Image exposes no ports');
     }
     if (exposed.length > 1) {
-        throw new Error(`Image exposes multiple ports (${exposed.join(', ')}) - web challenge images must expose exactly one`);
+        throw new Error(`Image exposes multiple ports (${exposed.join(', ')}) - web challenge images must expose exactly one, or set a khi.port label to disambiguate`);
     }
     return exposed[0];
 }
@@ -327,6 +345,8 @@ export async function CreateWebInstance(challengeId, image_ref) {
         return { success: false, rc: 500, error: 'No free web ports available' };
     }
 
+    const { pidsLimit, memBytes } = await getResourceLimits(resolvedImage);
+
     let networkName;
     try {
         networkName = await createInstanceNetwork();
@@ -351,8 +371,8 @@ export async function CreateWebInstance(challengeId, image_ref) {
                 NetworkMode: networkName,
                 AutoRemove: false,
                 NanoCpus: WEB_INSTANCE_CPU_NANOS,
-                Memory: WEB_INSTANCE_MEM_BYTES,
-                PidsLimit: WEB_INSTANCE_PIDS_LIMIT,
+                Memory: memBytes,
+                PidsLimit: pidsLimit,
             },
         }),
     });
