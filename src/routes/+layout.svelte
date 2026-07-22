@@ -237,7 +237,7 @@
         {@render children()}
     </div>
 
-    <footer class="border-t border-border/60 bg-background px-4 py-6 text-center font-mono text-sm text-muted-foreground">
+    <footer class="border-t border-border/60 px-4 py-6 text-center font-mono text-sm text-muted-foreground">
         &copy; HacKSU 2026
     </footer>
 </div>

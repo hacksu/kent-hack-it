@@ -73,13 +73,13 @@
         <Feedback {success} {warning} {error} />
 
         {#if isDirty}
-            <div class="mb-4 flex max-w-[35rem] items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-500">
+            <div class="mx-auto mb-4 flex max-w-[35rem] items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-500">
                 <TriangleAlert class="h-4 w-4 shrink-0" />
                 You have unsaved changes &mdash; click <strong class="mx-1">Save changes</strong> to apply them.
             </div>
         {/if}
 
-        <Card.Root class="max-w-[35rem] border-border bg-card {isDirty ? 'border-amber-500/50' : ''}">
+        <Card.Root class="mx-auto max-w-[35rem] border-border bg-card {isDirty ? 'border-amber-500/50' : ''}">
             <Card.Header class="flex-row items-center justify-between space-y-0 border-b border-border pb-3">
                 <Card.Title class="text-sm font-medium">Event Configuration</Card.Title>
                 <div class="flex items-center gap-2">
