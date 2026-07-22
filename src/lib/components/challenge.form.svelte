@@ -1,13 +1,20 @@
 <script lang="ts">
     import { enhance } from "$app/forms";
     import type { ChallengeData } from "$lib/database/db";
+    import * as Card from "$lib/components/ui/card";
+    import { Input } from "$lib/components/ui/input";
+    import { Label } from "$lib/components/ui/label";
+    import { Textarea } from "$lib/components/ui/textarea";
+    import { Button } from "$lib/components/ui/button";
+    import Eye from "@lucide/svelte/icons/eye";
+    import EyeOff from "@lucide/svelte/icons/eye-off";
 
     let showArchiveFiles = $state<boolean>(false);
     let showBinFiles = $state<boolean>(false);
     let creationDisabled = $state<boolean>(false);
     let showFlag = $state<boolean>(false);
     let flagValue = $state<string>("");
-        
+
     const { title, action_target, challenge, result, onSubmit, uploaded_files, requireFlag } : {
         title: string,
         action_target: string,
@@ -54,12 +61,17 @@
             hints.push("");
         }
     }
+
+    const selectClass =
+        "dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-full rounded-lg border bg-transparent px-2.5 py-1 text-base outline-none transition-colors md:text-sm";
+    const fileLabelClass =
+        "flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-foreground transition-colors hover:border-brand-green/40 hover:bg-accent";
 </script>
 
-<div class="container mt-4" style="max-width: 700px;">
-    <div style="transform: scale(0.95)" class={`card shadow-sm border-0 rounded-3 ${creationDisabled ? 'opacity-50' : ''}`}>
-        <div class="card-body p-4">
-            <h4 class="card-title text-center mb-4">{title}</h4>
+<div class="mx-auto mt-8 w-full max-w-[700px] px-4">
+    <Card.Root class={`border border-border bg-card ${creationDisabled ? 'opacity-50' : ''}`}>
+        <Card.Content>
+            <h4 class="mb-4 text-center font-mono text-lg font-bold text-foreground">{title}</h4>
 
             <!-- use:enhance allows us to track the result from the form POST -->
             <form method="POST" action={action_target} use:enhance={() => {
@@ -84,11 +96,11 @@
                 };
             }}>
                 <!-- Challenge Name -->
-                <div class="mb-3">
-                    <label for="name" class="form-label fw-semibold">Challenge Name</label>
-                    <input
+                <div class="mb-3 space-y-1.5">
+                    <Label for="name" class="font-semibold">Challenge Name</Label>
+                    <Input
                         type="text"
-                        class="form-control"
+                        id="name"
                         name="name" required
                         value={challenge?.name || ""}
                         placeholder="Enter challenge name"
@@ -96,23 +108,23 @@
                 </div>
 
                 <!-- Description -->
-                <div class="mb-3">
-                    <label for="desc" class="form-label fw-semibold">Description</label>
-                    <textarea
-                        class="form-control"
+                <div class="mb-3 space-y-1.5">
+                    <Label for="desc" class="font-semibold">Description</Label>
+                    <Textarea
+                        id="desc"
                         name="description" required
                         value={challenge?.description || ""}
-                        style="min-height: 120px; resize: vertical;"
+                        class="min-h-[120px] resize-y"
                         placeholder="Enter a short challenge description"
-                    ></textarea>
+                    ></Textarea>
                 </div>
 
                 <!-- Author -->
-                <div class="mb-3">
-                    <label for="author" class="form-label fw-semibold">Written By</label>
-                    <input
+                <div class="mb-3 space-y-1.5">
+                    <Label for="author" class="font-semibold">Written By</Label>
+                    <Input
                         type="text"
-                        class="form-control"
+                        id="author"
                         name="written_by" required
                         value={challenge?.written_by || ""}
                         placeholder="Enter challenge author name"
@@ -121,140 +133,138 @@
 
                 <!-- Challenge Files -->
                 <div class="mb-3">
-                    <label for="attached-files" class="form-label fw-semibold">Challenge Files</label>
-                    <hr />
+                    <Label for="attached-files" class="font-semibold">Challenge Files</Label>
+                    <hr class="my-2 border-border" />
 
-                    <button
+                    <Button
                         type="button"
-                        class="btn btn-sm btn-outline-primary mb-2"
+                        variant="outline"
+                        size="sm"
+                        class="mb-2"
                         onclick={() => { showArchiveFiles = !showArchiveFiles }}
                     >
                         {showArchiveFiles ? "Hide Files" : "Show Archives"}
-                    </button>
+                    </Button>
 
                     {#if showArchiveFiles}
                         <div class="mb-2">
-                            <input
+                            <Input
                                 type="text"
-                                class="form-control form-control-sm"
+                                class="h-7 text-xs"
                                 placeholder="Search files..."
                                 bind:value={archiveSearch}
                             />
                         </div>
 
-                        <div class="border rounded p-2 d-flex flex-wrap gap-2">
+                        <div class="flex flex-wrap gap-2 rounded-lg border border-border p-2">
                             {#if filteredArchives.length === 0}
-                                <p class="text-muted mb-0">
+                                <p class="mb-0 text-sm text-muted-foreground">
                                     {uploaded_files.archives.length === 0 ? "No files uploaded" : "No files match your search"}
                                 </p>
                             {/if}
 
                             {#each filteredArchives as file}
-                                <label
-                                    for={`file-${file}`}
-                                    class="d-flex align-items-center gap-1 small border rounded px-2 py-1 hover-highlight"
-                                >
+                                <label for={`file-${file}`} class={fileLabelClass}>
                                     <input
                                         type="checkbox"
                                         id={`file-${file}`}
                                         name="attached_files"
                                         value={file}
                                         bind:group={archiveFiles}
-                                        class="form-check-input m-0"
+                                        class="m-0 accent-brand-green"
                                     />
                                     {file}
                                 </label>
                             {/each}
                         </div>
 
-                        <hr />
+                        <hr class="my-2 border-border" />
                     {/if}
                 </div>
 
                 <!-- Binary Files -->
                 <div class="mb-3">
-                    <label for="attached-files" class="form-label fw-semibold">Binary Files</label>
-                    <hr />
+                    <Label for="attached-files" class="font-semibold">Binary Files</Label>
+                    <hr class="my-2 border-border" />
 
-                    <button
+                    <Button
                         type="button"
-                        class="btn btn-sm btn-outline-primary mb-2"
+                        variant="outline"
+                        size="sm"
+                        class="mb-2"
                         onclick={() => { showBinFiles = !showBinFiles }}
                     >
                         {showBinFiles ? "Hide Files" : "Show Binaries"}
-                    </button>
+                    </Button>
 
                     {#if showBinFiles}
                         <div class="mb-2">
-                            <input
+                            <Input
                                 type="text"
-                                class="form-control form-control-sm"
+                                class="h-7 text-xs"
                                 placeholder="Search files..."
                                 bind:value={binFileSearch}
                             />
                         </div>
 
-                        <div class="border rounded p-2 d-flex flex-wrap gap-2">
+                        <div class="flex flex-wrap gap-2 rounded-lg border border-border p-2">
                             {#if filterBinaries.length === 0}
-                                <p class="text-muted mb-0">
+                                <p class="mb-0 text-sm text-muted-foreground">
                                     {uploaded_files.bins.length === 0 ? "No files uploaded" : "No files match your search"}
                                 </p>
                             {/if}
 
                             {#each filterBinaries as file}
-                                <label
-                                    for={`file-${file}`}
-                                    class="d-flex align-items-center gap-1 small border rounded px-2 py-1 hover-highlight"
-                                >
+                                <label for={`file-${file}`} class={fileLabelClass}>
                                     <input
                                         type="radio"
                                         id={`file-${file}`}
                                         name="bin_file"
                                         value={file}
                                         bind:group={binaryFile}
-                                        class="form-check-input m-0"
+                                        class="m-0 accent-brand-green"
                                     />
                                     {file}
                                 </label>
                             {/each}
                         </div>
 
-                        <hr />
+                        <hr class="my-2 border-border" />
                     {/if}
                 </div>
-                
+
                 <!-- Challenge Hints -->
                 <div class="mb-3">
-                    <label for="hints" class="form-label fw-semibold">
+                    <Label for="hints" class="font-semibold">
                         Hints
-                    </label>
+                    </Label>
 
                     {#each hints as _, index}
-                        <div class="input-group mb-2">
-                            <input
+                        <div class="mb-2 flex gap-2">
+                            <Input
                                 type="text"
-                                class="form-control"
                                 bind:value={hints[index]}
                                 placeholder={`Hint #${index + 1}`}
                             />
 
-                            <button
+                            <Button
                                 type="button"
-                                class="btn btn-outline-danger"
+                                variant="destructive"
                                 onclick={() => removeHint(index)}
                             >
                                 Remove
-                            </button>
+                            </Button>
                         </div>
                     {/each}
 
-                    <button
+                    <Button
                         type="button"
-                        class="btn btn-outline-primary btn-sm"
+                        variant="outline"
+                        size="sm"
                         onclick={addHint}
                     >
                         + Add Hint
-                    </button>
+                    </Button>
 
                     <!-- Hidden field sent to backend -->
                     <input
@@ -267,11 +277,12 @@
                 </div>
 
                 <!-- Category & Difficulty -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="category" class="form-label fw-semibold">Category</label>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="mb-3 space-y-1.5">
+                        <Label for="category" class="font-semibold">Category</Label>
                         <select
-                            class="form-select"
+                            id="category"
+                            class={selectClass}
                             name="category" required
                         >
                             <option value="" disabled>Select Category</option>
@@ -285,10 +296,11 @@
                         </select>
                     </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label for="difficulty" class="form-label fw-semibold">Difficulty</label>
+                    <div class="mb-3 space-y-1.5">
+                        <Label for="difficulty" class="font-semibold">Difficulty</Label>
                         <select
-                            class="form-select"
+                            id="difficulty"
+                            class={selectClass}
                             name="difficulty" required
                         >
                             <option value="" disabled>Select difficulty</option>
@@ -302,27 +314,31 @@
                 </div>
 
                 <!-- Flag -->
-                <div class="mb-3">
-                    <label for="flag-value" class="form-label fw-semibold">Flag</label>
-                    <div class="input-group">
-                        <input
+                <div class="mb-3 space-y-1.5">
+                    <Label for="flag-value" class="font-semibold">Flag</Label>
+                    <div class="flex gap-2">
+                        <Input
                             id="flag-value"
                             type={ showFlag ? "text" : "password" }
-                            class="form-control"
                             name="flag"
                             required={requireFlag}
                             placeholder="Enter flag"
                             autocomplete="off"
                             bind:value={flagValue}
                         />
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
+                            size="icon"
                             aria-label="showFlagValue"
-                            class="btn btn-outline-secondary"
                             onclick={() => { showFlag = !showFlag }}
                         >
-                            <i class={showFlag ? "bi bi-eye-slash" : "bi bi-eye"}></i>
-                        </button>
+                            {#if showFlag}
+                                <EyeOff class="h-4 w-4" />
+                            {:else}
+                                <Eye class="h-4 w-4" />
+                            {/if}
+                        </Button>
                     </div>
                 </div>
 
@@ -344,13 +360,13 @@
                 {/if}
 
                 <!-- Submit -->
-                <button
+                <Button
                     type="submit"
-                    class="btn btn-primary w-100"
+                    class="w-full"
                 >
                     Submit
-                </button>
+                </Button>
             </form>
-        </div>
-    </div>
+        </Card.Content>
+    </Card.Root>
 </div>

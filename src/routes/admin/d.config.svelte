@@ -1,9 +1,19 @@
 <script lang="ts">
     import { enhance } from "$app/forms";
     import { invalidateAll } from '$app/navigation';
-    
+
     import Feedback from '$lib/components/feedback.svelte';
     import { handleFormResult } from "$lib/utilities";
+    import { Button } from '$lib/components/ui/button';
+    import { Input } from '$lib/components/ui/input';
+    import { Label } from '$lib/components/ui/label';
+    import { Badge } from '$lib/components/ui/badge';
+    import * as Card from '$lib/components/ui/card';
+    import { Separator } from '$lib/components/ui/separator';
+    import Power from '@lucide/svelte/icons/power';
+    import Save from '@lucide/svelte/icons/save';
+    import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+    import CircleAlert from '@lucide/svelte/icons/circle-alert';
 
     function clearResult() {
         error = warning = success = "";
@@ -48,114 +58,112 @@
     }
 </script>
 
-<div class="container mt-4 d-flex justify-content-center align-items-center">
-    <div class="row w-100 justify-content-center">
-        <h4>Configuration</h4>
+<div>
+    <div class="mb-4 flex items-center gap-2.5">
+        <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
+        <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Configuration</h2>
+    </div>
 
-        {#if !config}
-            <div class="alert alert-danger d-flex align-items-center gap-2">
-                <i class="ti ti-alert-circle"></i>
-                Error fetching configuration!
-            </div>
-        {:else}
-            <Feedback success={success} warning={warning} error={error} />
+    {#if !config}
+        <div class="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <CircleAlert class="h-4 w-4 shrink-0" />
+            Error fetching configuration!
+        </div>
+    {:else}
+        <Feedback {success} {warning} {error} />
 
-            {#if isDirty}
-                <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="font-size: 18px; max-width: 560px;">
-                    <i class="ti ti-alert-triangle"></i>
-                    You have unsaved changes — click <strong class="mx-1">Save changes</strong> to apply them.
-                </div>
-            {/if}
-
-            <div class="card border rounded-3 overflow-hidden" style="max-width: 560px;" class:border-warning={isDirty}>
-
-                <div class="card-header bg-white border-bottom px-3 py-2 d-flex align-items-center justify-content-between">
-                    <span class="fw-medium">Event Configuration</span>
-                    <div class="d-flex align-items-center gap-2">
-                        {#if isDirty}
-                            <span class="badge text-bg-warning">Unsaved</span>
-                        {/if}
-                        <span class="badge" class:text-bg-success={activation_status} class:text-bg-secondary={!activation_status}>
-                            {activation_status ? "Active" : "Inactive"}
-                        </span>
-                    </div>
-                </div>
-
-                <div class="card-body p-3">
-                    <form method="POST" action="?/update_config" use:enhance={() => {
-                        return async ({ result, update }) => {
-                            await update();
-                            
-                            const formResult = await handleFormResult(result);
-                            success = formResult.success;
-                            warning = formResult.warning;
-                            error = formResult.error;
-
-                            if (result.type === 'success' && result.data) {
-                                await invalidateAll();
-                                resync();
-                                setTimeout(clearResult, 5000);
-                            }
-                        };
-                    }}>
-
-                        <div class="mb-3">
-                            <label for="start-date" class="form-label small fw-medium text-muted">Event Start</label>
-                            <input
-                                type="datetime-local"
-                                id="start-date"
-                                class="form-control form-control-sm"
-                                class:border-warning={currentStart !== originalStart}
-                                name="start-date"
-                                bind:value={currentStart}
-                                required
-                            />
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="event-length" class="form-label small fw-medium text-muted">Event Length (days)</label>
-                            <input
-                                type="number"
-                                id="event-length"
-                                class="form-control form-control-sm"
-                                class:border-warning={currentLength !== originalLength}
-                                name="event-length"
-                                bind:value={currentLength}
-                                min={1}
-                                required
-                            />
-                        </div>
-
-                        <input type="hidden" name="activation-status" value={activation_status ? "true" : "false"} />
-
-                        <hr class="my-3" />
-
-                        <div class="d-flex gap-2">
-                            <button
-                                type="button"
-                                class="btn btn-sm w-50"
-                                class:btn-outline-danger={activation_status}
-                                class:btn-outline-success={!activation_status}
-                                onclick={() => { activation_status = !activation_status }}
-                            >
-                                <i class="ti ti-power me-1"></i>
-                                {activation_status ? "Disable site" : "Enable site"}
-                            </button>
-
-                            <button type="submit" class="btn btn-sm w-50"
-                                class:btn-primary={isDirty}
-                                class:btn-outline-secondary={!isDirty}
-                                disabled={!isDirty}
-                            >
-                                <i class="ti ti-device-floppy me-1"></i>
-                                Save changes
-                            </button>
-                        </div>
-
-                    </form>
-                </div>
+        {#if isDirty}
+            <div class="mx-auto mb-4 flex max-w-[35rem] items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-500">
+                <TriangleAlert class="h-4 w-4 shrink-0" />
+                You have unsaved changes &mdash; click <strong class="mx-1">Save changes</strong> to apply them.
             </div>
         {/if}
 
-    </div>
+        <Card.Root class="mx-auto max-w-[35rem] border-border bg-card {isDirty ? 'border-amber-500/50' : ''}">
+            <Card.Header class="flex-row items-center justify-between space-y-0 border-b border-border pb-3">
+                <Card.Title class="text-sm font-medium">Event Configuration</Card.Title>
+                <div class="flex items-center gap-2">
+                    {#if isDirty}
+                        <Badge class="bg-amber-500/15 text-amber-500">Unsaved</Badge>
+                    {/if}
+                    <Badge variant={activation_status ? 'default' : 'secondary'}>
+                        {activation_status ? "Active" : "Inactive"}
+                    </Badge>
+                </div>
+            </Card.Header>
+
+            <Card.Content class="pt-4">
+                <form method="POST" action="?/update_config" use:enhance={() => {
+                    return async ({ result, update }) => {
+                        await update();
+
+                        const formResult = await handleFormResult(result);
+                        success = formResult.success;
+                        warning = formResult.warning;
+                        error = formResult.error;
+
+                        if (result.type === 'success' && result.data) {
+                            await invalidateAll();
+                            resync();
+                            setTimeout(clearResult, 5000);
+                        }
+                    };
+                }}>
+
+                    <div class="mb-3 flex flex-col gap-1.5">
+                        <Label for="start-date" class="text-xs font-medium text-muted-foreground">Event Start</Label>
+                        <Input
+                            type="datetime-local"
+                            id="start-date"
+                            class={currentStart !== originalStart ? 'border-amber-500/60' : ''}
+                            name="start-date"
+                            bind:value={currentStart}
+                            required
+                        />
+                    </div>
+
+                    <div class="mb-3 flex flex-col gap-1.5">
+                        <Label for="event-length" class="text-xs font-medium text-muted-foreground">Event Length (days)</Label>
+                        <Input
+                            type="number"
+                            id="event-length"
+                            class={currentLength !== originalLength ? 'border-amber-500/60' : ''}
+                            name="event-length"
+                            bind:value={currentLength}
+                            min={1}
+                            required
+                        />
+                    </div>
+
+                    <input type="hidden" name="activation-status" value={activation_status ? "true" : "false"} />
+
+                    <Separator class="my-3" />
+
+                    <div class="flex gap-2">
+                        <Button
+                            type="button"
+                            variant={activation_status ? 'destructive' : 'outline'}
+                            class="w-1/2"
+                            onclick={() => { activation_status = !activation_status }}
+                        >
+                            <Power class="h-3.5 w-3.5" />
+                            {activation_status ? "Disable site" : "Enable site"}
+                        </Button>
+
+                        <Button
+                            type="submit"
+                            variant={isDirty ? 'default' : 'outline'}
+                            class="w-1/2"
+                            disabled={!isDirty}
+                        >
+                            <Save class="h-3.5 w-3.5" />
+                            Save changes
+                        </Button>
+                    </div>
+
+                </form>
+            </Card.Content>
+        </Card.Root>
+    {/if}
+
 </div>

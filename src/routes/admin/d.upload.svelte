@@ -1,5 +1,6 @@
 <script lang="ts">
     import UploadSection from '$lib/components/file_upload.svelte';
+    import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 
     let uploadsDisabled = $state(false);
 
@@ -13,10 +14,10 @@
     } = $props();
 </script>
 
-<div class="container">
+<div>
     {#if uploadsDisabled}
-        <div class="alert alert-warning text-center mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div class="mb-4 flex items-center justify-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-500" role="alert">
+            <TriangleAlert class="h-4 w-4 shrink-0" />
             <strong>Uploads Disabled:</strong> File uploads are currently disabled during the event.
         </div>
     {/if}

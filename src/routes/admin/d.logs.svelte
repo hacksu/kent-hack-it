@@ -1,6 +1,13 @@
 <script lang="ts">
     import type { LogEntry } from '$lib/parse-log';
 
+    import { Input } from '$lib/components/ui/input';
+    import * as Select from '$lib/components/ui/select';
+    import * as Table from '$lib/components/ui/table';
+    import ArrowUp from '@lucide/svelte/icons/arrow-up';
+    import ArrowDown from '@lucide/svelte/icons/arrow-down';
+    import ArrowUpDown from '@lucide/svelte/icons/arrow-up-down';
+
     const { entries }: { entries: LogEntry[] } = $props();
 
     let search = $state('');
@@ -48,10 +55,20 @@
     }
 
     function statusClass(status: number) {
-        if (status < 300) return 'success';
-        if (status < 400) return 'redirect';
-        if (status < 500) return 'client-err';
-        return 'server-err';
+        if (status < 300) return 'text-brand-green';
+        if (status < 400) return 'text-brand-blue';
+        if (status < 500) return 'text-amber-500';
+        return 'text-destructive';
+    }
+
+    function methodClass(method: string) {
+        return {
+            get: 'text-brand-blue',
+            post: 'text-brand-green',
+            put: 'text-amber-500',
+            delete: 'text-destructive',
+            patch: 'text-purple-400',
+        }[method.toLowerCase()] ?? 'text-foreground';
     }
 
     function formatBytes(n: number) {
@@ -59,99 +76,117 @@
         if (n < 1024 ** 2) return `${(n / 1024).toFixed(1)} KB`;
         return `${(n / 1024 ** 2).toFixed(1)} MB`;
     }
+
+    const columns: [keyof LogEntry, string][] = [
+        ['time',        'Time'],
+        ['ip',          'IP'],
+        ['method',      'Method'],
+        ['uri',         'URI'],
+        ['status',      'Status'],
+        ['bytesSent',   'Size'],
+        ['requestTime', 'RT (s)'],
+    ];
 </script>
 
-<svelte:head>
-    <link rel="stylesheet" href="/css/logsearch.css">
-</svelte:head>
-
-<div class="log-wrap">
+<div class="flex max-h-[75dvh] flex-col overflow-hidden text-sm">
     <!-- filters -->
-    <div class="filters">
-        <input
-            class="search"
+    <div class="flex flex-shrink-0 flex-wrap items-center gap-2 border-b border-border pb-3">
+        <Input
+            class="min-w-[11rem] flex-1"
             placeholder="Search IP or URI…"
             bind:value={search}
         />
 
-        <select bind:value={methodFilter}>
-            {#each methods as m}
-                <option value={m}>{m === 'all' ? 'All methods' : m}</option>
-            {/each}
-        </select>
-
-        <select bind:value={statusFilter}>
-            {#each statusGroups as s}
-                <option value={s}>{s === 'all' ? 'All status' : s}</option>
-            {/each}
-        </select>
-
-        <div class="rt-range">
-            <input type="number" placeholder="Min RT" bind:value={minRt} min="0" step="0.001" />
-            <span>–</span>
-            <input type="number" placeholder="Max RT" bind:value={maxRt} min="0" step="0.001" />
-            <span class="rt-label">s</span>
-        </div>
-
-        <span class="count">{filtered.length} / {entries.length}</span>
-
-        <div>
-            <select bind:value={uaFilter}>
-                {#each userAgents as ua}
-                    <option value={ua}>{ua === 'all' ? 'All agents' : ua}</option>
+        <Select.Root type="single" bind:value={methodFilter}>
+            <Select.Trigger class="w-36">
+                {methodFilter === 'all' ? 'All methods' : methodFilter}
+            </Select.Trigger>
+            <Select.Content>
+                {#each methods as m}
+                    <Select.Item value={m}>{m === 'all' ? 'All methods' : m}</Select.Item>
                 {/each}
-            </select>
+            </Select.Content>
+        </Select.Root>
+
+        <Select.Root type="single" bind:value={statusFilter}>
+            <Select.Trigger class="w-32">
+                {statusFilter === 'all' ? 'All status' : statusFilter}
+            </Select.Trigger>
+            <Select.Content>
+                {#each statusGroups as s}
+                    <Select.Item value={s}>{s === 'all' ? 'All status' : s}</Select.Item>
+                {/each}
+            </Select.Content>
+        </Select.Root>
+
+        <div class="flex items-center gap-1">
+            <Input class="w-20" type="number" placeholder="Min RT" bind:value={minRt} min="0" step="0.001" />
+            <span class="text-muted-foreground">–</span>
+            <Input class="w-20" type="number" placeholder="Max RT" bind:value={maxRt} min="0" step="0.001" />
+            <span class="text-xs text-muted-foreground">s</span>
         </div>
 
+        <Select.Root type="single" bind:value={uaFilter}>
+            <Select.Trigger class="w-40">
+                {uaFilter === 'all' ? 'All agents' : uaFilter}
+            </Select.Trigger>
+            <Select.Content>
+                {#each userAgents as ua}
+                    <Select.Item value={ua}>{ua === 'all' ? 'All agents' : ua}</Select.Item>
+                {/each}
+            </Select.Content>
+        </Select.Root>
+
+        <span class="ml-auto font-mono text-xs text-muted-foreground tabular-nums">{filtered.length} / {entries.length}</span>
     </div>
 
     <!-- table -->
-    <div class="table-scroll">
-        <table>
-            <thead>
-                <tr>
-                    {#each [
-                        ['time',        'Time'],
-                        ['ip',          'IP'],
-                        ['method',      'Method'],
-                        ['uri',         'URI'],
-                        ['status',      'Status'],
-                        ['bytesSent',   'Size'],
-                        ['requestTime', 'RT (s)'],
-                    ] as [key, label]}
-                        <th
-                            class="sortable {sortKey === key ? 'active' : ''}"
-                            onclick={() => toggleSort(key as keyof LogEntry)}
+    <div class="flex-1 overflow-auto">
+        <Table.Root>
+            <Table.Header class="sticky top-0 z-10 bg-card">
+                <Table.Row class="hover:bg-transparent">
+                    {#each columns as [key, label]}
+                        <Table.Head
+                            class="cursor-pointer text-xs whitespace-nowrap select-none {sortKey === key ? 'text-foreground' : ''}"
+                            onclick={() => toggleSort(key)}
                         >
-                            {label}
-                            <span class="sort-icon">
-                                {sortKey === key ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+                            <span class="inline-flex items-center gap-1">
+                                {label}
+                                {#if sortKey === key}
+                                    {#if sortDir === 'asc'}
+                                        <ArrowUp class="h-3 w-3" />
+                                    {:else}
+                                        <ArrowDown class="h-3 w-3" />
+                                    {/if}
+                                {:else}
+                                    <ArrowUpDown class="h-3 w-3 opacity-50" />
+                                {/if}
                             </span>
-                        </th>
+                        </Table.Head>
                     {/each}
-                    <th>User agent</th>
-                </tr>
-            </thead>
-            <tbody>
+                    <Table.Head class="text-xs whitespace-nowrap">User agent</Table.Head>
+                </Table.Row>
+            </Table.Header>
+            <Table.Body>
                 {#each filtered as e}
-                    <tr>
-                        <td class="mono nowrap">{e.time}</td>
-                        <td class="mono nowrap">{e.ip}</td>
-                        <td class="mono method {e.method.toLowerCase()}">{e.method}</td>
-                        <td class="mono uri-cell">
-                            <div class="uri-scroll" title={e.uri}>{e.uri}</div>
-                        </td>
-                        <td class="mono status {statusClass(e.status)}">{e.status}</td>
-                        <td class="mono nowrap">{formatBytes(e.bytesSent)}</td>
-                        <td class="mono nowrap">{e.requestTime.toFixed(3)}</td>
-                        <td class="ua" title={e.userAgent}>{e.userAgent}</td>
-                    </tr>
+                    <Table.Row>
+                        <Table.Cell class="font-mono text-xs whitespace-nowrap">{e.time}</Table.Cell>
+                        <Table.Cell class="font-mono text-xs whitespace-nowrap">{e.ip}</Table.Cell>
+                        <Table.Cell class="font-mono text-xs whitespace-nowrap {methodClass(e.method)}">{e.method}</Table.Cell>
+                        <Table.Cell class="max-w-[16rem] p-0">
+                            <div class="overflow-x-auto px-2 py-1.5 font-mono text-xs whitespace-nowrap" title={e.uri}>{e.uri}</div>
+                        </Table.Cell>
+                        <Table.Cell class="font-mono text-xs whitespace-nowrap {statusClass(e.status)}">{e.status}</Table.Cell>
+                        <Table.Cell class="font-mono text-xs whitespace-nowrap">{formatBytes(e.bytesSent)}</Table.Cell>
+                        <Table.Cell class="font-mono text-xs whitespace-nowrap">{e.requestTime.toFixed(3)}</Table.Cell>
+                        <Table.Cell class="max-w-[12.5rem] overflow-hidden text-xs text-ellipsis whitespace-nowrap text-muted-foreground" title={e.userAgent}>{e.userAgent}</Table.Cell>
+                    </Table.Row>
                 {:else}
-                    <tr>
-                        <td colspan="8" class="empty">No entries match the current filters.</td>
-                    </tr>
+                    <Table.Row>
+                        <Table.Cell colspan={8} class="py-8 text-center text-muted-foreground">No entries match the current filters.</Table.Cell>
+                    </Table.Row>
                 {/each}
-            </tbody>
-        </table>
+            </Table.Body>
+        </Table.Root>
     </div>
 </div>
