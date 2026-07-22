@@ -12,6 +12,7 @@ import {
 } from "$lib/database/db";
 
 import ParseLog from '$lib/parse_log';
+import { ListRegistryImages } from '$lib/server/registry';
 
 import { readdir, writeFile, mkdir } from "fs/promises";
 import { join, basename } from "path";
@@ -54,6 +55,7 @@ export const load = async ({ parent }) => {
     let solvers = await GetSolvers();
     let log_data = await ParseLog();
     let instances = await GetActiveInstances();
+    let registry_images = await ListRegistryImages();
 
     return {
         user, challenges,
@@ -64,6 +66,7 @@ export const load = async ({ parent }) => {
         solvers,
         log_data,
         instances,
+        registry_images,
     }
 };
 

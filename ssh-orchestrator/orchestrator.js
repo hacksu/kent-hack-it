@@ -13,7 +13,12 @@ const WEB_MAX_PORT = Number(process.env.WEB_MAX_PORT);
 
 const SSH_INSTANCE_CPU_NANOS = Number(process.env.SSH_INSTANCE_CPU_NANOS ?? 1000000000);
 const SSH_INSTANCE_MEM_BYTES = Number(process.env.SSH_INSTANCE_MEM_BYTES ?? 268435456);
+const SSH_INSTANCE_PIDS_LIMIT = Number(process.env.SSH_INSTANCE_PIDS_LIMIT ?? 128);
 const SSH_INSTANCE_MINUTES = Number(process.env.SSH_INSTANCE_MINUTES ?? 45);
+
+const WEB_INSTANCE_CPU_NANOS = Number(process.env.WEB_INSTANCE_CPU_NANOS ?? 1000000000);
+const WEB_INSTANCE_MEM_BYTES = Number(process.env.WEB_INSTANCE_MEM_BYTES ?? 268435456);
+const WEB_INSTANCE_PIDS_LIMIT = Number(process.env.WEB_INSTANCE_PIDS_LIMIT ?? 128);
 
 const KHI_UID_LABEL = 'khi.uid';
 const KHI_CHALLENGE_LABEL = 'khi.challenge_id';
@@ -222,6 +227,7 @@ export async function CreateSSHInstance(uid, image_ref) {
                 AutoRemove: true,
                 NanoCpus: SSH_INSTANCE_CPU_NANOS,
                 Memory: SSH_INSTANCE_MEM_BYTES,
+                PidsLimit: SSH_INSTANCE_PIDS_LIMIT,
             },
         }),
     });
@@ -337,6 +343,9 @@ export async function CreateWebInstance(challengeId, image_ref) {
                 PortBindings: { [containerPort]: [{ HostPort: String(port) }] },
                 NetworkMode: networkName,
                 AutoRemove: false,
+                NanoCpus: WEB_INSTANCE_CPU_NANOS,
+                Memory: WEB_INSTANCE_MEM_BYTES,
+                PidsLimit: WEB_INSTANCE_PIDS_LIMIT,
             },
         }),
     });

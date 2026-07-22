@@ -2,6 +2,7 @@
     import { enhance } from "$app/forms";
     import { untrack } from "svelte";
     import type { ChallengeData } from "$lib/database/db";
+    import type { RegistryImages } from "$lib/server/registry";
     import * as Card from "$lib/components/ui/card";
     import { Input } from "$lib/components/ui/input";
     import { Label } from "$lib/components/ui/label";
@@ -16,7 +17,7 @@
     let showFlag = $state<boolean>(false);
     let flagValue = $state<string>("");
 
-    const { title, action_target, challenge, result, onSubmit, uploaded_files, requireFlag } : {
+    const { title, action_target, challenge, result, onSubmit, uploaded_files, registry_images, requireFlag } : {
         title: string,
         action_target: string,
         challenge: ChallengeData | undefined,
@@ -26,6 +27,7 @@
             archives: string[];
             bins: string[];
         },
+        registry_images: RegistryImages,
         requireFlag: boolean
     } = $props();
 
@@ -42,6 +44,20 @@
     let binaryFile = $state<string|undefined>(untrack(() => challenge?.bin_file || undefined));
     let imageRef = $state<string>(untrack(() => challenge?.image_ref || ""));
     let webImageRef = $state<string>(untrack(() => challenge?.web_image_ref || ""));
+
+    let showManualImageRef = $state<boolean>(untrack(() => registry_images.ssh.length === 0));
+    let showManualWebImageRef = $state<boolean>(untrack(() => registry_images.web.length === 0));
+    let imageRefOptions = $derived(
+        challenge?.image_ref && !registry_images.ssh.includes(challenge.image_ref)
+            ? [challenge.image_ref, ...registry_images.ssh]
+            : registry_images.ssh
+    );
+    let webImageRefOptions = $derived(
+        challenge?.web_image_ref && !registry_images.web.includes(challenge.web_image_ref)
+            ? [challenge.web_image_ref, ...registry_images.web]
+            : registry_images.web
+    );
+
     let binFileSearch = $state("");
     let filterBinaries = $derived(
         uploaded_files.bins.filter(file =>
@@ -240,27 +256,70 @@
 
                 <!-- SSH Instance Image -->
                 <div class="mb-3 space-y-1.5">
-                    <Label for="image-ref" class="font-semibold">SSH Instance Image</Label>
-                    <Input
-                        type="text"
-                        id="image-ref"
-                        name="image_ref"
-                        bind:value={imageRef}
-                        placeholder="e.g. khi-ssh/go1:latest"
-                    />
+                    <div class="flex items-center justify-between">
+                        <Label for="image-ref" class="font-semibold">SSH Instance Image</Label>
+                        {#if imageRefOptions.length > 0}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onclick={() => { showManualImageRef = !showManualImageRef }}
+                            >
+                                {showManualImageRef ? "Choose from registry" : "Enter manually"}
+                            </Button>
+                        {/if}
+                    </div>
+
+                    {#if showManualImageRef}
+                        <Input
+                            type="text"
+                            id="image-ref"
+                            name="image_ref"
+                            bind:value={imageRef}
+                            placeholder="e.g. khi-ssh/go1:latest"
+                        />
+                    {:else}
+                        <select id="image-ref" name="image_ref" class={selectClass} bind:value={imageRef}>
+                            <option value="">None</option>
+                            {#each imageRefOptions as img}
+                                <option value={img}>{img}</option>
+                            {/each}
+                        </select>
+                    {/if}
                 </div>
 
                 <!-- Web Instance Image -->
-                <div class="mb-3">
-                    <label for="web-image-ref" class="form-label fw-semibold">Web Instance Image</label>
-                    <input
-                        id="web-image-ref"
-                        type="text"
-                        class="form-control"
-                        name="web_image_ref"
-                        bind:value={webImageRef}
-                        placeholder="e.g. khi-web/profilepeek:latest"
-                    />
+                <div class="mb-3 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <Label for="web-image-ref" class="font-semibold">Web Instance Image</Label>
+                        {#if webImageRefOptions.length > 0}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onclick={() => { showManualWebImageRef = !showManualWebImageRef }}
+                            >
+                                {showManualWebImageRef ? "Choose from registry" : "Enter manually"}
+                            </Button>
+                        {/if}
+                    </div>
+
+                    {#if showManualWebImageRef}
+                        <Input
+                            type="text"
+                            id="web-image-ref"
+                            name="web_image_ref"
+                            bind:value={webImageRef}
+                            placeholder="e.g. khi-web/profilepeek:latest"
+                        />
+                    {:else}
+                        <select id="web-image-ref" name="web_image_ref" class={selectClass} bind:value={webImageRef}>
+                            <option value="">None</option>
+                            {#each webImageRefOptions as img}
+                                <option value={img}>{img}</option>
+                            {/each}
+                        </select>
+                    {/if}
                 </div>
 
                 <!-- Challenge Hints -->

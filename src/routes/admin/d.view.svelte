@@ -1,6 +1,7 @@
 <script lang="ts">
     import { invalidateAll } from '$app/navigation';
     import type { ChallengeData } from '$lib/database/db';
+    import type { RegistryImages } from '$lib/server/registry';
 
     import { Button } from '$lib/components/ui/button';
     import { Badge } from '$lib/components/ui/badge';
@@ -72,12 +73,13 @@
     function openPanel(entry: ChallengeData) { originalData = entry; showEditPanel = true; }
     function exitPanel() { showEditPanel = false; }
 
-    const { uploaded_files, challenges = [], form } : {
+    const { uploaded_files, challenges = [], registry_images, form } : {
         uploaded_files: {
             archives: string[];
             bins: string[];
         },
         challenges: ChallengeData[] | undefined,
+        registry_images: RegistryImages,
         form: any
     } = $props();
 </script>
@@ -101,6 +103,7 @@
             }}
             result={form}
             uploaded_files={uploaded_files}
+            registry_images={registry_images}
             requireFlag={false}
         />
     </Dialog.Content>
