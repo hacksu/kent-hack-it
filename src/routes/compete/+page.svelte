@@ -27,6 +27,8 @@
 
     let instance_infomation = $state("");
 
+    let otherInstanceActive = $state(false);
+
     let ssh_active = $state(false);
     let ssh_host = $state("");
     let ssh_port = $state<number|undefined>(undefined);
@@ -263,10 +265,10 @@
         );
 
         challengeInfo = challenge;
+        otherInstanceActive = false;
 
         try {
-            // find instance information to display
-            const req = await fetch("/api/cinstance", {
+            const req = await fetch(`/api/cinstance?cid=${cid}`, {
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 cache: "no-store"
@@ -275,16 +277,17 @@
                 active: boolean,
                 host?: string,
                 rport?: number,
-                created_at?: Date
+                created_at?: Date,
+                other_active?: boolean
             } = await req.json();
 
             instance_infomation = (res.active) ? `nc ${res.host} ${res.rport}` : "";
             instanceStart = res.created_at;
+            if (res.other_active) otherInstanceActive = true;
         } catch {}
 
         try {
-            // find ssh instance information to display
-            const sshReq = await fetch("/api/sshinstance", {
+            const sshReq = await fetch(`/api/sshinstance?cid=${cid}`, {
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 cache: "no-store"
@@ -294,7 +297,8 @@
                 host?: string,
                 port?: number,
                 password?: string,
-                expires_at?: string
+                expires_at?: string,
+                other_active?: boolean
             } = await sshReq.json();
 
             ssh_active = sshRes.active;
@@ -302,6 +306,7 @@
             ssh_port = sshRes.port;
             ssh_password = sshRes.password ?? "";
             ssh_expires_at = sshRes.expires_at ? new Date(sshRes.expires_at) : undefined;
+            if (sshRes.other_active) otherInstanceActive = true;
         } catch {}
 
         try {
@@ -468,7 +473,11 @@
                         {#if instance_infomation.length === 0}
                             {#if challengeInfo && (challengeInfo.bin_file != null && challengeInfo.bin_file.length > 0)}
                                 {@const cid = challengeInfo.id}
-                                <form method="POST" action="?/create_instance" use:enhance={() => {
+                                <form method="POST" action="?/create_instance" use:enhance={({ cancel }) => {
+                                    if (otherInstanceActive && !window.confirm("You have another active instance running elsewhere. Launching this instance will end it and any progress will be lost. Continue?")) {
+                                        cancel();
+                                        return;
+                                    }
                                     return async ({ result, update }) => {
                                         await update();
 
@@ -533,7 +542,11 @@
                         {#if challengeInfo.image_ref}
                             {#if !ssh_active}
                                 {@const cid = challengeInfo.id}
-                                <form method="POST" action="?/create_ssh_instance" use:enhance={() => {
+                                <form method="POST" action="?/create_ssh_instance" use:enhance={({ cancel }) => {
+                                    if (otherInstanceActive && !window.confirm("You have another active instance running elsewhere. Launching this instance will end it and any progress will be lost. Continue?")) {
+                                        cancel();
+                                        return;
+                                    }
                                     return async ({ result, update }) => {
                                         await update();
 

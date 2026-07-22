@@ -1512,6 +1512,11 @@ export async function CreateInstance(uid: any, cid: any) {
                 .where(eq(schema.instance_sessions.uid, uid));
         }
 
+        if (await GetActiveSSHInstance(uid)) {
+            console.log("[*] Stopping existing SSH instance before creating an nc instance...");
+            await StopSSHInstance(uid);
+        }
+
         const challenge_data = await db.select({
             name: schema.challenges.name,
             bin: schema.challenges.bin_file,
@@ -1578,13 +1583,15 @@ export async function GetActiveInstance(uid: any) {
     try {
         const instance_info = await db.select({
             port: schema.instance_sessions.sess_port,
-            created_at: schema.instance_sessions.created_at
+            created_at: schema.instance_sessions.created_at,
+            challenge_id: schema.instance_sessions.challenge_id,
         }).from(schema.instance_sessions)
         .where(eq(schema.instance_sessions.uid, uid)).limit(1);
 
         return (instance_info.length > 0) ? {
             port: instance_info[0].port,
-            created_at: instance_info[0].created_at
+            created_at: instance_info[0].created_at,
+            challenge_id: instance_info[0].challenge_id,
         } : undefined;
     } catch (e: any) {
         console.error("[-] GetActiveInstance:", e);
@@ -1654,6 +1661,11 @@ export async function CreateSSHInstance(uid: any, cid: any) {
             }
         }
 
+        if (await GetActiveInstance(uid)) {
+            console.log("[*] Stopping existing nc instance before creating an SSH instance...");
+            await StopInstance(uid);
+        }
+
         const challenge_data = await db.select({
             image_ref: schema.challenges.image_ref,
         }).from(schema.challenges)
@@ -1704,6 +1716,7 @@ export async function GetActiveSSHInstance(uid: any) {
             port: schema.ssh_instance_sessions.port,
             password: schema.ssh_instance_sessions.password,
             expires_at: schema.ssh_instance_sessions.expires_at,
+            challenge_id: schema.ssh_instance_sessions.challenge_id,
         }).from(schema.ssh_instance_sessions)
         .where(eq(schema.ssh_instance_sessions.uid, uid)).limit(1);
 

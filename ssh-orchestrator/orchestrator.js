@@ -123,14 +123,20 @@ async function resolveImage(image_ref) {
         headers: { 'X-Registry-Auth': authHeader },
     });
 
-    // drain the streamed JSON-lines pull progress body
     await pullRes.text();
 
-    if (!pullRes.ok) {
-        throw new Error(`Image pull failed: ${pullRes.status}`);
+    if (pullRes.ok) {
+        return fullRef;
     }
 
-    return fullRef;
+    console.error(`[-] Registry pull failed for ${fullRef} (${pullRes.status}), falling back to local image ${image_ref}`);
+
+    const localRes = await fetch(`${DOCKER_API}/images/${encodeURIComponent(image_ref)}/json`);
+    if (!localRes.ok) {
+        throw new Error(`Image pull failed (${pullRes.status}) and no local image "${image_ref}" found`);
+    }
+
+    return image_ref;
 }
 
 async function getExposedContainerPort(image) {
@@ -142,6 +148,9 @@ async function getExposedContainerPort(image) {
     const exposed = Object.keys(info.Config?.ExposedPorts ?? {});
     if (exposed.length === 0) {
         throw new Error('Image exposes no ports');
+    }
+    if (exposed.length > 1) {
+        throw new Error(`Image exposes multiple ports (${exposed.join(', ')}) - web challenge images must expose exactly one`);
     }
     return exposed[0];
 }
@@ -243,8 +252,6 @@ export async function CreateSSHInstance(uid, image_ref) {
     const startRes = await fetch(`${DOCKER_API}/containers/${containerId}/start`, { method: 'POST' });
     if (!startRes.ok && startRes.status !== 304) {
         console.error("[-] container start failed:", startRes.status);
-        // AutoRemove only fires on stopping a container that actually started,
-        // so a created-but-never-started container would otherwise linger
         await fetch(`${DOCKER_API}/containers/${containerId}?force=true`, { method: 'DELETE' });
         await removeInstanceNetwork(networkName);
         return { success: false, rc: 500, error: 'Failed to start container' };
@@ -312,7 +319,7 @@ export async function CreateWebInstance(challengeId, image_ref) {
         containerPort = await getExposedContainerPort(resolvedImage);
     } catch (e) {
         console.error("[-] image inspect failed:", e);
-        return { success: false, rc: 500, error: 'Failed to inspect image' };
+        return { success: false, rc: 500, error: e.message ?? 'Failed to inspect image' };
     }
 
     const port = await GetUnusedWebPort();
