@@ -6,10 +6,13 @@ import {
     GetUsers, GetTeams, GetSolvers,
     GetConfiguration,
     UpdateConfiguration,
-    GetFlagHash
+    GetFlagHash,
+    GetActiveInstances,
+    EnsureWebInstance, RedeployWebInstance
 } from "$lib/database/db";
 
 import ParseLog from '$lib/parse_log';
+import { ListRegistryImages } from '$lib/server/registry';
 
 import { readdir, writeFile, mkdir } from "fs/promises";
 import { join, basename } from "path";
@@ -51,6 +54,8 @@ export const load = async ({ parent }) => {
     let config = await GetConfiguration();
     let solvers = await GetSolvers();
     let log_data = await ParseLog();
+    let instances = await GetActiveInstances();
+    let registry_images = await ListRegistryImages();
 
     return {
         user, challenges,
@@ -60,6 +65,8 @@ export const load = async ({ parent }) => {
         config,
         solvers,
         log_data,
+        instances,
+        registry_images,
     }
 };
 
@@ -71,7 +78,6 @@ const PointValues = {
     "extreme": 500,
 };
 
-// FORM DATA HANDLING ONLY - POSTS ARE HANDLED IN +server.ts
 export const actions = {
     // special form named-target
 	add_challenge: async ({ request }) => {
@@ -104,9 +110,18 @@ export const actions = {
                 hlinks: attached_files,
                 hints,
                 bin_file: formData.bin_file,
+                image_ref: formData.image_ref || null,
+                web_image_ref: formData.web_image_ref || null,
             };
 
-            await AddChallenge(data);
+            const result = await AddChallenge(data);
+            if (!result.success) {
+                return fail(409, { error: result.error });
+            }
+
+            if (data.web_image_ref) {
+                await EnsureWebInstance(result.id);
+            }
             return { success: true, message: 'Challenge added!' };
         } catch (e) {
             console.error(`[-] Add_Challenge -> ${e}`);
@@ -142,7 +157,7 @@ export const actions = {
         try {
             console.log("[!] Admin is modifying a challenge");
 
-            await UpdateChallenge({
+            const result = await UpdateChallenge({
                 name: formData.name,
                 description: formData.description,
                 written_by: formData.written_by,
@@ -153,7 +168,17 @@ export const actions = {
                 hlinks: attached_files,
                 hints,
                 bin_file: formData.bin_file,
+                image_ref: formData.image_ref || null,
+                web_image_ref: formData.web_image_ref || null,
             }, formData.id);
+
+            if (!result.success) {
+                return fail(409, { error: result.error });
+            }
+
+            if (formData.web_image_ref) {
+                await RedeployWebInstance(result.id);
+            }
 
             return { success: true, message: 'Challenge updated!' };
         } catch (e) {

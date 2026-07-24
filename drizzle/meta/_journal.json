@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1784581054447,
+      "tag": "0000_narrow_emma_frost",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784581104318,
+      "tag": "0001_seed_event_config",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784585393714,
+      "tag": "0002_dazzling_paper_doll",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784585502271,
+      "tag": "0003_next_kulan_gath",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784585521436,
+      "tag": "0004_cooing_kabuki",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784671320967,
+      "tag": "0005_sleepy_celestials",
+      "breakpoints": true
+    }
+  ]
+}

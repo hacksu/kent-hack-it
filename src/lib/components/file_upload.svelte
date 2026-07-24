@@ -70,7 +70,7 @@
 
     async function handleDelete(filename: string) {
         if (window.confirm(`Are you sure you want to DELETE this file "${filename}"?`)) {
-            const req = await fetch('/admin', {
+            const req = await fetch('/admin/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ context: 'file', action: 'delete', file: filename })

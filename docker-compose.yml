@@ -51,6 +51,66 @@ services:
       # handler does not need to be on the same network as the database
       - handler_net
 
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: docker_socket_proxy_khi
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      IMAGES: 1
+      NETWORKS: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - docker_proxy_net
+
+  ssh-orchestrator:
+    container_name: ssh_orchestrator_khi
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./ssh-orchestrator/Dockerfile
+    environment:
+      DOCKER_PROXY_HOST: docker-socket-proxy
+      DOCKER_PROXY_PORT: 2375
+      SSH_MIN_PORT: ${SSH_MIN_PORT}
+      SSH_MAX_PORT: ${SSH_MAX_PORT}
+      WEB_MIN_PORT: ${WEB_MIN_PORT}
+      WEB_MAX_PORT: ${WEB_MAX_PORT}
+      SSH_INSTANCE_MINUTES: ${SSH_INSTANCE_MINUTES:-45}
+      SSH_INSTANCE_CPU_NANOS: ${SSH_INSTANCE_CPU_NANOS:-1000000000}
+      SSH_INSTANCE_MEM_BYTES: ${SSH_INSTANCE_MEM_BYTES:-268435456}
+      SSH_INSTANCE_PIDS_LIMIT: ${SSH_INSTANCE_PIDS_LIMIT:-128}
+      WEB_INSTANCE_CPU_NANOS: ${WEB_INSTANCE_CPU_NANOS:-1000000000}
+      WEB_INSTANCE_MEM_BYTES: ${WEB_INSTANCE_MEM_BYTES:-268435456}
+      WEB_INSTANCE_PIDS_LIMIT: ${WEB_INSTANCE_PIDS_LIMIT:-128}
+      SSH_IMAGE_REGISTRY: ${SSH_IMAGE_REGISTRY:-}
+      SSH_REGISTRY_USER: ${SSH_REGISTRY_USER:-}
+      SSH_REGISTRY_PASSWORD: ${SSH_REGISTRY_PASSWORD:-}
+      SSH_IMAGE_PREFIX: ${SSH_IMAGE_PREFIX:-khi-ssh/}
+      WEB_IMAGE_PREFIX: ${WEB_IMAGE_PREFIX:-khi-web/}
+    networks:
+      - ssh_orch_net
+      - docker_proxy_net
+
+  migrate:
+    container_name: migrate_khi
+    build:
+      context: .
+      dockerfile: ./migrate/Dockerfile
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: ${PG_ADMIN_USER}
+      PG_PASSWORD: ${PG_ADMIN_PASSWORD}
+      PG_DATABASE: ${PG_DATABASE}
+    networks:
+      - app_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   app:
     container_name: web_khi
     restart: unless-stopped
@@ -85,6 +145,10 @@ services:
       BIN_UPLOADS_DIR: /app/ctf
       CHALLENGE_HOST: ${CHALLENGE_HOST:-ctf.hacksu.com}
       TESTING_READ: "C++ is the Best Language, the very best."
+
+      SSH_IMAGE_REGISTRY: ${SSH_IMAGE_REGISTRY:-}
+      SSH_REGISTRY_USER: ${SSH_REGISTRY_USER:-}
+      SSH_REGISTRY_PASSWORD: ${SSH_REGISTRY_PASSWORD:-}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.khi.rule=Host(`ctf.hacksu.com`)"
@@ -101,9 +165,12 @@ services:
     networks:
       - app_internal
       - handler_net
+      - ssh_orch_net
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   khi_psql_data:
@@ -114,3 +181,5 @@ volumes:
 networks:
   app_internal:
   handler_net:
+  docker_proxy_net:
+  ssh_orch_net:

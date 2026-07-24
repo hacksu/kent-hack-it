@@ -7,7 +7,8 @@ import {
     GetProgress, GetChallenges, CheckFlag,
     IsSiteActive, GetCompletions, GetSolversCount,
     SubmitRating, GetRated,
-    CreateInstance,
+    CreateInstance, CreateSSHInstance,
+    type ViewableChallengeData,
 } from "$lib/database/db";
 
 export const load = async ({ parent, setHeaders }) => {
@@ -17,7 +18,7 @@ export const load = async ({ parent, setHeaders }) => {
     // redirect unauthenticated users to login
     if (!user) throw redirect(303, '/auth/login');
 
-    let challenges = await GetChallenges(false, 1); // only fetch event/live challenges
+    let challenges = await GetChallenges(false, 1) as ViewableChallengeData[] | undefined; // only fetch event/live challenges
     const completions = await GetCompletions(user.id);
     const rated = await GetRated(user.id);
     const progressData = await GetProgress(user.id);
@@ -154,6 +155,35 @@ export const actions = {
         } catch (e) {
             console.error(`[-] Create Instance -> ${e}`);
             return fail(500, { success: false, error: 'An error occurred while preparing Instance' });
+        }
+    },
+
+    create_ssh_instance: async ({ request }) => {
+        const session = await auth.api.getSession({
+                headers: request.headers,
+            });
+
+        // user not authenticated
+        if (!session) {
+            throw redirect(302, "/auth/login");
+        }
+
+        const form = await request.formData();
+        const { cid } = Object.fromEntries(form.entries()) as Record<string, string>;
+        const uid = session.user.id;
+
+        try {
+            if (!await IsSiteActive()) {
+                return { success: false, message: 'Cannot create Instances at this time, try again later!' };
+            } else {
+                console.log("[*] Attempting to prepare SSH Instance");
+                const instance_data = await CreateSSHInstance(uid, cid);
+                console.log(instance_data);
+                return instance_data;
+            }
+        } catch (e) {
+            console.error(`[-] Create SSH Instance -> ${e}`);
+            return fail(500, { success: false, error: 'An error occurred while preparing SSH Instance' });
         }
     },
 };

@@ -27,6 +27,20 @@
 
     let instance_infomation = $state("");
 
+    let otherInstanceActive = $state(false);
+
+    let ssh_active = $state(false);
+    let ssh_host = $state("");
+    let ssh_port = $state<number|undefined>(undefined);
+    let ssh_password = $state("");
+    let ssh_expires_at = $state<Date|undefined>(undefined);
+    let ssh_command = $derived(`ssh ctf-player@${ssh_host} -p ${ssh_port}`);
+
+    let web_active = $state(false);
+    let web_host = $state("");
+    let web_port = $state<number|undefined>(undefined);
+    let web_url = $derived(`http://${web_host}:${web_port}`);
+
     function clearResult() {
         error = warning = success = "";
     }
@@ -251,10 +265,10 @@
         );
 
         challengeInfo = challenge;
+        otherInstanceActive = false;
 
         try {
-            // find instance information to display
-            const req = await fetch("/api/cinstance", {
+            const req = await fetch(`/api/cinstance?cid=${cid}`, {
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 cache: "no-store"
@@ -263,11 +277,53 @@
                 active: boolean,
                 host?: string,
                 rport?: number,
-                created_at?: Date
+                created_at?: Date,
+                other_active?: boolean
             } = await req.json();
 
             instance_infomation = (res.active) ? `nc ${res.host} ${res.rport}` : "";
             instanceStart = res.created_at;
+            if (res.other_active) otherInstanceActive = true;
+        } catch {}
+
+        try {
+            const sshReq = await fetch(`/api/sshinstance?cid=${cid}`, {
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                cache: "no-store"
+            });
+            const sshRes: {
+                active: boolean,
+                host?: string,
+                port?: number,
+                password?: string,
+                expires_at?: string,
+                other_active?: boolean
+            } = await sshReq.json();
+
+            ssh_active = sshRes.active;
+            ssh_host = sshRes.host ?? "";
+            ssh_port = sshRes.port;
+            ssh_password = sshRes.password ?? "";
+            ssh_expires_at = sshRes.expires_at ? new Date(sshRes.expires_at) : undefined;
+            if (sshRes.other_active) otherInstanceActive = true;
+        } catch {}
+
+        try {
+            const webReq = await fetch(`/api/webinstance?cid=${cid}`, {
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                cache: "no-store"
+            });
+            const webRes: {
+                active: boolean,
+                host?: string,
+                port?: number,
+            } = await webReq.json();
+
+            web_active = webRes.active;
+            web_host = webRes.host ?? "";
+            web_port = webRes.port;
         } catch {}
 
         showPanel = challenge !== undefined;
@@ -306,9 +362,37 @@
         timeLeft = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
     }
 
+    let sshTimeLeft = $state("00:00");
+    let sshTimer: NodeJS.Timeout|undefined = undefined;
+
+    function updateSSHTimer() {
+        if (!ssh_expires_at) return;
+
+        const distance = new Date(ssh_expires_at).getTime() - Date.now();
+
+        if (distance <= 0) {
+            sshTimeLeft = "00:00";
+            return;
+        }
+
+        const totalSeconds = Math.floor(distance / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        sshTimeLeft = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
     onMount(() => {
         updateInstanceTimer();
         timer = setInterval(updateInstanceTimer, 1000);
+
+        updateSSHTimer();
+        sshTimer = setInterval(updateSSHTimer, 1000);
+
+        return () => {
+            clearInterval(timer);
+            clearInterval(sshTimer);
+        };
     });
 
     // Styling helper: maps a challenge difficulty to a badge color, mirroring
@@ -388,7 +472,12 @@
 
                         {#if instance_infomation.length === 0}
                             {#if challengeInfo && (challengeInfo.bin_file != null && challengeInfo.bin_file.length > 0)}
-                                <form method="POST" action="?/create_instance" use:enhance={() => {
+                                {@const cid = challengeInfo.id}
+                                <form method="POST" action="?/create_instance" use:enhance={({ cancel }) => {
+                                    if (otherInstanceActive && !window.confirm("You have another active instance running elsewhere. Launching this instance will end it and any progress will be lost. Continue?")) {
+                                        cancel();
+                                        return;
+                                    }
                                     return async ({ result, update }) => {
                                         await update();
 
@@ -398,7 +487,7 @@
                                         error = formResult.error;
 
                                         // trigger the instance to be rendered
-                                        viewChallenge(challengeInfo.id);
+                                        viewChallenge(cid);
 
                                         await invalidateAll();
                                         setTimeout(clearResult, 5000);
@@ -414,13 +503,14 @@
                                 </form>
                             {/if}
                         {:else}
+                            {@const cid = challengeInfo.id}
                             <div>
                                 <div class="mb-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-sm text-foreground">
                                     {instanceLabel} {timeLeft}
                                 </div>
                                 <p class="mb-1 text-sm text-foreground">Connect to Instance</p>
-                                <code class="font-mono text-brand-green select-all">
-                                    $ {instance_infomation}
+                                <code class="font-mono text-brand-green">
+                                    <span class="select-none">$ </span><span class="select-all">{instance_infomation}</span>
                                 </code>
                                 <form method="POST" action="?/create_instance" class="mt-2" use:enhance={() => {
                                     return async ({ result, update }) => {
@@ -432,7 +522,7 @@
                                         error = formResult.error;
 
                                         // trigger the instance to be rendered
-                                        viewChallenge(challengeInfo.id);
+                                        viewChallenge(cid);
 
                                         await invalidateAll();
                                         setTimeout(clearResult, 5000);
@@ -446,6 +536,92 @@
                                         Restart Instance
                                     </Button>
                                 </form>
+                            </div>
+                        {/if}
+
+                        {#if challengeInfo.image_ref}
+                            {#if !ssh_active}
+                                {@const cid = challengeInfo.id}
+                                <form method="POST" action="?/create_ssh_instance" use:enhance={({ cancel }) => {
+                                    if (otherInstanceActive && !window.confirm("You have another active instance running elsewhere. Launching this instance will end it and any progress will be lost. Continue?")) {
+                                        cancel();
+                                        return;
+                                    }
+                                    return async ({ result, update }) => {
+                                        await update();
+
+                                        const formResult = await handleFormResult(result);
+                                        success = formResult.success;
+                                        warning = formResult.warning;
+                                        error = formResult.error;
+
+                                        // trigger the ssh instance to be rendered
+                                        viewChallenge(cid);
+
+                                        await invalidateAll();
+                                        setTimeout(clearResult, 5000);
+                                    };
+                                }}>
+                                    <input type="hidden" name="cid" value={challengeInfo.id} />
+                                    <button type="submit" class="btn btn-success">
+                                        Launch SSH Instance
+                                    </button>
+                                </form>
+                            {:else}
+                                {@const cid = challengeInfo.id}
+                                <div>
+                                    <div
+                                        style="border-style: solid; border-radius: 3px; border-color: orange; border-radius: 8px; padding: 5px;"
+                                    >
+                                        Time Remaining: {sshTimeLeft}
+                                    </div>
+                                    Connect via SSH<br>
+                                    <code class="font-mono text-green-400">
+                                        <span class="select-none">$ </span><span class="select-all">{ssh_command}</span>
+                                    </code>
+                                    <br>
+                                    Password:
+                                    <code class="font-mono text-green-400 select-all">
+                                        {ssh_password}
+                                    </code>
+                                    <form method="POST" action="?/create_ssh_instance" use:enhance={() => {
+                                        return async ({ result, update }) => {
+                                            await update();
+
+                                            const formResult = await handleFormResult(result);
+                                            success = formResult.success;
+                                            warning = formResult.warning;
+                                            error = formResult.error;
+
+                                            // trigger the ssh instance to be re-rendered
+                                            viewChallenge(cid);
+
+                                            await invalidateAll();
+                                            setTimeout(clearResult, 5000);
+                                        };
+                                    }}>
+                                        <input type="hidden" name="cid" value={challengeInfo.id} />
+                                        <button type="submit" class="btn btn-success">
+                                            Restart SSH Instance
+                                        </button>
+                                    </form>
+                                </div>
+                            {/if}
+                        {/if}
+
+                        {#if challengeInfo.web_image_ref}
+                            <div class="mb-2">
+                                {#if web_active}
+                                    <div
+                                        style="border-style: solid; border-radius: 3px; border-color: orange; border-radius: 8px; padding: 5px;"
+                                    >
+                                        Web Challenge
+                                    </div>
+                                    Visit:<br>
+                                    <code class="font-mono text-green-400 select-all">{web_url}</code>
+                                {:else}
+                                    <div class="text-muted-foreground">Instance not available yet.</div>
+                                {/if}
                             </div>
                         {/if}
 

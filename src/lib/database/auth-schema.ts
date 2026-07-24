@@ -128,7 +128,9 @@ export const challenges = pgTable("challenges", {
     is_active: boolean("is_active").default(true),  // used to close a challenge from players to perform maintanence
     is_gym: boolean("is_gym").default(false),       // used to defined what is an event challenge and post-event challenge
 
-    bin_file: text("bin_file")
+    bin_file: text("bin_file"),
+    image_ref: text("image_ref"),
+    web_image_ref: text("web_image_ref")
 });
 
 export const teams = pgTable("teams", {
@@ -167,5 +169,24 @@ export const instance_sessions = pgTable("instance_sessions", {
     uid: text("uid").primaryKey().references(() => user.id),
     sess_port: integer("sess_port").notNull(),
     cpid: integer("cpid").notNull(),
+    created_at: timestamp("created_at").defaultNow().notNull(),
+    challenge_id: integer("challenge_id").references(() => challenges.id),
+});
+
+export const ssh_instance_sessions = pgTable("ssh_instance_sessions", {
+    uid: text("uid").primaryKey().references(() => user.id),
+    challenge_id: integer("challenge_id").notNull().references(() => challenges.id),
+    container_id: text("container_id").notNull(),
+    port: integer("port").notNull(),
+    password: text("password").notNull(),
+    expires_at: timestamp("expires_at").notNull(),
+    created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+// one shared instance per challenge, not one per player
+export const web_instances = pgTable("web_instances", {
+    challenge_id: integer("challenge_id").primaryKey().references(() => challenges.id),
+    container_id: text("container_id").notNull(),
+    port: integer("port").notNull(),
     created_at: timestamp("created_at").defaultNow().notNull(),
 });

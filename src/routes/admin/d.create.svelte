@@ -1,6 +1,7 @@
 <script lang="ts">
     import ChallengeForm from '$lib/components/challenge.form.svelte';
-    
+    import type { RegistryImages } from '$lib/server/registry';
+
     let result = $state<{success: boolean, message?: string, error?: string} | undefined>(undefined);
     function clearResult() {
         result = undefined;
@@ -11,11 +12,12 @@
         elem?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     
-    const { uploaded_files, form } : {
+    const { uploaded_files, registry_images, form } : {
         uploaded_files: {
             archives: string[];
             bins: string[];
         },
+        registry_images: RegistryImages,
         form: any
     } = $props();
 </script>
@@ -47,5 +49,6 @@
     }}
     result={form}
     uploaded_files={uploaded_files}
+    registry_images={registry_images}
     requireFlag={true}
 />

@@ -1,10 +1,10 @@
 import { error, redirect, json, isRedirect } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
 import { auth } from "$lib/server/auth";
-import { GetActiveInstance } from "$lib/database/db";
+import { GetActiveInstance, GetActiveSSHInstance } from "$lib/database/db";
 import type { RequestHandler } from "./$types";
 
-export const GET: RequestHandler = async ({ request }) => {
+export const GET: RequestHandler = async ({ request, url }) => {
     try {
         const session = await auth.api.getSession({
             headers: request.headers,
@@ -16,11 +16,19 @@ export const GET: RequestHandler = async ({ request }) => {
         }
 
         const CHALLENGE_HOST = process.env.CHALLENGE_HOST ?? env.CHALLENGE_HOST ?? "ctf.hacksu.com";
+        const cid = Number(url.searchParams.get('cid'));
 
-        const data = await GetActiveInstance(session.user.id);
-        const instance_info = data
-            ? { active: true, host: CHALLENGE_HOST, rport: data.port, created_at: data.created_at }
-            : { active: false };
+        const [data, sshData] = await Promise.all([
+            GetActiveInstance(session.user.id),
+            GetActiveSSHInstance(session.user.id),
+        ]);
+
+        const active = !!data && data.challenge_id === cid;
+        const other_active = (!!data && !active) || !!sshData;
+
+        const instance_info = active
+            ? { active: true, host: CHALLENGE_HOST, rport: data.port, created_at: data.created_at, other_active: false }
+            : { active: false, other_active };
 
         console.log(instance_info);
 

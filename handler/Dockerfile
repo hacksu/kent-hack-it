@@ -28,14 +28,14 @@ FROM debian:bookworm-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     supervisor \
-    nodejs \
-    npm \
     net-tools \
     socat \
     libprotobuf32 \
     libnl-route-3-200 \
     libcap2-bin \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
 WORKDIR /app
 
@@ -52,8 +52,8 @@ RUN mkdir -p /app/ctf
 RUN mkdir -p /app/jobs
 
 # move node application code and install needed dependencies
-COPY ./handler/server.js ./handler/handler.js ./handler/package.json ./handler/package-lock.json /app
-RUN npm install .
+COPY ./handler/server.js ./handler/handler.js ./handler/package.json ./handler/bun.lock /app
+RUN bun install --frozen-lockfile
 
 # allow www-data to rw /app and /jail
 RUN chown -R www-data:www-data /app

@@ -106,6 +106,7 @@
             {#if data.team.members.length === 0}
                 <p class="text-sm text-muted-foreground">No other members yet.</p>
             {:else}
+                {@const teamId = data.team.id}
                 <div class="flex flex-col gap-2.5">
                     {#each data.team.members as member}
                         <div class="flex items-center gap-4">
@@ -131,7 +132,7 @@
                                     variant="destructive"
                                     size="sm"
                                     class="ml-auto"
-                                    onclick={ () => { RemoveMember(member.id, member.name, data.team.id) } }
+                                    onclick={ () => { RemoveMember(member.id, member.name, teamId) } }
                                 >
                                     Remove
                                 </Button>

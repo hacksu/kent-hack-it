@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { LogEntry } from '$lib/parse-log';
+    import type { LogEntry } from '$lib/parse_log';
 
     import { Input } from '$lib/components/ui/input';
     import * as Select from '$lib/components/ui/select';

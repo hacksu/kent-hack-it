@@ -16,7 +16,7 @@
 
     async function deleteAdmin(id: string, name: string) {
         if (window.confirm(`Are you sure you want to DELETE this admin "${name}"?`)) {
-            const req = await fetch('/admin', {
+            const req = await fetch('/admin/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ context: 'admin', action: 'delete', id })

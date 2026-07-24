@@ -8,6 +8,7 @@
     import FileUploadTab from './d.upload.svelte';
     import ConfigTab from './d.config.svelte';
     import LogTab from './d.logs.svelte';
+    import InstancesTab from './d.instances.svelte';
 
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
@@ -26,11 +27,12 @@
         { title: "Teams",      value: "teams",    component: TeamsTab,          props: () => ({ teams: data.teams }) },
         { title: "Admins",     value: "admins",   component: AdminsTab,         props: () => ({ admins: data.admins }) },
         { title: "Solvers",    value: "solvers",  component: SolversTab,        props: () => ({ solvers: data.solvers, challenges: data.challenges }) },
-        { title: "View",       value: "view",     component: ChallengeView,     props: () => ({ uploaded_files: data.files, challenges: data.challenges, form: undefined }) },
-        { title: "Create",     value: "create",   component: ChallengeCreate,   props: () => ({ uploaded_files: data.files, form: undefined }) },
+        { title: "View",       value: "view",     component: ChallengeView,     props: () => ({ uploaded_files: data.files, challenges: data.challenges, registry_images: data.registry_images, form: undefined }) },
+        { title: "Create",     value: "create",   component: ChallengeCreate,   props: () => ({ uploaded_files: data.files, registry_images: data.registry_images, form: undefined }) },
         { title: "Upload",     value: "upload",   component: FileUploadTab,     props: () => ({ uploaded_files: data.files }) },
         { title: "Configuration",     value: "config",   component: ConfigTab,  props: () => ({ config: data.config }) },
         { title: "Logs",     value: "logs",   component: LogTab,                props: () => ({ entries: data.log_data }) },
+        { title: "Instances",     value: "instances",   component: InstancesTab, props: () => ({ instances: data.instances }) },
     ];
 
     let activeComponent = $derived(tabs.find(t => t.value === activeTab));
@@ -61,7 +63,7 @@
     <div class="rounded-2xl border border-border bg-card p-4 sm:p-6">
         {#if activeComponent}
             {@const Comp = activeComponent.component}
-            <Comp {...activeComponent.props()} />
+            <Comp {...(activeComponent.props() as any)} />
         {/if}
     </div>
 </main>

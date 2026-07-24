@@ -4,6 +4,10 @@ import {
     DeleteAdmin,
     DeleteUser,
     RemoveTeam,
+    StopInstance,
+    StopSSHInstance,
+    StopWebInstance,
+    RedeployWebInstance,
 } from '$lib/database/db';
 import { json } from '@sveltejs/kit';
 
@@ -18,11 +22,7 @@ async function toggleChallenge(id: string, is_active: boolean, is_gym: boolean) 
 }
 
 async function deleteChallenge(id: string) {
-    if ( await DeleteChallenge(id) ) {
-        return json({ success: true , status: 200 });
-    } else {
-        return json({ success: false , status: 200 });
-    }
+    return json(await DeleteChallenge(id));
 }
 
 async function deleteAdmin(id: string) {
@@ -39,6 +39,20 @@ async function deleteUser(id: string) {
     } else {
         return json({ success: false , status: 200 });
     }
+}
+
+async function stopInstance(type: string, uid: string, cid: string) {
+    if (type === 'web') {
+        return json(await StopWebInstance(cid));
+    }
+    return json(type === 'ssh' ? await StopSSHInstance(uid) : await StopInstance(uid));
+}
+
+async function restartInstance(type: string, cid: string) {
+    if (type !== 'web') {
+        return json({ success: false, error: 'Restart is only supported for web instances' });
+    }
+    return json(await RedeployWebInstance(cid));
 }
 
 async function deleteTeam(id: string) {
@@ -63,7 +77,7 @@ async function delFile(is_archive: boolean, file: string) {
         // remove from binaries directory
         basePath = process.env.BIN_UPLOADS_DIR ?? join(process.cwd(), "ctf");
     }
-    
+
     // check for path traversal
     const filepath = join(basePath, filename);
     if (!filepath.startsWith(basePath)) {
@@ -129,6 +143,15 @@ export const POST = async (event) => {
             handler = await delFile(true, data.file);
         } else if (data.action === 'del_bin') {
             handler = await delFile(false, data.file);
+        } else {
+            // unknown action
+            return json({ success: false, error: 'Unknown action' , status: 500 });
+        }
+    } else if (data.context === 'instance') {
+        if (data.action === 'stop') {
+            handler = await stopInstance(data.type, data.uid, data.cid);
+        } else if (data.action === 'restart') {
+            handler = await restartInstance(data.type, data.cid);
         } else {
             // unknown action
             return json({ success: false, error: 'Unknown action' , status: 500 });

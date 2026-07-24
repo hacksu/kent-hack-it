@@ -75,6 +75,7 @@
 
 :root {
 	--radius: 0.5rem;
+	color-scheme: light;
 	/* Light theme: faint cool-white with deep brand accents for contrast */
 	--background: oklch(0.985 0.004 210);
 	--foreground: oklch(0.2 0.02 230);
@@ -116,6 +117,7 @@
 }
 
 .dark {
+	color-scheme: dark;
 	/* Dark-first: deep navy / blue-black, tuned to the reference dashboard */
 	--background: oklch(0.155 0.032 262);
 	--foreground: oklch(0.95 0.012 230);

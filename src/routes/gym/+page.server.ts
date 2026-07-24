@@ -3,6 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import {
     GetProgress, GetChallenges, GetCompletions,
     GetSolversCount, GetRated,
+    type ViewableChallengeData,
 } from "$lib/database/db";
 
 export const load = async ({ parent }) => {
@@ -12,7 +13,7 @@ export const load = async ({ parent }) => {
     // redirect unauthenticated users to login
     if (!user) throw redirect(303, '/auth/login');
 
-    let challenges = await GetChallenges(false, 2); // only fetch gym challenges
+    let challenges = await GetChallenges(false, 2) as ViewableChallengeData[] | undefined; // only fetch gym challenges
     const completions = await GetCompletions(user.id);
     const rated = await GetRated(user.id);
     const progressData = await GetProgress(user.id);

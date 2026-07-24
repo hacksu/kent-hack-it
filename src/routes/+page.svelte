@@ -14,6 +14,12 @@
     let showTimer = $state(true);
 
     function updateCountdown() {
+        if (!data.eventStartDate || !data.eventEndDate) {
+            showTimer = false;
+            clearInterval(timer);
+            return;
+        }
+
         const now = new Date().getTime();
         const start = new Date(data.eventStartDate).getTime();
         const end = new Date(data.eventEndDate).getTime();
