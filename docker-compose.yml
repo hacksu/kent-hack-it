@@ -41,6 +41,7 @@ services:
       - SYS_ADMIN
     security_opt:
       - seccomp=./handler/seccomp-nsjail.json
+      - apparmor:unconfined
     ports:
       - "${MIN_PORT}-${MAX_PORT}:${MIN_PORT}-${MAX_PORT}"
       - "3000"
@@ -105,6 +106,7 @@ services:
       PG_USER: ${PG_ADMIN_USER}
       PG_PASSWORD: ${PG_ADMIN_PASSWORD}
       PG_DATABASE: ${PG_DATABASE}
+      DB_USER: ${PG_USER}
     networks:
       - app_internal
     depends_on:
