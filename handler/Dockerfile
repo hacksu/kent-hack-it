@@ -33,6 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libprotobuf32 \
     libnl-route-3-200 \
     libcap2-bin \
+    uidmap \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
@@ -46,6 +47,9 @@ RUN chmod +x /usr/bin/nsjail
 RUN setcap cap_sys_admin+eip /usr/bin/nsjail
 RUN groupadd -g 99999 ctf-player && \
     useradd -m -u 99999 -g 99999 -s /bin/bash ctf-player
+
+RUN echo "www-data:99999:1" >> /etc/subuid && \
+    echo "www-data:99999:1" >> /etc/subgid
 
 # prep container dirs
 RUN mkdir -p /jail
