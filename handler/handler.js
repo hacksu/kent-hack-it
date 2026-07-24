@@ -108,8 +108,8 @@ function buildNsjailCmd(jailDir, bin_path) {
         "-l", "/tmp/nsjail.log",                 // general logging for debugging
 
         "--cwd", "/",                            // jail-root == chal_dir, so this is correct post-chroot
-        "--user", "ctf-player",
-        "--group", "ctf-player",
+        "-U", "99999:33:1",
+        "-G", "99999:33:1",
 
         // --- resource limits ---
         "--rlimit_as", "512",
