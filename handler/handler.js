@@ -208,33 +208,30 @@ export async function CreateInstance(name, bin_dir, bin, flag_value) {
         return { success: false, rc: 500, error: 'Server Error' }
     }
 
-    // write nsjail job file
+    // write nsjail job file - regenerated every call so changes to
+    // buildNsjailCmd() take effect immediately, not just for new names
     const jobFile = path.join("/app/jobs", name + ".sh");
-    if (!await PathExists(jobFile)) {
-        // prepare jailcmd
-        const bin_path = path.join(bin_dir, bin);
-        const jailcmd = buildNsjailCmd(jailDir, bin_path);
+    const bin_path = path.join(bin_dir, bin);
+    const jailcmd = buildNsjailCmd(jailDir, bin_path);
 
-        console.log("[*] Creating Job File", jobFile);
+    console.log("[*] Writing Job File", jobFile);
 
-        // generate script content
-        let job_fc = "#!/bin/bash\n";
-        for (const arg of jailcmd) {
-            job_fc += `${arg} `;
-        }
-        job_fc += '\n';
+    let job_fc = "#!/bin/bash\n";
+    for (const arg of jailcmd) {
+        job_fc += `${arg} `;
+    }
+    job_fc += '\n';
 
-        if (!await CreateFile(jobFile, job_fc)) {
-            console.error("[-] Failed to create", jobFile);
-            return { success: false, rc: 500, error: 'Server Error' };
-        }
+    if (!await CreateFile(jobFile, job_fc)) {
+        console.error("[-] Failed to create", jobFile);
+        return { success: false, rc: 500, error: 'Server Error' };
+    }
 
-        try {
-            await fs.chmod(jobFile, 0o755); // set executeable-bit
-        } catch (e) {
-            console.error("[-] Error:", jobFile);
-            return { success: false, rc: 500, error: 'Server Error' };
-        }
+    try {
+        await fs.chmod(jobFile, 0o755); // set executeable-bit
+    } catch (e) {
+        console.error("[-] Error:", jobFile);
+        return { success: false, rc: 500, error: 'Server Error' };
     }
 
     // prep socat cmd
