@@ -90,24 +90,26 @@
 
 <Dialog.Root open={showEditPanel} onOpenChange={(open) => { if (!open) exitPanel(); }}>
     <Dialog.Content class="max-h-[90vh] max-w-2xl overflow-y-auto bg-card p-0 sm:max-w-2xl">
-        <ChallengeForm
-            title="Edit Challenge"
-            action_target="?/edit_challenge"
-            challenge={originalData}
-            onSubmit={(data: { success: boolean, message?: string, error?: string }|undefined) => {
-                showEditPanel = false;
-                if (data) {
-                    result = data;
-                } else {
-                    result = { error: 'An error occurred' };
-                }
-                setTimeout(clearResult, 5000);
-            }}
-            result={form}
-            uploaded_files={uploaded_files}
-            registry_images={registry_images}
-            requireFlag={false}
-        />
+        {#key `${originalData?.id}:${showEditPanel}`}
+            <ChallengeForm
+                title="Edit Challenge"
+                action_target="?/edit_challenge"
+                challenge={originalData}
+                onSubmit={(data: { success: boolean, message?: string, error?: string }|undefined) => {
+                    showEditPanel = false;
+                    if (data) {
+                        result = data;
+                    } else {
+                        result = { error: 'An error occurred' };
+                    }
+                    setTimeout(clearResult, 5000);
+                }}
+                result={form}
+                uploaded_files={uploaded_files}
+                registry_images={registry_images}
+                requireFlag={false}
+            />
+        {/key}
     </Dialog.Content>
 </Dialog.Root>
 

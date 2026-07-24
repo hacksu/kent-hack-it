@@ -71,6 +71,9 @@
             : [""])
     );
 
+    let category = $state<string>(untrack(() => challenge?.category || ""));
+    let difficulty = $state<string>(untrack(() => challenge?.difficulty || ""));
+
     function addHint() {
         hints.push("");
     }
@@ -381,6 +384,7 @@
                             id="category"
                             class={selectClass}
                             name="category" required
+                            bind:value={category}
                         >
                             <option value="" disabled>Select Category</option>
                             <option value="Web Exploitation">Web Exploitation</option>
@@ -399,6 +403,7 @@
                             id="difficulty"
                             class={selectClass}
                             name="difficulty" required
+                            bind:value={difficulty}
                         >
                             <option value="" disabled>Select difficulty</option>
                             <option value="Simple">Simple</option>
