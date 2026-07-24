@@ -43,6 +43,7 @@ WORKDIR /app
 COPY --from=nsjail-builder /build/nsjail/nsjail /usr/bin/nsjail
 RUN chmod +x /usr/bin/nsjail
 # create the jail user
+RUN setcap cap_sys_admin+eip /usr/bin/nsjail
 RUN groupadd -g 99999 ctf-player && \
     useradd -m -u 99999 -g 99999 -s /bin/bash ctf-player
 
