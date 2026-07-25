@@ -146,6 +146,7 @@ services:
       UPLOADS_DIR: /app/uploads
       BIN_UPLOADS_DIR: /app/ctf
       CHALLENGE_HOST: ${CHALLENGE_HOST:-ctf.hacksu.com}
+      FLAG_ENCRYPTION_KEY: ${FLAG_ENCRYPTION_KEY}
       TESTING_READ: "C++ is the Best Language, the very best."
 
       SSH_IMAGE_REGISTRY: ${SSH_IMAGE_REGISTRY:-}

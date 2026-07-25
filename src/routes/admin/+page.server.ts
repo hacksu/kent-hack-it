@@ -20,6 +20,7 @@ import { join, basename } from "path";
 // importing interface alias
 import type { ChallengeForm } from "$lib/database/db";
 import { SHA256 } from '$lib/utilities';
+import { encryptFlag } from '$lib/server/flag-crypto';
 
 const uploadDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
 const binUploadDir = process.env.BIN_UPLOADS_DIR ?? join(process.cwd(), "ctf");
@@ -105,7 +106,7 @@ export const actions = {
                 written_by: formData.written_by,
                 category: formData.category,
                 difficulty: formData.difficulty,
-                flag: await SHA256(formData.flag),
+                flag: formData.bin_file ? await encryptFlag(formData.flag) : await SHA256(formData.flag),
                 points,
                 hlinks: attached_files,
                 hints,
@@ -151,7 +152,7 @@ export const actions = {
         if (!flag_value || flag_value.length === 0) {
             flag_value = await GetFlagHash(formData.id);
         } else {
-            flag_value = await SHA256(formData.flag);
+            flag_value = formData.bin_file ? await encryptFlag(formData.flag) : await SHA256(formData.flag);
         }
 
         try {

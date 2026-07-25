@@ -10,7 +10,8 @@ import {
 import * as schema from "./auth-schema";
 import { env } from "$env/dynamic/private"; // dynamic allows the .env file to be read at runtime
 
-import { randomString } from "$lib/utilities";
+import { randomString, SHA256 } from "$lib/utilities";
+import { decryptFlag } from "$lib/server/flag-crypto";
 import { type Stat } from "$lib/mtypes";
 
 const PSQL = postgres({
@@ -649,21 +650,16 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
                 return { success: true, message: 'Already Claimed!' };
             }
         }
-        
 
-        // check flag validiity
-        const row = await db.select()
-            .from(schema.challenges)
-            .where(
-                and(
-                    eq(schema.challenges.id, cid),
-                    eq(schema.challenges.flag, flag_value)
-                )
-            );
-            
-        
-        // append the flag entry to the user as a claim
-        const claimed = row.length === 1;
+        const [challenge] = await db.select({
+            flag: schema.challenges.flag,
+            bin_file: schema.challenges.bin_file,
+        }).from(schema.challenges).where(eq(schema.challenges.id, cid)).limit(1);
+
+        const claimed = challenge && (challenge.bin_file
+            ? await decryptFlag(challenge.flag) === flag_value
+            : challenge.flag === await SHA256(flag_value));
+
         if (claimed) {
             const has_appended = await addClaim(uid, cid);
             console.log(`[*] Appended Claim Status: ${has_appended}`);
@@ -1581,7 +1577,7 @@ export async function CreateInstance(uid: any, cid: any) {
             body: JSON.stringify({
                 name: challenge_data[0].name,
                 bin: challenge_data[0].bin,
-                flag_value: challenge_data[0].flag_value,
+                flag_value: await decryptFlag(challenge_data[0].flag_value),
             })
         });
         const instance_data = await res.json();
