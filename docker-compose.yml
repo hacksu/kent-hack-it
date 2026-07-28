@@ -46,6 +46,7 @@ services:
       - "${MIN_PORT}-${MAX_PORT}:${MIN_PORT}-${MAX_PORT}"
       - "3000"
     volumes:
+      - khi_jail_files:/app/nsjail_confs
       - khi_ctf_exec_files:/app/ctf
       - khi_jobs:/app/jobs
     networks:
@@ -162,9 +163,10 @@ services:
       - "3333:3000" # dev only
     volumes:
       - khi_uploads:/app/uploads
+      - khi_ctf_exec_files:/app/ctf
+      - khi_jail_files:/app/nsjail_confs
       # temp volume (destroyed on recompose on dokploy)
       - ./khi_web_logs:/var/log/nginx
-      - khi_ctf_exec_files:/app/ctf
     networks:
       - app_internal
       - handler_net
@@ -179,6 +181,7 @@ volumes:
   khi_psql_data:
   khi_uploads:
   khi_ctf_exec_files:
+  khi_jail_files:
   khi_jobs:
 
 networks:

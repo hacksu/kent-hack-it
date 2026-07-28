@@ -12,7 +12,7 @@
     import EyeOff from "@lucide/svelte/icons/eye-off";
 
     let showArchiveFiles = $state<boolean>(false);
-    let showBinFiles = $state<boolean>(false);
+    let showJailFiles = $state<boolean>(false);      // @todo - Swap for config files
     let creationDisabled = $state<boolean>(false);
     let showFlag = $state<boolean>(false);
     let flagValue = $state<string>("");
@@ -26,6 +26,7 @@
         uploaded_files: {
             archives: string[];
             bins: string[];
+            jail_confs: string[];
         },
         registry_images: RegistryImages,
         requireFlag: boolean
@@ -41,7 +42,7 @@
         )
     );
 
-    let binaryFile = $state<string|undefined>(untrack(() => challenge?.bin_file || undefined));
+    let nsjail_conf = $state<string|undefined>(untrack(() => challenge?.nsjail_conf || undefined));
     let imageRef = $state<string>(untrack(() => challenge?.image_ref || ""));
     let webImageRef = $state<string>(untrack(() => challenge?.web_image_ref || ""));
 
@@ -58,10 +59,10 @@
             : registry_images.web
     );
 
-    let binFileSearch = $state("");
-    let filterBinaries = $derived(
-        uploaded_files.bins.filter(file =>
-            file.toLowerCase().includes(binFileSearch.toLowerCase())
+    let jailConfSearch = $state("");
+    let filteredJailConfs = $derived(
+        uploaded_files.jail_confs.filter(file =>
+            file.toLowerCase().includes(jailConfSearch.toLowerCase())
         )
     );
 
@@ -214,9 +215,9 @@
                     {/if}
                 </div>
 
-                <!-- Binary Files -->
+                <!-- nsjail configuration files -->
                 <div class="mb-3">
-                    <Label for="attached-files" class="font-semibold">Binary Files</Label>
+                    <Label for="attached-files" class="font-semibold">nsjail Configurations</Label>
                     <hr class="my-2 border-border" />
 
                     <Button
@@ -224,36 +225,36 @@
                         variant="outline"
                         size="sm"
                         class="mb-2"
-                        onclick={() => { showBinFiles = !showBinFiles }}
+                        onclick={() => { showJailFiles = !showJailFiles }}
                     >
-                        {showBinFiles ? "Hide Files" : "Show Binaries"}
+                        {showJailFiles ? "Hide Files" : "Show nsjail Configs"}
                     </Button>
 
-                    {#if showBinFiles}
+                    {#if showJailFiles}
                         <div class="mb-2">
                             <Input
                                 type="text"
                                 class="h-7 text-xs"
                                 placeholder="Search files..."
-                                bind:value={binFileSearch}
+                                bind:value={jailConfSearch}
                             />
                         </div>
 
                         <div class="flex flex-wrap gap-2 rounded-lg border border-border p-2">
-                            {#if filterBinaries.length === 0}
+                            {#if filteredJailConfs.length === 0}
                                 <p class="mb-0 text-sm text-muted-foreground">
-                                    {uploaded_files.bins.length === 0 ? "No files uploaded" : "No files match your search"}
+                                    {uploaded_files.jail_confs.length === 0 ? "No files uploaded" : "No files match your search"}
                                 </p>
                             {/if}
 
-                            {#each filterBinaries as file}
+                            {#each filteredJailConfs as file}
                                 <label for={`file-${file}`} class={fileLabelClass}>
                                     <input
                                         type="radio"
                                         id={`file-${file}`}
-                                        name="bin_file"
+                                        name="nsjail_conf"
                                         value={file}
-                                        bind:group={binaryFile}
+                                        bind:group={nsjail_conf}
                                         class="m-0 accent-brand-green"
                                     />
                                     {file}

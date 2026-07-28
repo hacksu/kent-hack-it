@@ -128,7 +128,7 @@ export const challenges = pgTable("challenges", {
     is_active: boolean("is_active").default(true),  // used to close a challenge from players to perform maintanence
     is_gym: boolean("is_gym").default(false),       // used to defined what is an event challenge and post-event challenge
 
-    bin_file: text("bin_file"),
+    nsjail_conf: text("nsjail_conf"),
     image_ref: text("image_ref"),
     web_image_ref: text("web_image_ref")
 });

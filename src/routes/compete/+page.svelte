@@ -471,7 +471,7 @@
                         {/if}
 
                         {#if instance_infomation.length === 0}
-                            {#if challengeInfo && (challengeInfo.bin_file != null && challengeInfo.bin_file.length > 0)}
+                            {#if challengeInfo && (challengeInfo.nsjail_conf != null && challengeInfo.nsjail_conf.length > 0)}
                                 {@const cid = challengeInfo.id}
                                 <form method="POST" action="?/create_instance" use:enhance={({ cancel }) => {
                                     if (otherInstanceActive && !window.confirm("You have another active instance running elsewhere. Launching this instance will end it and any progress will be lost. Continue?")) {
