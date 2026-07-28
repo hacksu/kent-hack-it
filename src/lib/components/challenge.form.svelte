@@ -390,6 +390,7 @@
                             <option value="Web Exploitation">Web Exploitation</option>
                             <option value="Cryptography">Cryptography</option>
                             <option value="Reverse Engineering">Reverse Engineering</option>
+                            <option value="Privilege Escalation">Privilege Escalation</option>
                             <option value="Forensics">Forensics</option>
                             <option value="Steganography">Steganography</option>
                             <option value="Binary Exploitation">Binary Exploitation</option>
