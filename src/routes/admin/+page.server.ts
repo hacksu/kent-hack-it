@@ -108,7 +108,7 @@ export const actions = {
                 written_by: formData.written_by,
                 category: formData.category,
                 difficulty: formData.difficulty,
-                flag: formData.bin_file ? await encryptFlag(formData.flag) : await SHA256(formData.flag),
+                flag: formData.nsjail_conf ? await encryptFlag(formData.flag) : await SHA256(formData.flag),
                 points,
                 hlinks: attached_files,
                 hints,
@@ -154,7 +154,7 @@ export const actions = {
         if (!flag_value || flag_value.length === 0) {
             flag_value = await GetFlagHash(formData.id);
         } else {
-            flag_value = formData.bin_file ? await encryptFlag(formData.flag) : await SHA256(formData.flag);
+            flag_value = formData.nsjail_conf ? await encryptFlag(formData.flag) : await SHA256(formData.flag);
         }
 
         try {

@@ -642,6 +642,7 @@ async function addClaim(uid: any, cid: any): Promise<boolean> {
 export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ success: boolean, message: string }> {
     try {
         // fetch users flag claims to determine if they already captured this flag
+        console.log("[*] Checking if already claimed");
         const [data] = await db.select({ claims: schema.user.claims })
                     .from(schema.user)
                     .where(eq(schema.user.id, uid)).limit(1);
@@ -651,16 +652,26 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
             }
         }
 
-        const [challenge] = await db.select({
+        console.log("[*] Attempting to find challenge entry");
+        const c_data = await db.select({
             flag: schema.challenges.flag,
-            bin_file: schema.challenges.bin_file,
+            nsjail_conf: schema.challenges.nsjail_conf,
         }).from(schema.challenges).where(eq(schema.challenges.id, cid)).limit(1);
+        
+        if (c_data.length === 0) {
+            console.error("Error occurred challenge not found!");
+            return { success: false, message: 'Error Occurred' };
+        }
 
-        const claimed = challenge && (challenge.bin_file
-            ? await decryptFlag(challenge.flag) === flag_value
-            : challenge.flag === await SHA256(flag_value));
+        console.log("[*] Verifying Flag");
+        const challenge = c_data[0];
+        const flag_claimed = challenge.nsjail_conf ? (
+            await decryptFlag(challenge.flag) === flag_value
+        ) : (
+            challenge.flag === await SHA256(flag_value)
+        );
 
-        if (claimed) {
+        if (flag_claimed) {
             const has_appended = await addClaim(uid, cid);
             console.log(`[*] Appended Claim Status: ${has_appended}`);
             return { success: true, message: 'Correct Flag!' };
@@ -686,7 +697,7 @@ export async function GetFlagHash(cid: any) {
             .where(eq(cid, schema.challenges.id)).limit(1);
         return data.length > 0 ? data[0].flag : "";
     } catch (error) {
-        console.error('Error occurred checking flag:', error);
+        console.error('Error occurred fetching flag:', error);
         return "";
     }
 }
