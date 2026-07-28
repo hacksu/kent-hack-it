@@ -2,7 +2,6 @@ import { auth, isAdmin } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 import { env } from "$env/dynamic/private";
 
-import { SHA256 } from '$lib/utilities';
 import {
     GetProgress, GetChallenges, CheckFlag,
     IsSiteActive, GetCompletions, GetSolversCount,
@@ -61,7 +60,7 @@ export const actions = {
         const form = await request.formData();
         let formData = Object.fromEntries(form.entries()) as Record<string, string>;
 
-        const flag_value = await SHA256(formData.flag_value);
+        const flag_value = formData.flag_value;
         const cid = formData.cid;
         const uid = session.user.id;
 
@@ -69,7 +68,7 @@ export const actions = {
             return { success: false, message: !await IsSiteActive() ? 'No flag submitted' : 'Not accepting flags at this time' };
         }
 
-        console.log(`[${uid}] Checking Flag (${cid}) -> ${flag_value}`);
+        console.log(`[${uid}] Checking Flag (${cid})`);
 
         try {
             if (!await IsSiteActive()) {
