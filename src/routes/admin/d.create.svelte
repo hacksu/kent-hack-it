@@ -16,6 +16,7 @@
         uploaded_files: {
             archives: string[];
             bins: string[];
+            jail_confs: string[];
         },
         registry_images: RegistryImages,
         form: any

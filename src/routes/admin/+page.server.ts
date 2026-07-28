@@ -23,6 +23,7 @@ import { SHA256 } from '$lib/utilities';
 
 const uploadDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
 const binUploadDir = process.env.BIN_UPLOADS_DIR ?? join(process.cwd(), "ctf");
+const jailConfDir = process.env.JAIL_CONF_DIR ?? join(process.cwd(), "nsjail_confs");
 
 async function GetFiles(search_dir: string): Promise<string[]> {
     let files: string[] = [];
@@ -48,7 +49,8 @@ export const load = async ({ parent }) => {
     let players = await GetUsers();
     let files = {
         archives: await GetFiles(uploadDir),
-        bins: await GetFiles(binUploadDir)
+        bins: await GetFiles(binUploadDir),
+        jail_confs: await GetFiles(jailConfDir)
     };
     let teams = await GetTeams();
     let config = await GetConfiguration();
@@ -109,7 +111,7 @@ export const actions = {
                 points,
                 hlinks: attached_files,
                 hints,
-                bin_file: formData.bin_file,
+                nsjail_conf: formData.nsjail_conf,
                 image_ref: formData.image_ref || null,
                 web_image_ref: formData.web_image_ref || null,
             };
@@ -167,7 +169,7 @@ export const actions = {
                 points,
                 hlinks: attached_files,
                 hints,
-                bin_file: formData.bin_file,
+                nsjail_conf: formData.nsjail_conf,
                 image_ref: formData.image_ref || null,
                 web_image_ref: formData.web_image_ref || null,
             }, formData.id);
@@ -328,6 +330,56 @@ export const actions = {
             };
         } catch (e) {
             console.error(`[-] Bin File Upload -> ${e}`);
+            return {
+                success: false,
+                error: "An error occurred while uploading files"
+            };
+        }
+    },
+    upload_jail_conf: async ({ request }) => {
+        if (!await isAdmin(request))
+            throw redirect(303, '/auth/login');
+
+        try {
+            const form = await request.formData();
+            let files = form.getAll("jail_confs") as File[];
+
+            console.log(files);
+            files.forEach(f => {
+                console.log(`${f} : ${f.size}`);
+            });
+
+            // check for file sizes and remove large files
+            const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12 MB
+
+            const largeFiles = files.filter(f => f.size > MAX_FILE_SIZE);
+            files = files.filter(f => f.size <= MAX_FILE_SIZE);
+
+            if (files.length === 0 || files.every(f => f.size === 0)) {
+                return { 
+                    success: false,
+                    error: "No jail configs provided."
+                };
+            }
+
+            console.log(`[*] Saving nsjail Files to: ${jailConfDir}`);
+            await mkdir(jailConfDir, { recursive: true });
+
+            for (const file of files) {
+                const safeName = basename(file.name);
+                const buffer = Buffer.from(await file.arrayBuffer());
+                await writeFile(join(jailConfDir, safeName), buffer);
+            }
+
+            return (largeFiles.length === 0) ? {
+                success: true,
+                message: "nsjail Configurations Uploaded!"
+            } : {
+                success: true,
+                warning: "Some files were not uploaded due to size"
+            };
+        } catch (e) {
+            console.error(`[-] nsjail config upload -> ${e}`);
             return {
                 success: false,
                 error: "An error occurred while uploading files"

@@ -21,6 +21,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
         // search from binaries directory
         basePath = process.env.BIN_UPLOADS_DIR ?? join(process.cwd(), "ctf");
         contentType = "application/octet-stream";
+    } else if (type === "nsjail") {
+        basePath = process.env.JAIL_CONF_DIR ?? join(process.cwd(), "nsjail_confs");
+        // we want json files to be downloaded not just displayed on screen
+        contentType = "application/octet-stream";
     } else {
         throw error(404, "Not Found.");
     }

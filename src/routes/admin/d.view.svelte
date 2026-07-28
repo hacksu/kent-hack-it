@@ -79,6 +79,7 @@
         uploaded_files: {
             archives: string[];
             bins: string[];
+            jail_confs: string[];
         },
         challenges: ChallengeData[] | undefined,
         registry_images: RegistryImages,

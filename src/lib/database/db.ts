@@ -39,7 +39,7 @@ export interface ChallengeForm {
     points: number;
     hlinks: string[] | null;
     hints: string[] | null;
-    bin_file: string | null;
+    nsjail_conf: string | null;
     image_ref: string | null;
     web_image_ref: string | null;
 };
@@ -58,7 +58,7 @@ export interface ChallengeData {
     hlinks: string[] | null;
     is_active: boolean | null;
     is_gym: boolean | null;
-    bin_file: string | null;
+    nsjail_conf: string | null;
     image_ref: string | null;
     web_image_ref: string | null;
 };
@@ -77,7 +77,7 @@ export interface ViewableChallengeData {
     is_active: boolean | null;
     is_gym: boolean | null;
     solves: number;
-    bin_file: string | null;
+    nsjail_conf: string | null;
     image_ref: string | null;
     web_image_ref: string | null;
 }
@@ -96,7 +96,7 @@ const publicChallengeData = {
     hints: schema.challenges.hints,
     is_active: schema.challenges.is_active,
     is_gym: schema.challenges.is_gym,
-    bin_file: schema.challenges.bin_file,
+    nsjail_conf: schema.challenges.nsjail_conf,
     image_ref: schema.challenges.image_ref,
     web_image_ref: schema.challenges.web_image_ref,
 };
@@ -1552,7 +1552,7 @@ export async function CreateInstance(uid: any, cid: any) {
 
         const challenge_data = await db.select({
             name: schema.challenges.name,
-            bin: schema.challenges.bin_file,
+            nsjail_conf: schema.challenges.nsjail_conf,
             flag_value: schema.challenges.flag,
         }).from(schema.challenges)
         .where(eq(schema.challenges.id, cid)).limit(1);
@@ -1562,9 +1562,8 @@ export async function CreateInstance(uid: any, cid: any) {
                 success: false,
                 error: "Challenge Not Found"
             }
-        } else if (!challenge_data[0].bin) {
-            // challenge does not have a configured bin_file
-            // therefor it cannot host an instance
+        } else if (!challenge_data[0].nsjail_conf) {
+            // challenges without a jail conf cannot generate instances
             return {
                 success: false,
                 error: "Instance Not Supported"
@@ -1580,7 +1579,7 @@ export async function CreateInstance(uid: any, cid: any) {
             },
             body: JSON.stringify({
                 name: challenge_data[0].name,
-                bin: challenge_data[0].bin,
+                nsjail_conf: challenge_data[0].nsjail_conf,
                 flag_value: challenge_data[0].flag_value,
             })
         });

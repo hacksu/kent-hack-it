@@ -14,7 +14,7 @@
         cardTitle,
         formAction,
         fieldName,
-        zip_only = true,
+        accepted_files = "",
         uploadsDisabled = false,
         uploaded_files
     }: {
@@ -22,10 +22,16 @@
         cardTitle: string;
         formAction: string;
         fieldName: string;
-        zip_only?: boolean;
+        accepted_files?: string;
         uploadsDisabled?: boolean;
         uploaded_files: string[];
     } = $props();
+
+    const f_type = $derived((() => {
+        if (accepted_files === ".zip") return "archive";
+        if (accepted_files === ".json") return "nsjail";
+        return "bin";
+    })());
 
     let selectedFiles = $state<File[]>([]);
     let fileInput = $state<HTMLInputElement | null>(null);
@@ -46,10 +52,17 @@
         const picked = Array.from(input.files ?? []);
 
 
-        if (zip_only) {
-            const invalid = picked.filter(f => !f.name.endsWith(".zip"));
+        if (accepted_files.length > 0) {
+            // check for multiple accepted files
+            const valid_files = accepted_files.split(",").map(ext => ext.trim().toLowerCase());
+
+            const invalid = picked.filter(file => {
+                const name = file.name.toLowerCase();
+                return !valid_files.some(ext => name.endsWith(ext));
+            });
+
             if (invalid.length > 0) {
-                error = `Only .zip files are allowed: ${invalid.map(f => f.name).join(", ")}`;
+                error = `Only ${valid_files.join(", ")} files are allowed: ${invalid.map(f => f.name).join(", ")}`;
                 input.value = "";
                 selectedFiles = [];
                 return;
@@ -132,7 +145,7 @@
                             <Input
                                 name={fieldName}
                                 type="file"
-                                accept={zip_only ? ".zip" : ""}
+                                accept={accepted_files}
                                 multiple
                                 oninput={handleFileInput}
                                 disabled={uploadsDisabled || uploading}
@@ -175,7 +188,7 @@
                         class="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-sm"
                     >
                         <a
-                            href={`/api/download/${file}?t=${ zip_only ? "archive" : "bin" }`}
+                            href={`/api/download/${file}?t=${f_type}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             class="min-w-0 flex-1 truncate text-muted-foreground no-underline! transition-colors hover:text-brand-blue!"

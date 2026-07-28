@@ -10,6 +10,7 @@
         uploaded_files: {
             archives: string[];
             bins: string[];
+            jail_confs: string[];
         }
     } = $props();
 </script>
@@ -27,17 +28,27 @@
         cardTitle="Upload Challenge"
         formAction="?/upload_files"
         fieldName="challenge_archives"
+        accepted_files={".zip"}
         {uploadsDisabled}
         uploaded_files={uploaded_files.archives}
     />
 
     <UploadSection
-        summaryText="Upload Compressed CTF Executable Files"
+        summaryText="Upload CTF Executable Files"
         cardTitle="Upload CTF Binary"
         formAction="?/upload_exec_files"
         fieldName="bins"
-        zip_only={false}
         {uploadsDisabled}
         uploaded_files={uploaded_files.bins}
+    />
+
+    <UploadSection
+        summaryText="Upload nsjail Configurations"
+        cardTitle="Upload nsjail Configs"
+        formAction="?/upload_jail_conf"
+        fieldName="jail_confs"
+        accepted_files={".json"}
+        {uploadsDisabled}
+        uploaded_files={uploaded_files.jail_confs}
     />
 </div>
