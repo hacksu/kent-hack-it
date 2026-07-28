@@ -167,7 +167,7 @@ export async function GetChallenges(is_admin: boolean, grab_mode: number = 0) {
             const base = selection
                 ? db.select(selection).from(schema.challenges)
                 : db.select().from(schema.challenges);
-            return where ? base.where(where) : base;
+            return (where ? base.where(where) : base).orderBy(asc(schema.challenges.points));
         };
 
         // grab all
