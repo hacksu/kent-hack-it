@@ -161,9 +161,9 @@ services:
       - "3333:3000" # dev only
     volumes:
       - khi_uploads:/app/uploads
+      - khi_ctf_exec_files:/app/ctf
       # temp volume (destroyed on recompose on dokploy)
       - ./khi_web_logs:/var/log/nginx
-      - khi_ctf_exec_files:/app/ctf
     networks:
       - app_internal
       - handler_net
