@@ -37,6 +37,7 @@ services:
       MIN_PORT: ${MIN_PORT}
       MAX_PORT: ${MAX_PORT}
       BIN_UPLOADS_DIR: /app/ctf
+      JAIL_CONF_DIR: /app/nsjail_confs
     cap_add:
       - SYS_ADMIN
     security_opt:
@@ -146,6 +147,8 @@ services:
 
       UPLOADS_DIR: /app/uploads
       BIN_UPLOADS_DIR: /app/ctf
+      JAIL_CONF_DIR: /app/nsjail_confs
+      
       CHALLENGE_HOST: ${CHALLENGE_HOST:-ctf.hacksu.com}
       FLAG_ENCRYPTION_KEY: ${FLAG_ENCRYPTION_KEY}
       TESTING_READ: "C++ is the Best Language, the very best."

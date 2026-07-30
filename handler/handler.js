@@ -1,76 +1,13 @@
-import net from "net";
 import fs from 'fs/promises';
 import path from 'path';
 import { execSync, spawn } from 'child_process';
 
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
+import { GetUnusedPort, CheckFile, PathExists, CreateDir, CreateFile } from './utils_h.js';
 
-export async function GetUnusedPort(MIN, MAX) {
-    // Generate the port list
-    const ports = [];
-    for (let port = MIN; port <= MAX; port++) {
-        ports.push(port);
-    }
-
-    // Randomize the order
-    shuffle(ports);
-
-    // Test each port
-    for (const port of ports) {
-        const available = await new Promise((resolve) => {
-            const server = net.createServer();
-
-            server.once("error", () => resolve(false));
-
-            server.once("listening", () => {
-                server.close(() => resolve(true));
-            });
-
-            server.listen(port, "127.0.0.1");
-        });
-
-        if (available) {
-            return port;
-        }
-    }
-
-    return -1;
-}
-
-/**
- * Check if a given bin_dir+bin path is valid
- * and exists and enables the executable-bit
- * on valid existing paths
- * 
- * @param {*} bin_dir 
- * @param {*} bin 
- * @returns 
- */
-export async function CheckFile(bin_dir, bin) {
-    try {
-        console.log(`[*] Testing ${bin_dir}/${bin}`);
-        // check if the dir is valid
-        const requestedPath = path.normalize(
-            path.join(bin_dir, bin)
-        );
-        if (!requestedPath.startsWith(bin_dir)) {
-            console.log("[*] Potential Mal-Path...");
-            return { success: false, rc: 403, message: 'Potentially Malicious' };
-        }
-
-        await fs.access(requestedPath);
-        await fs.chmod(requestedPath, 0o755); // set executable-bit
-        return { success: true, rc: 200, message: '' };
-    } catch (e) {
-        console.error("[-] Error:", e);
-        return { success: false, rc: 500, message: 'Server Error' };
-    }
-}
+export const MIN_PORT = process.env.MIN_PORT ?? 0;
+export const MAX_PORT = process.env.MAX_PORT ?? 0;
+export const BINS_FOLDER = process.env.BIN_UPLOADS_DIR ?? path.join(process.cwd(), "ctf");
+export const NSJAIL_CONFS_FOLDER = process.env.JAIL_CONF_DIR ?? path.join(process.cwd(), "nsjail_confs");
 
 const SESSION_TIMEOUT = 15 * 60; // 15 minutes
 const SESSION_TIMEOUT_MS = SESSION_TIMEOUT * 1000;
@@ -82,21 +19,63 @@ const SESSION_TIMEOUT_MS = SESSION_TIMEOUT * 1000;
  * @param {*} bin_path 
  * @returns 
  */
-function buildNsjailCmd(jailDir, bin_path) {
-    const bin_name = path.basename(bin_path);
+function buildNsjailCmd(jailDir, jail_conf) {
+    if (typeof jail_conf.entrypoint !== 'string') {
+        console.error('[-] Invalid jail entrypoint string!');
+        return [];
+    }
+    if (!Array.isArray(jail_conf.files)) {
+        console.error('[-] Invalid jail file array!');
+        return [];
+    }
+
     const src_flag_path = path.join(jailDir, "flag.txt");
-    return [
+    const entrypoint_bin = path.normalize(
+        path.join(BINS_FOLDER, jail_conf.entrypoint)
+    );
+    const nsjail_main = path.normalize(
+        path.join("/", jail_conf.entrypoint)
+    );
+
+    let nsjail_cmd = [
         "/usr/bin/nsjail",
         "-Mo",                                      // standalone-once: exit after one connection, no session reuse
-        "--chroot", jailDir,                        // jail root IS the challenge dir — nothing outside is reachable
+        "--chroot", jailDir                         // jail root IS the challenge dir — nothing outside is reachable
+    ];
 
-        "-R", `${bin_path}:/${bin_name}`,           // move binary
-        "-R", `${src_flag_path}:/flag.txt`,         // move flag.txt
+    let nsjail_rbinds = [
+        "-R", `${entrypoint_bin}:${nsjail_main}`,
+        "-R", `${src_flag_path}:/flag.txt`,
         "-R", "/lib64",
-        "-R", "/lib/x86_64-linux-gnu",
+        "-R", "/lib/x86_64-linux-gnu"
+    ];
+    
+    for (const f of jail_conf.files) {
+        const requestedPath = path.normalize(f);
+        if (requestedPath.startsWith("/lib")) {
+            // @todo - This might need expanded to support other additions
+            nsjail_rbinds.push("-R", requestedPath);
+        } else {
+            // we know at this point this is a challenge file
+            const bin_path = path.normalize(
+                path.join(BINS_FOLDER, f)
+            );
+            const jail_bin = path.normalize(
+                path.join("/", f)
+            );
+            nsjail_rbinds.push("-R", `${bin_path}:${jail_bin}`);
+        }
+    }
 
-        "-R", "/usr/bin/sh:/bin/sh",                        // pwntools looks for /bin/sh
-        "-R", "/usr/bin/bash:/bin/bash",                    // some people pref. bash
+    // append args into main cmd list
+    nsjail_cmd = [
+        ...nsjail_cmd,
+        ...nsjail_rbinds
+    ];
+
+    const nsjail_general = [
+        "-R", "/usr/bin/sh:/bin/sh",            // pwntools looks for /bin/sh
+        "-R", "/usr/bin/bash:/bin/bash",        // some people pref. bash
         "-R", "/usr/bin/sh",
         "-R", "/usr/bin/bash",
 
@@ -104,7 +83,6 @@ function buildNsjailCmd(jailDir, bin_path) {
         "-R", "/usr/bin/whoami",
         "-R", "/usr/bin/ls",
         "-R", "/usr/bin/cat",
-
         "-l", "/tmp/nsjail.log",                 // general logging for debugging
 
         "--cwd", "/",                            // jail-root == chal_dir, so this is correct post-chroot
@@ -129,51 +107,98 @@ function buildNsjailCmd(jailDir, bin_path) {
         // (nsjail's default), giving the jailed process no network at all.
 
         "--",
-        `/${bin_name}`,
+        `${nsjail_main}`
+    ]
+    nsjail_cmd = [
+        ...nsjail_cmd,
+        ...nsjail_general
     ];
+
+    return nsjail_cmd;
 }
 
-async function PathExists(path) {
+async function ParseJailConfig(nsjail_conf) {
     try {
-        await fs.access(path);
-        return true;
-    } catch {
-        return false;
-    }
-}
+        // verify path
+        console.log("[*] Checking najail config path...");
+        const { success, rc, message } = await CheckFile(NSJAIL_CONFS_FOLDER, nsjail_conf, false);
+        if (!success) return { success, rc, error: message };
 
-async function CreateDir(path) {
-    try {
-        await fs.mkdir(path, { recursive: true });
-        return true;
-    } catch {
-        return false;
-    }
-}
-async function CreateFile(path, content = "") {
-    try {
-        await fs.writeFile(path, content);
-        return true;
-    } catch {
-        return false;
-    }
-}
+        const nsjail_conf_path = path.normalize(
+            path.join(NSJAIL_CONFS_FOLDER, nsjail_conf)
+        );
+        const data = JSON.parse(await fs.readFile(nsjail_conf_path, 'utf-8'));
 
-export async function CreateInstance(name, bin_dir, bin, flag_value) {
-    console.log("[*] Checking bin path...");
-
-    {
-        // executables exists within bin_dir
-        const { success, rc, message } = await CheckFile(bin_dir, bin);
-        if (!success) {
-            console.error(`[-] '${BINS_FOLDER}/${bin}' might not exist...`);
-            return { success: false, rc, error: message };
+        // check for required attributes
+        if (!data.files || !data.entrypoint) {
+            console.error(`[-] nsjail config '${nsjail_conf_path}' is missing required attributes!`);
+            return { success: false, rc: 500, error: 'Server Error' };
         }
-    }
 
-    // create jail-cell based on challenge name provided
-    const jailDir = path.join("/jail", name);
+        // type verify
+        if (typeof data.entrypoint !== 'string') {
+            console.error(`[-] nsjail config '${nsjail_conf_path}' entrypoint is invalid!`);
+            return { success: false, rc: 500, error: 'Server Error' };
+        }
+        if (!Array.isArray(data.files)) {
+            console.error(`[-] nsjail config '${nsjail_conf_path}' files is invalid!`);
+            return { success: false, rc: 500, error: 'Server Error' };
+        }
+
+        // verify all requested jail files
+        const entry_included = data.files.find(f => f === data.entrypoint);
+        const jail_files = entry_included ? data.files : [data.entrypoint, ...data.files];
+        for (const f of jail_files) {
+            let requestedPath = path.normalize(f);
+            if (requestedPath.startsWith("/lib")) {
+                // @todo - This might need expanded to support other additions
+
+                // check abs non-exec files (i.e., libc.so.6)
+                if (await PathExists(f)) continue;
+            } else {
+                const jail_bin = path.normalize(
+                    path.join("/", f)
+                );
+
+                // check executable challenge files
+                requestedPath = path.normalize(
+                    path.join(BINS_FOLDER, jail_bin)
+                );
+
+                if (requestedPath.startsWith(BINS_FOLDER)) {
+                    // check executable binary files
+                    if (await CheckFile(BINS_FOLDER, jail_bin)) continue;
+                } else {
+                    // files we include within nsjail come strictly from BINS_FOLDER or
+                    // are to a system resource using absolute path like libc.so.6
+                    console.error(`[-] Requested jail file '${f}' is within an invalid location!`);
+                    return { success: false, rc: 500, error: 'Server Error' };
+                }
+            }
+
+            console.error(`[-] Requested jail file '${f}' does not exist!`);
+            return { success: false, rc: 500, error: 'Server Error' };
+        }
+
+        console.log(`[+] nsjail config '${nsjail_conf_path}' parsed successfully!`);
+        return { success: true, rc: 200, message: '' };
+    } catch (e) {
+        console.error("[ParseJailConfig] Error Occurred:", e);
+        return { success: false, rc: 500, error: 'Server Error' };
+    }
+}
+
+/**
+ * Generates the initial file-system directory nsjail will use as the root
+ * for a newly created jail
+ * 
+ * @param {*} jailDir 
+ * @param {*} flag_value 
+ * @returns 
+ */
+async function CreateJail(jailDir, flag_value) {
     console.log(`[*] Checking '${jailDir}'...`);
+
     if (!await PathExists(jailDir)) {
         console.log("[*] Creating directory", jailDir);
         if (!await CreateDir(jailDir)) {
@@ -181,6 +206,7 @@ export async function CreateInstance(name, bin_dir, bin, flag_value) {
             return { success: false, rc: 500, error: 'Server Error' }
         }
     }
+    
 
     // write flag inside jail
     const flagFile = path.join(jailDir, "flag.txt");
@@ -189,6 +215,7 @@ export async function CreateInstance(name, bin_dir, bin, flag_value) {
         console.error("[-] Failed to create", flagFile);
         return { success: false, rc: 500, error: 'Server Error' }
     }
+
 
     // write jail passwd file
     const jailPasswd = path.join(jailDir, "/etc/passwd");
@@ -208,11 +235,46 @@ export async function CreateInstance(name, bin_dir, bin, flag_value) {
         return { success: false, rc: 500, error: 'Server Error' }
     }
 
-    // write nsjail job file - regenerated every call so changes to
-    // buildNsjailCmd() take effect immediately, not just for new names
+    return { success: true, rc: 200, message: '' };
+}
+
+export async function CreateInstance(name, nsjail_conf, flag_value) {
+    
+    {
+        console.log("[*] Parsing nsjail config...");
+        const { success, rc, error } = await ParseJailConfig(nsjail_conf);
+        if (!success) {
+            console.error(`[-] Error Parsing '${NSJAIL_CONFS_FOLDER}/${nsjail_conf}'`);
+            console.error(` |___ ${error}`);
+            return { success: false, rc, error };
+        }
+    }
+
+    const nsjail_conf_path = path.normalize(
+        path.join(NSJAIL_CONFS_FOLDER, nsjail_conf)
+    );
+    const jail_conf = JSON.parse(await fs.readFile(nsjail_conf_path, 'utf-8'));
+
+    // create jail-cell based on challenge name provided
+    const jailDir = path.join("/jail", name);
+
+    {
+        console.log(`[*] Generating jail for '${name}'...`);
+        const { success, rc, error } = await CreateJail(jailDir, flag_value);
+        if (!success) {
+            console.error(`[-] Error making jail for '${name}'...`);
+            return { success: false, rc, error };
+        }
+    }
+
+    // in order to properly execute nsjail through socat we are
+    // providing socat a bash file because the nsjail command
+    // will be large
     const jobFile = path.join("/app/jobs", name + ".sh");
-    const bin_path = path.join(bin_dir, bin);
-    const jailcmd = buildNsjailCmd(jailDir, bin_path);
+    const jailcmd = buildNsjailCmd(jailDir, jail_conf);
+    if (jailcmd.length === 0) {
+        return { success: false, rc: 500, error: `Invalid nsjail configuration provided! --> ${nsjail_conf_path}` };
+    }
 
     console.log("[*] Writing Job File", jobFile);
 

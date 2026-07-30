@@ -55,9 +55,10 @@ RUN echo "www-data:99999:1" >> /etc/subuid && \
 RUN mkdir -p /jail
 RUN mkdir -p /app/ctf
 RUN mkdir -p /app/jobs
+RUN mkdir -p /app/nsjail_confs
 
 # move node application code and install needed dependencies
-COPY ./handler/server.js ./handler/handler.js ./handler/package.json ./handler/bun.lock /app
+COPY ./handler/server.js ./handler/handler.js ./handler/utils_h.js ./handler/package.json ./handler/bun.lock /app
 RUN bun install --frozen-lockfile
 
 # allow www-data to rw /app and /jail
