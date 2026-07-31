@@ -13,8 +13,9 @@ const app = express()
 app.use(express.json());
 const port = 3000
 
-if (MIN_PORT === MAX_PORT) {
-    console.error("[-] Possibly missing env values for MIN_PORT and MAX_PORT!")
+// Casted to Number within the file they're declared in
+if (MIN_PORT >= MAX_PORT) {
+    console.error("[-] MIN_PORT/MAX_PORT values may be invalid!")
     exit(1);
 }
 

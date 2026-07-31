@@ -64,6 +64,8 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
 UPLOADS_DIR=
+BIN_UPLOADS_DIR=
+JAIL_CONF_DIR=
 ```
 
 Running the svelte application

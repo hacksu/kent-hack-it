@@ -2,10 +2,13 @@ import fs from 'fs/promises';
 import path from 'path';
 import { execSync, spawn } from 'child_process';
 
-import { GetUnusedPort, CheckFile, PathExists, CreateDir, CreateFile } from './utils_h.js';
+import {
+    GetUnusedPort, buildRbinds,
+    CheckFile, PathExists, CreateDir, CreateFile
+} from './utils_h.js';
 
-export const MIN_PORT = process.env.MIN_PORT ?? 0;
-export const MAX_PORT = process.env.MAX_PORT ?? 0;
+export const MIN_PORT = Number(process.env.MIN_PORT) || 0;
+export const MAX_PORT = Number(process.env.MAX_PORT) || 0;
 export const BINS_FOLDER = process.env.BIN_UPLOADS_DIR ?? path.join(process.cwd(), "ctf");
 export const NSJAIL_CONFS_FOLDER = process.env.JAIL_CONF_DIR ?? path.join(process.cwd(), "nsjail_confs");
 
@@ -50,22 +53,7 @@ function buildNsjailCmd(jailDir, jail_conf) {
         "-R", "/lib/x86_64-linux-gnu"
     ];
     
-    for (const f of jail_conf.files) {
-        const requestedPath = path.normalize(f);
-        if (requestedPath.startsWith("/lib")) {
-            // @todo - This might need expanded to support other additions
-            nsjail_rbinds.push("-R", requestedPath);
-        } else {
-            // we know at this point this is a challenge file
-            const bin_path = path.normalize(
-                path.join(BINS_FOLDER, f)
-            );
-            const jail_bin = path.normalize(
-                path.join("/", f)
-            );
-            nsjail_rbinds.push("-R", `${bin_path}:${jail_bin}`);
-        }
-    }
+    buildRbinds(jail_conf.files, nsjail_rbinds);
 
     // append args into main cmd list
     nsjail_cmd = [
@@ -121,8 +109,10 @@ async function ParseJailConfig(nsjail_conf) {
     try {
         // verify path
         console.log("[*] Checking najail config path...");
-        const { success, rc, message } = await CheckFile(NSJAIL_CONFS_FOLDER, nsjail_conf, false);
-        if (!success) return { success, rc, error: message };
+        {
+            const { success, rc, message } = await CheckFile(NSJAIL_CONFS_FOLDER, nsjail_conf, false);
+            if (!success) return { success, rc, error: message };
+        }
 
         const nsjail_conf_path = path.normalize(
             path.join(NSJAIL_CONFS_FOLDER, nsjail_conf)
@@ -167,7 +157,10 @@ async function ParseJailConfig(nsjail_conf) {
 
                 if (requestedPath.startsWith(BINS_FOLDER)) {
                     // check executable binary files
-                    if (await CheckFile(BINS_FOLDER, jail_bin)) continue;
+                    {
+                        const { success, rc, message } = await CheckFile(BINS_FOLDER, jail_bin);
+                        if (success) continue;
+                    }
                 } else {
                     // files we include within nsjail come strictly from BINS_FOLDER or
                     // are to a system resource using absolute path like libc.so.6

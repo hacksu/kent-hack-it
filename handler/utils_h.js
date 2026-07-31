@@ -2,6 +2,8 @@ import net from "net";
 import path from 'path';
 import fs from 'fs/promises';
 
+import { BINS_FOLDER } from "./handler";
+
 // @section - General File-System Operations
 
 export async function PathExists(path) {
@@ -73,6 +75,18 @@ function shuffle(array) {
     }
 }
 export async function GetUnusedPort(MIN, MAX) {
+    MIN = Number(MIN) || 0;
+    MAX = Number(MAX) || 0;
+
+    if (MIN === MAX) {
+        console.error("[-] Cannot fetch unused-port, MIN/MAX values are the same!")
+        return -1;
+    }
+    if (MIN > MAX) {
+        console.error("[-] Cannot fetch unused-port, MIN is larger than MAX!")
+        return -1;
+    }
+
     // Generate the port list
     const ports = [];
     for (let port = MIN; port <= MAX; port++) {
@@ -102,4 +116,24 @@ export async function GetUnusedPort(MIN, MAX) {
     }
 
     return -1;
+}
+
+/**
+ * Given a list of file strings within a nsjail configuration
+ * append special rbinds to them
+ * 
+ * @param {*} files 
+ * @param {*} nsjail_rbinds 
+ */
+export function buildRbinds(files, nsjail_rbinds) {
+    for (const f of files) {
+        const requestedPath = path.normalize(f);
+        if (requestedPath.startsWith("/lib")) {
+            nsjail_rbinds.push("-R", requestedPath);
+        } else {
+            const bin_path = path.normalize(path.join(BINS_FOLDER, f));
+            const jail_bin = path.normalize(path.join("/", f));
+            nsjail_rbinds.push("-R", `${bin_path}:${jail_bin}`);
+        }
+    }
 }

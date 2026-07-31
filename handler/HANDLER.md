@@ -28,7 +28,7 @@ The `files` attribute when parsed will automatically append `entrypoint` within 
         "/vuln_comp",
         "/lib/x86_64-linux-gnu/libc.so.6"
     ],
-    "entrypoint":"/vuln",
+    "entrypoint":"/vuln"
 }
 ```
 As you can see the files `vuln` and `vuln_comp` are ctf challenge files, thus exist within the root directory, while natural files like `libc.so.6` use the absolute system path because these files are aquired from the jail host file-system.
