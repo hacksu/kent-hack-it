@@ -6,6 +6,7 @@ async function importKey(): Promise<CryptoKey> {
     if (!KEY_HEX || KEY_HEX.length !== 64) {
         throw new Error("FLAG_ENCRYPTION_KEY must be a 64-char hex string (32 bytes)");
     }
+    console.log("[KEY CHECK]", KEY_HEX?.slice(0, 8));
     const keyBytes = Uint8Array.from(Buffer.from(KEY_HEX, "hex"));
     return crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt", "decrypt"]);
 }
@@ -21,10 +22,15 @@ export async function encryptFlag(plaintext: string): Promise<string> {
 }
 
 export async function decryptFlag(encoded: string): Promise<string> {
-    const key = await importKey();
-    const combined = Buffer.from(encoded, "base64");
-    const iv = combined.subarray(0, 12);
-    const ciphertext = combined.subarray(12);
-    const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
-    return new TextDecoder().decode(plaintext);
+    try {
+        const key = await importKey();
+        const combined = Buffer.from(encoded, "base64");
+        const iv = combined.subarray(0, 12);
+        const ciphertext = combined.subarray(12);
+        const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+        return new TextDecoder().decode(plaintext);
+    } catch (e: any) {
+        console.error("[FLAG-DEC] Error Occurred:", e);
+        return "";
+    }
 }

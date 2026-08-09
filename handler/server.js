@@ -2,18 +2,20 @@ import express from 'express'
 import { exit } from 'process';
 import { access, chmod } from "fs/promises";
 import { join, basename, normalize } from "path";
-import { CheckFile, CreateInstance } from './handler.js';
+
+import { CheckFile } from './utils_h.js';
+import {
+    CreateInstance,
+    MIN_PORT, MAX_PORT,
+} from './handler.js';
 
 const app = express()
 app.use(express.json());
 const port = 3000
 
-const MIN_PORT = process.env.MIN_PORT;
-const MAX_PORT = process.env.MAX_PORT;
-const BINS_FOLDER = process.env.BIN_UPLOADS_DIR;
-
-if (!MIN_PORT || !MAX_PORT || !BINS_FOLDER) {
-    console.error("[-] Missing values for MIN_PORT and MAX_PORT!")
+// Casted to Number within the file they're declared in
+if (MIN_PORT >= MAX_PORT) {
+    console.error("[-] MIN_PORT/MAX_PORT values may be invalid!")
     exit(1);
 }
 
@@ -23,19 +25,12 @@ app.get('/', (req, res) => {
 
 app.post('/create_instance', async (req, res) => {
     try {
-        const { name, bin, flag_value } = req.body;
-    
-        // executables exists within BINS_FOLDER
-        const { success, rc, message } = await CheckFile(BINS_FOLDER, bin);
-        if (!success) {
-            console.error(`[-] '${BINS_FOLDER}/${bin}' might not exist...`);
-            return res.status(rc).send(message);
-        }
-    
+        const { name, nsjail_conf, flag_value } = req.body;
         console.log("[*] Attempting to Create Instance...");
-        const sess = await CreateInstance(name, BINS_FOLDER, bin, flag_value);
+        const sess = await CreateInstance(name, nsjail_conf, flag_value);
         return res.status(sess.rc).json(sess);
     } catch (err) {
+        console.error("[-] Error Creating Instance:", err);
         return res.status(500).json({ success: false, error: 'Failed to create Instance' });
     }
 });
