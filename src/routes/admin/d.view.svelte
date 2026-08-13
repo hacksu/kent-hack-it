@@ -95,6 +95,7 @@
             <ChallengeForm
                 title="Edit Challenge"
                 action_target="?/edit_challenge"
+                subaction_target={undefined}
                 challenge={originalData}
                 onSubmit={(data: { success: boolean, message?: string, error?: string }|undefined) => {
                     showEditPanel = false;

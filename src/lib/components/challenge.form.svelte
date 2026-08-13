@@ -17,9 +17,10 @@
     let showFlag = $state<boolean>(false);
     let flagValue = $state<string>("");
 
-    const { title, action_target, challenge, result, onSubmit, uploaded_files, registry_images, requireFlag } : {
+    const { title, action_target, subaction_target, challenge, result, onSubmit, uploaded_files, registry_images, requireFlag } : {
         title: string,
         action_target: string,
+        subaction_target: string | undefined,
         challenge: ChallengeData | undefined,
         onSubmit?: (data: { success: true; message: string } | { success: false; error: string } | undefined) => void,
         result: { error?: string, success?: boolean, message?: string } | null,
@@ -464,12 +465,19 @@
                 {/if}
 
                 <!-- Submit -->
-                <Button
-                    type="submit"
-                    class="w-full"
-                >
-                    Submit
-                </Button>
+                {#if challenge === undefined && requireFlag}
+                    <div class="flex justify-center gap-4">
+                        <Button type="submit" formaction={subaction_target} class="flex-1">Submit as Gym</Button>
+                        <Button type="submit" formaction={action_target} class="flex-1">Submit as Event</Button>
+                    </div>
+                {:else}
+                    <Button
+                        type="submit"
+                        class="w-full"
+                    >
+                        Submit
+                    </Button>
+                {/if}
             </form>
         </Card.Content>
     </Card.Root>

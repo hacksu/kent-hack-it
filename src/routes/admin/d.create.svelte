@@ -37,7 +37,8 @@
 
 <ChallengeForm
     title="Create a New Challenge"
-    action_target="?/add_challenge"
+    action_target="?/add_event"
+    subaction_target="?/add_gym"
     challenge={undefined}
     onSubmit={(data: { success: boolean, message?: string, error?: string }|undefined) => {
         if (data) {

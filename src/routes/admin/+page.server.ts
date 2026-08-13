@@ -81,55 +81,63 @@ const PointValues = {
     "extreme": 500,
 };
 
+async function CreatChallenge(request: Request, is_gym: boolean) {
+    if (!await isAdmin(request))
+        throw redirect(303, '/auth/login');
+
+    const form = await request.formData();
+    let formData = Object.fromEntries(form.entries()) as Record<string, string>;
+    
+    const attached_files = form.getAll("attached_files") as string[];
+    const hints = JSON.parse(formData['hints'] || '[]') as string[];
+
+    if (!formData.name || !formData.description || !formData.written_by || 
+        !formData.category || !formData.difficulty || !formData.flag)
+        return fail(400, { error: 'Missing required data' });
+
+    const points = PointValues[formData.difficulty.toLowerCase() as keyof typeof PointValues];
+    if (!points)
+        return fail(400, { error: 'Invalid difficulty value' });
+
+    try {
+        const data: ChallengeForm = {
+            name: formData.name,
+            description: formData.description,
+            written_by: formData.written_by,
+            category: formData.category,
+            difficulty: formData.difficulty,
+            flag: formData.nsjail_conf ? await encryptFlag(formData.flag) : await SHA256(formData.flag),
+            points,
+            hlinks: attached_files,
+            hints,
+            nsjail_conf: formData.nsjail_conf,
+            image_ref: formData.image_ref || null,
+            web_image_ref: formData.web_image_ref || null,
+            is_gym: is_gym
+        };
+
+        const result = await AddChallenge(data);
+        if (!result.success) {
+            return fail(409, { error: result.error });
+        }
+
+        if (data.web_image_ref) {
+            await EnsureWebInstance(result.id);
+        }
+        return { success: true, message: 'Challenge added!' };
+    } catch (e) {
+        console.error(`[-] Add_Challenge -> ${e}`);
+        return fail(500, { error: 'An error occurred while adding the challenge' });
+    }
+}
+
 export const actions = {
     // special form named-target
-	add_challenge: async ({ request }) => {
-        if (!await isAdmin(request))
-            throw redirect(303, '/auth/login');
-
-        const form = await request.formData();
-        let formData = Object.fromEntries(form.entries()) as Record<string, string>;
-        
-        const attached_files = form.getAll("attached_files") as string[];
-        const hints = JSON.parse(formData['hints'] || '[]') as string[];
-
-        if (!formData.name || !formData.description || !formData.written_by || 
-            !formData.category || !formData.difficulty || !formData.flag)
-            return fail(400, { error: 'Missing required data' });
-
-        const points = PointValues[formData.difficulty.toLowerCase() as keyof typeof PointValues];
-        if (!points)
-            return fail(400, { error: 'Invalid difficulty value' });
-
-        try {
-            const data: ChallengeForm = {
-                name: formData.name,
-                description: formData.description,
-                written_by: formData.written_by,
-                category: formData.category,
-                difficulty: formData.difficulty,
-                flag: formData.nsjail_conf ? await encryptFlag(formData.flag) : await SHA256(formData.flag),
-                points,
-                hlinks: attached_files,
-                hints,
-                nsjail_conf: formData.nsjail_conf,
-                image_ref: formData.image_ref || null,
-                web_image_ref: formData.web_image_ref || null,
-            };
-
-            const result = await AddChallenge(data);
-            if (!result.success) {
-                return fail(409, { error: result.error });
-            }
-
-            if (data.web_image_ref) {
-                await EnsureWebInstance(result.id);
-            }
-            return { success: true, message: 'Challenge added!' };
-        } catch (e) {
-            console.error(`[-] Add_Challenge -> ${e}`);
-            return fail(500, { error: 'An error occurred while adding the challenge' });
-        }
+    add_event: async ({ request }) => {
+        return await CreatChallenge(request, false);
+    },
+    add_gym: async ({ request }) => {
+        return await CreatChallenge(request, true);
     },
     edit_challenge: async ({ request }) => {
         if (!await isAdmin(request))
@@ -172,7 +180,7 @@ export const actions = {
                 hints,
                 nsjail_conf: formData.nsjail_conf,
                 image_ref: formData.image_ref || null,
-                web_image_ref: formData.web_image_ref || null,
+                web_image_ref: formData.web_image_ref || null
             }, formData.id);
 
             if (!result.success) {

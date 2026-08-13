@@ -43,7 +43,9 @@ export interface ChallengeForm {
     nsjail_conf: string | null;
     image_ref: string | null;
     web_image_ref: string | null;
+    is_gym: boolean | null;
 };
+export type ChallengeEditForm = Omit<ChallengeForm, 'is_gym'>;
 
 export interface ChallengeData {
     id: number;
@@ -133,7 +135,7 @@ export async function AddChallenge(data: ChallengeForm) {
  * @param id 
  * @returns 
  */
-export async function UpdateChallenge(data: ChallengeForm, id: any) {
+export async function UpdateChallenge(data: ChallengeEditForm, id: any) {
     try {
         const [row] = await db.update(schema.challenges)
                         .set(data)

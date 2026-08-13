@@ -34,8 +34,8 @@ services:
       context: .
       dockerfile: ./handler/Dockerfile
     environment:
-      MIN_PORT: ${MIN_PORT}
-      MAX_PORT: ${MAX_PORT}
+      MIN_PORT: ${JAIL_MIN_PORT}
+      MAX_PORT: ${JAIL_MAX_PORT}
       BIN_UPLOADS_DIR: /app/ctf
       JAIL_CONF_DIR: /app/nsjail_confs
     cap_add:
@@ -44,7 +44,7 @@ services:
       - seccomp=./handler/seccomp-nsjail.json
       - apparmor:unconfined
     ports:
-      - "${MIN_PORT}-${MAX_PORT}:${MIN_PORT}-${MAX_PORT}"
+      - "${JAIL_MIN_PORT}-${JAIL_MAX_PORT}:${JAIL_MIN_PORT}-${JAIL_MAX_PORT}"
       - "3000"
     volumes:
       - khi_jail_files:/app/nsjail_confs
