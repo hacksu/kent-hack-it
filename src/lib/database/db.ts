@@ -1447,11 +1447,19 @@ export async function GetLeaderboard(): Promise<LeaderboardEntry[]> {
         }
 
         // fetch the scores for all solo-players
-        const all_users = await db.select({ id: schema.user.id, name: schema.user.name })
-                            .from(schema.user).where(eq(schema.user.role, "user"));
+        const all_users = (process.env.PROD || env.PROD) ? (
+            await db.select({ id: schema.user.id, name: schema.user.name })
+            .from(schema.user).where(eq(schema.user.role, "user"))
+        ) : (
+            // show admin users in dev
+            await db.select({ id: schema.user.id, name: schema.user.name })
+            .from(schema.user)
+        );
+
         const users_in_groups = await db.select({ uid: schema.team_members.user_id })
                                     .from(schema.team_members);
-        const solo_users = all_users.filter((user) => {
+        
+                                    const solo_users = all_users.filter((user) => {
             return !users_in_groups.find((u) => u.uid === user.id);
         });
 
