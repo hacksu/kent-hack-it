@@ -658,8 +658,10 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
         const c_data = await db.select({
             flag: schema.challenges.flag,
             nsjail_conf: schema.challenges.nsjail_conf,
+            image_ref: schema.challenges.image_ref,
+            web_image_ref: schema.challenges.web_image_ref,
         }).from(schema.challenges).where(eq(schema.challenges.id, cid)).limit(1);
-        
+
         if (c_data.length === 0) {
             console.error("Error occurred challenge not found!");
             return { success: false, message: 'Error Occurred' };
@@ -667,7 +669,7 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
 
         console.log("[*] Verifying Flag");
         const challenge = c_data[0];
-        const flag_claimed = challenge.nsjail_conf ? (
+        const flag_claimed = (challenge.nsjail_conf || challenge.image_ref || challenge.web_image_ref) ? (
             await decryptFlag(challenge.flag) === flag_value
         ) : (
             challenge.flag === await SHA256(flag_value)
@@ -1717,6 +1719,7 @@ export async function CreateSSHInstance(uid: any, cid: any) {
 
         const challenge_data = await db.select({
             image_ref: schema.challenges.image_ref,
+            flag: schema.challenges.flag,
         }).from(schema.challenges)
         .where(eq(schema.challenges.id, cid)).limit(1);
 
@@ -1730,7 +1733,11 @@ export async function CreateSSHInstance(uid: any, cid: any) {
         const res = await fetch("http://ssh-orchestrator:3000/create_instance", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uid, image_ref: challenge_data[0].image_ref })
+            body: JSON.stringify({
+                uid,
+                image_ref: challenge_data[0].image_ref,
+                flag_value: await decryptFlag(challenge_data[0].flag),
+            })
         });
         const instance_data = await res.json();
 
@@ -1919,6 +1926,7 @@ export async function EnsureWebInstance(cid: any) {
 
         const challenge_data = await db.select({
             web_image_ref: schema.challenges.web_image_ref,
+            flag: schema.challenges.flag,
         }).from(schema.challenges)
         .where(eq(schema.challenges.id, cid)).limit(1);
 
@@ -1931,7 +1939,11 @@ export async function EnsureWebInstance(cid: any) {
         const res = await fetch("http://ssh-orchestrator:3000/create_web_instance", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ challenge_id: cid, image_ref: challenge_data[0].web_image_ref })
+            body: JSON.stringify({
+                challenge_id: cid,
+                image_ref: challenge_data[0].web_image_ref,
+                flag_value: await decryptFlag(challenge_data[0].flag),
+            })
         });
         const instance_data = await res.json();
 

@@ -26,8 +26,8 @@ app.get('/', (req, res) => {
 
 app.post('/create_instance', async (req, res) => {
     try {
-        const { uid, image_ref } = req.body;
-        const result = await CreateSSHInstance(uid, image_ref);
+        const { uid, image_ref, flag_value } = req.body;
+        const result = await CreateSSHInstance(uid, image_ref, flag_value);
         return res.status(result.rc).json(result);
     } catch (err) {
         console.error("[-] create_instance error:", err);
@@ -48,8 +48,8 @@ app.post('/stop_instance', async (req, res) => {
 
 app.post('/create_web_instance', async (req, res) => {
     try {
-        const { challenge_id, image_ref } = req.body;
-        const result = await CreateWebInstance(challenge_id, image_ref);
+        const { challenge_id, image_ref, flag_value } = req.body;
+        const result = await CreateWebInstance(challenge_id, image_ref, flag_value);
         return res.status(result.rc).json(result);
     } catch (err) {
         console.error("[-] create_web_instance error:", err);

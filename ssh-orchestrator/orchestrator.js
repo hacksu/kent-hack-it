@@ -202,7 +202,7 @@ async function removeInstanceNetwork(networkName) {
     }
 }
 
-export async function CreateSSHInstance(uid, image_ref) {
+export async function CreateSSHInstance(uid, image_ref, flag_value) {
     if (!uid || !image_ref) {
         return { success: false, rc: 400, error: 'Missing uid or image_ref' };
     }
@@ -240,7 +240,7 @@ export async function CreateSSHInstance(uid, image_ref) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             Image: resolvedImage,
-            Env: [`CTF_PASSWORD=${password}`],
+            Env: [`CTF_PASSWORD=${password}`, `FLAG=${flag_value ?? ''}`],
             Labels: {
                 [KHI_TYPE_LABEL]: KHI_SSH_TYPE_VALUE,
                 [KHI_UID_LABEL]: uid,
@@ -315,7 +315,7 @@ export async function StopInstance(containerId) {
     return { success: true, rc: 200, message: 'SSH Instance Stopped' };
 }
 
-export async function CreateWebInstance(challengeId, image_ref) {
+export async function CreateWebInstance(challengeId, image_ref, flag_value) {
     if (!challengeId || !image_ref) {
         return { success: false, rc: 400, error: 'Missing challengeId or image_ref' };
     }
@@ -360,6 +360,7 @@ export async function CreateWebInstance(challengeId, image_ref) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             Image: resolvedImage,
+            Env: [`FLAG=${flag_value ?? ''}`],
             Labels: {
                 [KHI_TYPE_LABEL]: KHI_WEB_TYPE_VALUE,
                 [KHI_CHALLENGE_LABEL]: String(challengeId),
