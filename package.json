@@ -1,59 +1,45 @@
 {
-  "name": "kent-hack-it",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.2.0",
-    "@testing-library/user-event": "^13.5.0",
-    "connect-mongo": "^5.1.0",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dompurify": "^3.2.6",
-    "express": "^4.21.2",
-    "express-rate-limit": "^7.5.0",
-    "express-session": "^1.18.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.11.0",
-    "multer": "^2.0.0",
-    "passport": "^0.7.0",
-    "passport-discord": "^0.1.4",
-    "passport-github2": "^0.1.12",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-router-dom": "^7.2.0",
-    "react-scripts": "5.0.1",
-    "recharts": "^2.15.3",
-    "sanitize-filename": "^1.6.3",
-    "web-vitals": "^2.1.4"
-  },
-  "engines": {
-    "node": ">=18.19",
-    "npm": ">=9.2"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  }
+	"name": "kent-hack-it",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+        "test": "bun test",
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate"
+	},
+	"devDependencies": {
+		"@internationalized/date": "^3.12.2",
+		"@lucide/svelte": "^1.25.0",
+		"@sveltejs/adapter-auto": "^7.0.1",
+		"@sveltejs/kit": "^2.70.1",
+		"@sveltejs/vite-plugin-svelte": "^7.2.0",
+		"@tailwindcss/vite": "^4.3.3",
+		"@types/node": "^25.9.5",
+		"drizzle-kit": "^0.31.10",
+		"svelte": "^5.56.7",
+		"svelte-check": "^4.7.3",
+		"tailwindcss": "^4.3.3",
+		"typescript": "^6.0.3",
+		"vite": "^8.1.5"
+	},
+	"dependencies": {
+		"@sveltejs/adapter-node": "^5.5.7",
+		"better-auth": "^1.6.24",
+		"bits-ui": "^2.18.1",
+		"clsx": "^2.1.1",
+		"dotenv": "^17.4.2",
+		"drizzle-orm": "^0.45.2",
+		"mode-watcher": "^1.1.0",
+		"pg": "^8.22.0",
+		"postgres": "^3.4.9",
+		"tailwind-merge": "^3.6.0",
+		"tailwind-variants": "^3.2.2"
+	}
 }

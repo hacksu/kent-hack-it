@@ -1,0 +1,1 @@
+ALTER TABLE "challenges" RENAME COLUMN "bin_file" TO "nsjail_conf";

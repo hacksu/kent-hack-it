@@ -1,0 +1,2034 @@
+import postgres from "postgres";
+
+import { drizzle } from "drizzle-orm/postgres-js";
+import {
+    eq, sql, arrayContains, and,
+    or, asc, isNull, lt, count,
+    inArray, ne
+} from "drizzle-orm";
+
+import * as schema from "./auth-schema";
+import { env } from "$env/dynamic/private"; // dynamic allows the .env file to be read at runtime
+
+import { randomString, SHA256 } from "$lib/utilities";
+import { decryptFlag } from "$lib/server/flag-crypto";
+import { type Stat } from "$lib/mtypes";
+
+const PSQL = postgres({
+    host: process.env.PG_HOST ?? env.PG_HOST,
+    port: Number(process.env.PG_PORT ?? env.PG_PORT),
+    user: process.env.PG_USER ?? env.PG_USER,
+    password: process.env.PG_PASSWORD ?? env.PG_PASSWORD,
+    database: process.env.PG_DATABASE ?? env.PG_DATABASE
+});
+
+/*
+   To prepare the postgresql db you must:
+        - create the drizzle.config.ts
+        - npx drizzle-kit generate
+        - force feed psql the generated .sql file
+*/
+export const db = drizzle(PSQL);
+
+export interface ChallengeForm {
+    name: string;
+    description: string;
+    written_by: string;
+    category: string;
+    difficulty: string;
+    flag: string;
+    points: number;
+    hlinks: string[] | null;
+    hints: string[] | null;
+    nsjail_conf: string | null;
+    image_ref: string | null;
+    web_image_ref: string | null;
+    is_gym: boolean | null;
+};
+export type ChallengeEditForm = Omit<ChallengeForm, 'is_gym'>;
+
+export interface ChallengeData {
+    id: number;
+    name: string;
+    description: string;
+    category: string;
+    difficulty: string;
+    written_by: string | null;
+    flag: string;
+    points: number;
+    rating: string | null;
+    hints: string[] | null;
+    hlinks: string[] | null;
+    is_active: boolean | null;
+    is_gym: boolean | null;
+    nsjail_conf: string | null;
+    image_ref: string | null;
+    web_image_ref: string | null;
+};
+
+export interface ViewableChallengeData {
+    id: number;
+    name: string;
+    description: string;
+    category: string;
+    difficulty: string;
+    written_by: string | null;
+    points: number;
+    rating: string | null;
+    hints: string[] | null;
+    hlinks: string[] | null;
+    is_active: boolean | null;
+    is_gym: boolean | null;
+    solves: number;
+    nsjail_conf: string | null;
+    image_ref: string | null;
+    web_image_ref: string | null;
+}
+
+// special select type used in challenge querying
+const publicChallengeData = {
+    id: schema.challenges.id,
+    name: schema.challenges.name,
+    description: schema.challenges.description,
+    category: schema.challenges.category,
+    difficulty: schema.challenges.difficulty,
+    written_by: schema.challenges.written_by,
+    points: schema.challenges.points,
+    rating: schema.challenges.rating,
+    hlinks: schema.challenges.hlinks,
+    hints: schema.challenges.hints,
+    is_active: schema.challenges.is_active,
+    is_gym: schema.challenges.is_gym,
+    nsjail_conf: schema.challenges.nsjail_conf,
+    image_ref: schema.challenges.image_ref,
+    web_image_ref: schema.challenges.web_image_ref,
+};
+
+function uniqueConstraintName(error: any): string | undefined {
+    const code = error?.code ?? error?.cause?.code;
+    if (code !== '23505') return undefined;
+    return error?.constraint_name ?? error?.cause?.constraint_name;
+}
+
+export async function AddChallenge(data: ChallengeForm) {
+    try {
+        const [row] = await db.insert(schema.challenges).values(data).returning();
+        console.log(`[*] AddChallenge -> inserted ${row.id}`);
+        return { success: true as const, id: row.id };
+    } catch (error: any) {
+        console.error('Failed to insert challenge:', error);
+        const constraint = uniqueConstraintName(error);
+        if (constraint === 'challenges_flag_unique') {
+            return { success: false as const, error: 'A challenge with this flag already exists' };
+        }
+        if (constraint === 'challenges_name_unique') {
+            return { success: false as const, error: 'A challenge with this name already exists' };
+        }
+        return { success: false as const, error: 'Failed to add challenge' };
+    }
+}
+
+/**
+ * Update a specific challenge
+ * 
+ * @param data 
+ * @param id 
+ * @returns 
+ */
+export async function UpdateChallenge(data: ChallengeEditForm, id: any) {
+    try {
+        const [row] = await db.update(schema.challenges)
+                        .set(data)
+                        .where(eq(schema.challenges.id, id)).returning();
+        console.log(`[*] UpdateChallenge -> updated ${row.id}`);
+        return { success: true as const, id: row.id };
+    } catch (error: any) {
+        console.error('Failed to update challenge:', error);
+        const constraint = uniqueConstraintName(error);
+        if (constraint === 'challenges_flag_unique') {
+            return { success: false as const, error: 'A challenge with this flag already exists' };
+        }
+        if (constraint === 'challenges_name_unique') {
+            return { success: false as const, error: 'A challenge with this name already exists' };
+        }
+        return { success: false as const, error: 'Failed to update challenge' };
+    }
+}
+
+/**
+ * Return all challenges based on mode integer
+ * @param grab_mode `0 - all, 1 - event only, 2 - gym only`
+ */
+export async function GetChallenges(is_admin: boolean, grab_mode: number = 0) {
+    try {
+        const selection = is_admin ? undefined : publicChallengeData;
+
+        if (!await IsSiteActive() && !is_admin)
+            return undefined;
+
+        const q = (where?: any) => {
+            const base = selection
+                ? db.select(selection).from(schema.challenges)
+                : db.select().from(schema.challenges);
+            return (where ? base.where(where) : base).orderBy(asc(schema.challenges.points));
+        };
+
+        // grab all
+        if (grab_mode === 0) return await q();
+        // grab only event
+        if (grab_mode === 1) return await q(eq(schema.challenges.is_gym, false));
+        // grab only gym
+        if (grab_mode === 2) return await q(eq(schema.challenges.is_gym, true));
+        return undefined;
+    } catch (error) {
+        console.error('Failed to insert challenge:', error);
+        return undefined;
+    }
+}
+
+/**
+ * Update a challenge entry based on id and toggle
+ * its is_active attribute
+ * 
+ * @param id
+ * @param set_enabled
+ * @returns 
+ */
+export async function ToggleChallenge(id: any, set_enabled: boolean, set_gym: boolean) {
+    try {
+        const [challenge_old] = await db.select({ name: schema.challenges.name, is_active: schema.challenges.is_active, is_gym: schema.challenges.is_gym })
+                                    .from(schema.challenges)
+                                    .where(eq(schema.challenges.id, id));
+
+        const [row] = await db.update(schema.challenges)
+                        .set({ is_active: set_enabled, is_gym: set_gym })
+                        .where(eq(schema.challenges.id, id));
+
+        console.log(`[*] ToggleChallenge -> ${id} [${ set_enabled ? "ACTIVE" : "DISABLED" }]`);
+        console.log(` |___--> ${id} [${ set_gym ? "GYM" : "LIVE" }]`);
+
+        let message = "";
+        if (challenge_old.is_active !== set_enabled) {
+            message = `"${challenge_old.name}" has been ${ set_enabled ? "enabled" : "disabled" }`;
+        } else if (challenge_old.is_gym !== set_gym) {
+            message = `"${challenge_old.name}" is now a ${ set_gym ? "gym" : "event" } challenge`;
+        }
+
+        console.log(message);
+
+        return { success: true, message };
+    } catch (error) {
+        console.error('Failed to toggle challenge:', error);
+        return { success: false, error: "Error Modifying Challenge" };
+    }
+}
+
+/**
+ * Fetch the publically viewable data of a specific challenge
+ * 
+ * @param id 
+ * @returns 
+ */
+export async function GetChallenge(id: any) {
+    try {
+        if (!await IsSiteActive())
+            return [];
+
+        return await db.select(publicChallengeData)
+                        .from(schema.challenges)
+                        .where(eq(schema.challenges.id, id))
+                        .limit(1);
+    } catch (error) {
+        console.error(`Failed to fetch challenge (${id}):`, error);
+        return [];
+    }
+}
+
+/**
+ * Delete a challenge with a given id
+ * 
+ * @param id 
+ * @returns 
+ */
+export async function DeleteChallenge(id: any) {
+    try {
+        const [webInstance] = await db.select({ challenge_id: schema.web_instances.challenge_id })
+            .from(schema.web_instances).where(eq(schema.web_instances.challenge_id, id)).limit(1);
+        if (webInstance) {
+            await StopWebInstance(id);
+        }
+
+        const sshSessions = await db.select({ uid: schema.ssh_instance_sessions.uid })
+            .from(schema.ssh_instance_sessions).where(eq(schema.ssh_instance_sessions.challenge_id, id));
+        for (const session of sshSessions) {
+            await StopSSHInstance(session.uid);
+        }
+
+        const ncSessions = await db.select({ uid: schema.instance_sessions.uid })
+            .from(schema.instance_sessions).where(eq(schema.instance_sessions.challenge_id, id));
+        for (const session of ncSessions) {
+            await StopInstance(session.uid);
+        }
+
+        const [row] = await db.delete(schema.challenges)
+            .where(eq(schema.challenges.id, id))
+            .returning();
+
+        // remove the flag claim from all players if needed
+        await db.update(schema.user)
+            .set({
+                claims: sql`(
+                SELECT jsonb_agg(claim)
+                FROM jsonb_array_elements(${schema.user.claims}) AS claim
+                WHERE (claim->>'challenge_id') != ${id}::text
+                )`
+            })
+            .where(
+                sql`EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(${schema.user.claims}) AS claim
+                WHERE (claim->>'challenge_id') = ${id}::text
+                )`
+            );
+
+        console.log(`[*] DeleteChallenge -> deleted ${row.id}`);
+        return { success: true as const };
+    } catch (error: any) {
+        console.error('Failed to delete challenge:', error);
+        return { success: false as const, error: 'Failed to delete challenge' };
+    }
+}
+
+/**
+ * Get the number of solvers based on a challenge id (cid)
+ * 
+ * @param cid 
+ */
+export async function GetSolversCount(cid: number) {
+    try {
+        const result = await db
+            .select({ count: count() })
+            .from(schema.user)
+            .where(
+                and(
+                    eq(schema.user.role, 'user'),
+                    sql`
+                        ${schema.user.claims} @> ${JSON.stringify([{ challenge_id: String(cid) }])}::jsonb
+                    `
+                )
+            );
+
+        return result[0]?.count ?? 0;
+    } catch (e: any) {
+        console.error("[-] Error:", e);
+        return 0;
+    }
+}
+
+/**
+ * Return a map of solvers where the key is a challenge id
+ * and the value is a set of usernames sorted by claim timestamp
+ * 
+ * @returns 
+ */
+export async function GetSolvers() {
+    
+    try {
+        const solvers: Record<number, { name: string; claimed_at: string }[]> = {};
+        const sorted: Record<number, string[]> = {};
+        
+        const users = await db
+            .select({ name: schema.user.name, claims: schema.user.claims })
+            .from(schema.user)
+            .where(eq(schema.user.role, 'user'));
+
+
+        for (const user of users) {
+            for (const claim of user.claims ?? []) {
+                const cid = Number(claim.challenge_id);
+                if (!solvers[cid]) solvers[cid] = [];
+                solvers[cid].push({ name: user.name, claimed_at: claim.claimed_at });
+            }
+        }
+
+        for (const [cid, entries] of Object.entries(solvers)) {
+            sorted[Number(cid)] = entries
+                .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime())
+                .map(e => e.name);
+        }
+
+        return sorted;
+    } catch (e: any) {
+        console.error("[-] Error:", e);
+        return undefined;
+    }
+}
+
+/**
+ * Returns list of all admins on the DB
+ * 
+ * @returns 
+ */
+export async function GetAdmins() {
+    try {
+        return await db.select()
+                .from(schema.user)
+                .where(eq(schema.user.role, "admin"));
+    } catch (error) {
+        console.error('Failed to get admins:', error);
+        return false;
+    }
+}
+
+/**
+ * Removes an admin entry from the db
+ * 
+ * @param id 
+ * @returns 
+ */
+export async function DeleteAdmin(id: any) {
+    try {
+        // remove user entry
+        const [user_data] = await db.delete(schema.user)
+            .where(eq(schema.user.id, id))
+            .returning();
+
+        // remove account entry
+        const [acc_data] = await db.delete(schema.account)
+            .where(eq(schema.account.userId, id))
+            .returning();
+        // remove session entry
+        const [sess_data] = await db.delete(schema.session)
+            .where(eq(schema.session.userId, id))
+            .returning();
+
+        console.log('[+] Deleted Admin');
+
+        const all_data = [user_data, acc_data, sess_data];
+        console.log(all_data);
+
+        return true;
+    } catch (error) {
+        console.error('Failed to delete admin:', error);
+        return false;
+    }
+}
+
+/**
+ * Returns a list of CTF players
+ * 
+ * @returns 
+ */
+export async function GetUsers() {
+    try {
+        const users = await db
+            .select({
+                name: schema.user.name,
+                email: schema.user.email,
+                image: schema.user.image,
+                team_name: schema.teams.name,
+            })
+            .from(schema.user)
+            .leftJoin(schema.team_members, eq(schema.user.id, schema.team_members.user_id))
+            .leftJoin(schema.teams, eq(schema.team_members.team_id, schema.teams.id))
+            .where(eq(schema.user.role, "user"));
+
+        return users.map(u => ({
+            name: u.name,
+            email: u.email,
+            image: u.image,
+            team_name: u.team_name ?? null,
+        }));
+    } catch (e: any) {
+        console.error('Failed to get users:', e);
+        return [];
+    }
+}
+
+/**
+ * Delete a CTF Player with the respective id
+ * 
+ * @param id 
+ * @returns 
+ */
+export async function DeleteUser(id: any) {
+    try {
+        // remove user entry
+        const [user_data] = await db.delete(schema.user)
+            .where(eq(schema.user.id, id))
+            .returning();
+
+        // remove account entry
+        const [acc_data] = await db.delete(schema.account)
+            .where(eq(schema.account.userId, id))
+            .returning();
+        // remove session entry
+        const [sess_data] = await db.delete(schema.session)
+            .where(eq(schema.session.userId, id))
+            .returning();
+
+        console.log('[+] Deleted CTF Player');
+
+        const all_data = [user_data, acc_data, sess_data];
+        console.log(all_data);
+
+        return true;
+    } catch (error) {
+        console.error('Failed to delete CTF Player:', error);
+        return false;
+    }
+}
+
+export async function GetRated(uid: any) {
+    try {
+        const [user] = await db.select({ rated: schema.user.ratings })
+                        .from(schema.user)
+                        .where(eq(schema.user.id, uid)).limit(1);
+        if (!user) {
+            console.log("[-] Could not find rated list for (UID):", uid);
+            return [];
+        } else {
+            return user.rated;
+        }
+
+    } catch (e: any) {
+        console.error("[-] Error:", e);
+        return [];
+    }
+}
+
+/**
+ * Return two lists of completions, one based on the user
+ * the other based on the team the user is potentially
+ * associated with
+ * 
+ * @param uid 
+ * @returns 
+ */
+export async function GetCompletions(uid: any) {
+    try {
+        const [user] = await db.select({ completions: schema.user.claims })
+                        .from(schema.user)
+                        .where(eq(schema.user.id, uid)).limit(1);
+        if (!user) {
+            console.log("[-] Could not find completions for (UID):", uid);
+            return {
+                user: [],
+                team: []
+            };
+        }
+
+        // find the team id a given user is associated with and find
+        // the claims across the entire team
+        const [membership] = await db
+            .select({ team_id: schema.team_members.team_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.user_id, uid))
+            .limit(1);
+
+        if (!membership) {
+            console.log("[-] Could not find team id associated with (UID):", uid);
+            return {
+                user: user.completions,
+                team: []
+            };
+        } else {
+            const members = await db
+                .select({ user_id: schema.team_members.user_id })
+                .from(schema.team_members)
+                .where(eq(schema.team_members.team_id, membership.team_id));
+    
+            if (!members.length) return { user: user.completions, team: [] };
+    
+            const member_ids = members.map(m => m.user_id);
+    
+            const users = await db
+                .select({ claims: schema.user.claims })
+                .from(schema.user)
+                .where(inArray(schema.user.id, member_ids));
+    
+            const claimed = new Set<number>();
+            for (const user of users) {
+                for (const claim of user.claims ?? []) {
+                    claimed.add(Number(claim.challenge_id));
+                }
+            }
+    
+            return {
+                user: user.completions,
+                team: [... claimed]
+            };
+        }
+
+
+    } catch (e: any) {
+        console.error("[-] Error:", e);
+        return {
+            user: [],
+            team: []
+        };
+    }
+}
+
+/**
+ * Delete a specific challenge archive from the server
+ * 
+ * @param file 
+ * @returns 
+ */
+export async function UnlinkArchive(file: string) {
+    try {
+        // fetch all challenges that reference "file" in their hlinks array
+        const challenges = await db.select()
+            .from(schema.challenges)
+            .where(arrayContains(schema.challenges.hlinks, [file]));
+
+        // unlink file from all collected challenges
+        for (const challenge of challenges) {
+            const updatedLinks = (challenge.hlinks ?? []).filter(f => f !== file);
+            await db.update(schema.challenges)
+                .set({ hlinks: updatedLinks })
+                .where(eq(schema.challenges.id, challenge.id));
+        }
+
+        console.log(`[+] File "${file}" unlinked from ${challenges.length} challenge(s)`);
+        return true;
+    } catch (error) {
+        console.error('Failed to unlink file from challenges:', error);
+        return false;
+    }
+}
+
+/**
+ * Append a flag claim to a specific user
+ * 
+ * @param uid 
+ * @param cid 
+ * @returns 
+ */
+async function addClaim(uid: any, cid: any): Promise<boolean> {
+    try {
+        // duplicate claim insert protection
+        const [data] = await db.select({ claims: schema.user.claims })
+                    .from(schema.user)
+                    .where(eq(schema.user.id, uid)).limit(1);
+        for (const claim of data.claims || []) {
+            if (claim.challenge_id === cid) {
+                return true;
+            }
+        }
+
+        await db.update(schema.user)
+            .set({
+                claims: sql`coalesce(${schema.user.claims}, '[]'::jsonb) || ${JSON.stringify([{
+                    challenge_id: cid,
+                    claimed_at: new Date().toISOString()
+                }])}::jsonb`
+            })
+            .where(eq(schema.user.id, uid));
+
+        return true;
+    } catch (e) {
+        console.error('Failed to add claim:', e);
+        return false;
+    }
+}
+
+/**
+ * Check challenge flag value submission
+ * 
+ * @param cid 
+ * @param flag_value 
+ * @returns 
+ */
+export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ success: boolean, message: string }> {
+    try {
+        // fetch users flag claims to determine if they already captured this flag
+        console.log("[*] Checking if already claimed");
+        const [data] = await db.select({ claims: schema.user.claims })
+                    .from(schema.user)
+                    .where(eq(schema.user.id, uid)).limit(1);
+        for (const claim of data.claims || []) {
+            if (claim.challenge_id === cid) {
+                return { success: true, message: 'Already Claimed!' };
+            }
+        }
+
+        console.log("[*] Attempting to find challenge entry");
+        const c_data = await db.select({
+            flag: schema.challenges.flag,
+            nsjail_conf: schema.challenges.nsjail_conf,
+            image_ref: schema.challenges.image_ref,
+            web_image_ref: schema.challenges.web_image_ref,
+        }).from(schema.challenges).where(eq(schema.challenges.id, cid)).limit(1);
+
+        if (c_data.length === 0) {
+            console.error("Error occurred challenge not found!");
+            return { success: false, message: 'Error Occurred' };
+        }
+
+        console.log("[*] Verifying Flag");
+        const challenge = c_data[0];
+        const flag_claimed = (challenge.nsjail_conf || challenge.image_ref || challenge.web_image_ref) ? (
+            await decryptFlag(challenge.flag) === flag_value
+        ) : (
+            challenge.flag === await SHA256(flag_value)
+        );
+
+        if (flag_claimed) {
+            const has_appended = await addClaim(uid, cid);
+            console.log(`[*] Appended Claim Status: ${has_appended}`);
+            return { success: true, message: 'Correct Flag!' };
+        } else {
+            return { success: false, message: 'Incorrect Flag!' };
+        }
+    } catch (error) {
+        console.error('Error occurred checking flag:', error);
+        return { success: false, message: 'Error Occurred' };
+    }
+}
+
+/**
+ * Return challenge flag hash based on given challenge id
+ * 
+ * @param cid 
+ * @returns 
+ */
+export async function GetFlagHash(cid: any) {
+    try {
+        const data = await db.select({ flag: schema.challenges.flag })
+            .from(schema.challenges)
+            .where(eq(cid, schema.challenges.id)).limit(1);
+        return data.length > 0 ? data[0].flag : "";
+    } catch (error) {
+        console.error('Error occurred fetching flag:', error);
+        return "";
+    }
+}
+
+export async function SubmitRating(uid: any, cid: any, rating: number): Promise<{ success: boolean, message: string }> {
+    try {
+        const [user] = await db
+            .select({ claims: schema.user.claims, ratings: schema.user.ratings })
+            .from(schema.user)
+            .where(eq(schema.user.id, uid))
+            .limit(1);
+
+        if (!user) return { success: false, message: 'User not found' };
+
+        // check if user has claimed this challenge
+        const hasClaimed = user.claims?.some(c => Number(c.challenge_id) === Number(cid));
+        if (!hasClaimed) return { success: false, message: 'You must complete a challenge before rating it' };
+
+        // atomic check + append: only appends if cid is NOT already in ratings
+        const ratingUpdate = await db.execute(
+            sql`
+                UPDATE "user"
+                SET ratings = array_append(ratings, ${cid}::int)
+                WHERE id = ${uid}
+                AND NOT (${cid}::int = ANY(ratings))
+                RETURNING id
+            `
+        );
+
+        // if no rows returned, user already rated
+        if (!ratingUpdate.length) {
+            return { success: false, message: 'You have already rated this challenge' };
+        }
+
+        const [challenge] = await db
+            .select({ rating: schema.challenges.rating, user_rates: schema.challenges.user_rates })
+            .from(schema.challenges)
+            .where(eq(schema.challenges.id, cid))
+            .limit(1);
+
+        if (!challenge) {
+            return { success: false, message: 'Challenge not found' };
+        }
+
+        const prevCount  = challenge.user_rates?.length ?? 0;
+        const prevRating = Number(challenge.rating ?? 0);
+        const newRating  = ((prevRating * prevCount) + rating) / (prevCount + 1);
+
+        await db.update(schema.challenges)
+            .set({
+                rating: newRating.toFixed(2),
+                user_rates: sql`array_append(${schema.challenges.user_rates}, ${uid})`,
+            })
+            .where(eq(schema.challenges.id, cid));
+
+        return { success: true, message: 'Rating submitted!' };
+    } catch (e: any) {
+        console.error('Error occurred rating challenge:', e);
+        return { success: false, message: 'Error occurred' };
+    }
+}
+
+export async function GetTeams() {
+    try {
+        const teams = await db.select().from(schema.teams);
+
+        return await Promise.all(teams.map(async (team) => {
+            const [leader] = await db
+                .select({
+                    name: schema.user.name,
+                    image: schema.user.image,
+                })
+                .from(schema.user)
+                .where(eq(schema.user.id, team.leader_id))
+                .limit(1);
+
+            const memberRows = await db
+                .select({
+                    name: schema.user.name,
+                    image: schema.user.image,
+                })
+                .from(schema.team_members)
+                .innerJoin(schema.user, eq(schema.team_members.user_id, schema.user.id))
+                .where(
+                    and(
+                        eq(schema.team_members.team_id, team.id),
+                        ne(schema.team_members.user_id, team.leader_id)
+                    )
+                );
+
+            return {
+                id: team.id,
+                name: team.name,
+                leader: leader,
+                members: memberRows.map(m => {m.name,m.image}),
+            };
+        }));
+    } catch (e: any) {
+        console.error("Error getting teams:", e);
+        return [];
+    }
+}
+
+export async function IsTeamLeader(uid: string) {
+    try {
+        const results = await db
+            .select({ name: schema.teams.name })
+            .from(schema.teams)
+            .where(eq(schema.teams.leader_id, uid))
+            .limit(1);
+
+        return results.length > 0;
+    } catch (e: any) {
+        console.error("Error checking leadership status:", e);
+        return false;
+    }
+}
+
+export async function GetOpenTeams(uid: string) {
+    try {
+        const counts = db
+            .select({
+                team_id: schema.team_members.team_id,
+                count: count().as("count"),
+            })
+            .from(schema.team_members)
+            .groupBy(schema.team_members.team_id)
+            .as("counts");
+
+        const teams = await db
+            .select({
+                id: schema.teams.id,
+                name: schema.teams.name,
+            })
+            .from(schema.teams)
+            .leftJoin(counts, eq(schema.teams.id, counts.team_id))
+            .where(or(
+                isNull(counts.count),
+                lt(counts.count, 4)
+            ));
+
+        const requests = await db
+            .select({ to: schema.team_requests.to })
+            .from(schema.team_requests)
+            .where(eq(schema.team_requests.from, uid));
+
+        const pendingLeaderIds = new Set(requests.map(r => r.to));
+
+        return teams.map(team => ({
+            id: team.id,
+            name: team.name,
+            pending: pendingLeaderIds.has(team.id),
+        }));
+    } catch (e: any) {
+        console.error("Error occurred fetching open teams:", e);
+        return [];
+    }
+}
+
+export async function LeaveTeam(uid: string, team_id: any) {
+    try {
+        await db.delete(schema.team_members)
+            .where(
+                and(
+                    eq(schema.team_members.user_id, uid),
+                    eq(schema.team_members.team_id, team_id)
+                )
+            );
+
+        const [team] = await db
+            .select()
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        if (!team) return { success: true, message: 'Left team!' };
+
+        if (team.leader_id === uid) {
+            const [next] = await db
+                .select()
+                .from(schema.team_members)
+                .where(eq(schema.team_members.team_id, team_id))
+                .orderBy(asc(schema.team_members.joined_at))
+                .limit(1);
+
+            if (next) {
+                await db.update(schema.teams)
+                    .set({ leader_id: next.user_id })
+                    .where(eq(schema.teams.id, team_id));
+            } else {
+                await db.delete(schema.teams)
+                    .where(eq(schema.teams.id, team_id));
+            }
+        }
+
+        return { success: true, message: 'Left team!' };
+    } catch (e: any) {
+        console.error("Error occurred leaving team:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function MakeTeam(uid: string, name: string) {
+    try {
+        const [existing] = await db
+            .select()
+            .from(schema.team_members)
+            .where(eq(schema.team_members.user_id, uid))
+            .limit(1);
+
+        if (existing) return { success: false, error: "You are already in a team!" };
+
+        const [team_data] = await db.insert(schema.teams).values({
+            name,
+            leader_id: uid,
+        }).returning({ team_id: schema.teams.id });
+
+        await db.insert(schema.team_members).values({
+            team_id: team_data.team_id,
+            user_id: uid,
+        });
+
+        return { success: true, message: 'Team created!' };
+    } catch (e: any) {
+        console.error("Error occurred creating a team:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function RemoveTeam(team_id: any) {
+    try {
+        await db.delete(schema.team_members)
+            .where(eq(schema.team_members.team_id, team_id));
+
+        await db.delete(schema.teams)
+            .where(eq(schema.teams.id, team_id));
+
+        return true;
+    } catch (e: any) {
+        console.error("Error occurred removing team:", e);
+        return false;
+    }
+}
+
+export async function GetTeam(uid: string) {
+    try {
+        const membership = await db
+            .select({ team_id: schema.team_members.team_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.user_id, uid))
+            .limit(1);
+
+        if (!membership.length) {
+            return {
+                is_leader: false,
+                team: null
+            };
+        }
+
+        const team_id = membership[0].team_id;
+
+        const [team] = await db
+            .select()
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        const is_leader = uid === team.leader_id;
+
+        const [leader] = await db
+            .select({ id: schema.user.id, name: schema.user.name, image: schema.user.image })
+            .from(schema.user)
+            .where(eq(schema.user.id, team.leader_id))
+            .limit(1);
+
+        const memberRows = await db
+            .select({ user_id: schema.team_members.user_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.team_id, team_id));
+
+        const memberIds = memberRows
+            .map(m => m.user_id)
+            .filter(id => id !== team.leader_id);
+
+        const memberUsers = memberIds.length > 0
+            ? await db
+                .select({ id: schema.user.id, name: schema.user.name, image: schema.user.image })
+                .from(schema.user)
+                .where(inArray(schema.user.id, memberIds))
+            : [];
+
+        const teamJoinRows = await db
+            .select({
+                id: schema.team_requests.id,
+                name: schema.user.name,
+                image: schema.user.image,
+                checksum: schema.team_requests.checksum,
+            })
+            .from(schema.team_requests)
+            .innerJoin(schema.user, eq(schema.team_requests.from, schema.user.id))
+            .where(eq(schema.team_requests.to, team_id as any));
+
+        const requests = (is_leader) ? (
+            teamJoinRows.map(r => ({ id: r.id, name: r.name, image: r.image, checksum: r.checksum }))
+        ) : [];
+
+        const team_data = {
+            id: team.id,
+            name: team.name,
+            leader: { id: leader.id, name: leader.name, image: leader.image },
+            members: memberUsers.map(m => ({ id: m.id, name: m.name, image: m.image })),
+            requests,
+        };
+
+        return {
+            is_leader,
+            team: team_data
+        };
+    } catch (e: any) {
+        console.error("Error occurred fetching team:", e);
+        return {
+            is_leader: false,
+            team: null
+        };
+    }
+}
+
+export async function CreateRequest(uid: any, team_id: any) {
+    try {
+        const existing = await db.select().from(schema.team_requests)
+                        .where(
+                            and(
+                                eq(schema.team_requests.to, team_id),
+                                eq(schema.team_requests.from, uid)
+                            )
+                        ).limit(1);
+        if (existing.length > 0) {
+            console.log("[*] Request has already been sent!");
+            return { success: true, error: "Request Pending" };
+        }
+
+        await db.insert(schema.team_requests).values({
+            to: team_id,
+            from: uid,
+            checksum: await randomString(),
+        });
+
+        return { success: true, message: 'Request Sent!' };
+    } catch (e: any) {
+        console.error("Error occurred requesting to join:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function AcceptMember(rid: any, r_checksum: any) {
+    try {
+        const data = await db.select().from(schema.team_requests)
+                        .where(
+                            and(
+                                eq(schema.team_requests.id, rid),
+                                eq(schema.team_requests.checksum, r_checksum)
+                            )
+                        ).limit(1);
+
+        if (data.length === 0) {
+            console.log("[*] Bad_Acceptance | Request not found!");
+            return { success: false, error: "Acceptance Failed" };
+        }
+
+        // remove request from db
+        await db.delete(schema.team_requests)
+                .where(eq(schema.team_requests.id, rid));
+
+        // update team record
+        const join_req = data[0];
+        return await AddMember(join_req.to, join_req.from);
+    } catch (e: any) {
+        console.error("Error occurred accepting request:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function AddMember(team_id: any, user_id: any) {
+    try {
+        const [existing] = await db
+            .select()
+            .from(schema.team_members)
+            .where(eq(schema.team_members.user_id, user_id))
+            .limit(1);
+
+        if (existing) return { success: false, error: "User is already in a team!" };
+
+        const [count_row] = await db
+            .select({ count: count() })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.team_id, team_id));
+
+        if (count_row.count >= 4) return { success: false, error: "Team is full!" };
+
+        await db.insert(schema.team_members).values({ team_id, user_id });
+
+        return { success: true, message: "Member added!" };
+    } catch (e: any) {
+        console.error("Error occurred adding member:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function RemoveMember(team_id: any, user_id: any) {
+    try {
+        await db
+            .delete(schema.team_members)
+            .where(
+                and(
+                    eq(schema.team_members.team_id, team_id),
+                    eq(schema.team_members.user_id, user_id)
+                )
+            );
+
+        const [team] = await db
+            .select()
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        if (!team) return { success: true, message: "Member removed!" };
+
+        if (team.leader_id === user_id) {
+            const [next] = await db
+                .select()
+                .from(schema.team_members)
+                .where(eq(schema.team_members.team_id, team_id))
+                .orderBy(asc(schema.team_members.joined_at))
+                .limit(1);
+
+            if (next) {
+                await db
+                    .update(schema.teams)
+                    .set({ leader_id: next.user_id })
+                    .where(eq(schema.teams.id, team_id));
+            } else {
+                await db.delete(schema.teams).where(eq(schema.teams.id, team_id));
+            }
+        }
+
+        return { success: true, message: "Member removed!" };
+    } catch (e: any) {
+        console.error("Error occurred removing member:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
+export async function GetProgress(uid: string) {
+    const category_colors = [
+        "#ec8058",
+        "#d8a04b",
+        "#d4d444",
+        "#90b850",
+        "#13beb6",
+        "#4068c5",
+        "#8354b5",
+    ];
+
+    try {
+        const [data] = await db.select({ claims: schema.user.claims })
+            .from(schema.user)
+            .where(eq(schema.user.id, uid))
+            .limit(1);
+
+        const all_challenges = await db.select({
+            id: schema.challenges.id,
+            name: schema.challenges.name,
+            category: schema.challenges.category,
+            is_gym: schema.challenges.is_gym,
+        }).from(schema.challenges);
+
+        const evt_challenges = all_challenges.filter(c => !c.is_gym);
+        const claims = data.claims ?? [];
+        const hasClaim = (id: number) => claims.some(c => String(c.challenge_id) === String(id));
+
+        const byCategory = (challenges: typeof all_challenges): Stat[] => {
+            const categories = [...new Set(challenges.map(c => c.category))];
+
+            return categories.map((cat, index) => {
+                const group = challenges.filter(c => c.category === cat);
+
+                return {
+                    label: cat,
+                    value: group.filter(c => hasClaim(c.id)).length,
+                    total: group.length,
+                    color: category_colors[index % category_colors.length],
+                };
+            });
+        };
+
+        // check if uid is in a team
+        const [membership] = await db
+            .select({ team_id: schema.team_members.team_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.user_id, uid))
+            .limit(1);
+
+        let teamProg = null;
+
+        if (membership) {
+            const team_id = membership.team_id;
+
+            // get all team members with their claims
+            const team_member_rows = await db
+                .select({ user_id: schema.team_members.user_id })
+                .from(schema.team_members)
+                .where(eq(schema.team_members.team_id, team_id));
+
+            const member_ids = team_member_rows.map(m => m.user_id);
+
+            const member_claims = await db
+                .select({ id: schema.user.id, name: schema.user.name, claims: schema.user.claims })
+                .from(schema.user)
+                .where(inArray(schema.user.id, member_ids));
+
+            // for each challenge, find who completed it first
+            // credit goes to earliest claimed_at, ties broken by member order
+            type Contribution = { challenge_id: string; winner_id: string; winner_name: string; claimed_at: string };
+
+            const contributions: Contribution[] = [];
+
+            for (const challenge of all_challenges) {
+                const completions = member_claims
+                    .flatMap(m => (m.claims ?? [])
+                        .filter(c => String(c.challenge_id) === String(challenge.id))
+                        .map(c => ({ user_id: m.id, name: m.name, claimed_at: c.claimed_at }))
+                    )
+                    .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime());
+
+                if (completions.length > 0) {
+                    contributions.push({
+                        challenge_id: String(challenge.id),
+                        winner_id: completions[0].user_id,
+                        winner_name: completions[0].name,
+                        claimed_at: completions[0].claimed_at,
+                    });
+                }
+            }
+
+            // category bars — how many challenges per category are completed by anyone on the team
+            const categories = [...new Set(all_challenges.map(c => c.category))];
+
+            const categoryBars: Stat[] = categories.map((cat, index) => {
+                const group = all_challenges.filter(c => c.category === cat);
+
+                const completed = group.filter(c =>
+                    contributions.some(con => con.challenge_id === String(c.id))
+                ).length;
+
+                return {
+                    label: cat,
+                    value: completed,
+                    total: group.length,
+                    color: category_colors[index % category_colors.length],
+                };
+            });
+
+            // pie chart data — contribution count per member (first-completion credit)
+            const pieData = member_claims.map(m => ({
+                user_id: m.id,
+                name: m.name,
+                contributions: contributions.filter(c => c.winner_id === m.id).length,
+            }));
+
+            teamProg = {
+                bars: [
+                    {
+                        label: 'Team Total',
+                        value: contributions.length,
+                        total: all_challenges.length,
+                        color: '#5b93d8',
+                    },
+                    ...categoryBars,
+                ],
+                pie: pieData,
+            };
+        }
+
+        return {
+            totalProg: [
+                {
+                    label: 'Total',
+                    value: claims.length,
+                    total: all_challenges.length,
+                    color: '#5b93d8',
+                },
+                ...byCategory(all_challenges),
+            ] as Stat[],
+            eventProg: [
+                {
+                    label: 'Event',
+                    value: evt_challenges.filter(c => hasClaim(c.id)).length,
+                    total: evt_challenges.length,
+                    color: '#5b93d8',
+                },
+                ...byCategory(evt_challenges),
+            ] as Stat[],
+            teamProg,
+        };
+    } catch (e) {
+        console.error("[-] Error", e);
+        return { totalProg: [], eventProg: [], teamProg: null };
+    }
+}
+
+export async function GetConfiguration() {
+    try {
+        const [data] = await db.select()
+                .from(schema.event_config)
+                .where(eq(schema.event_config.name, "config"))
+                .limit(1);
+        return data;
+    } catch (e: any) {
+        console.error("[-] Error", e);
+        return null;
+    }
+}
+
+export async function IsSiteActive() {
+    try {
+        const [data] = await db.select({ status: schema.event_config.site_active })
+                .from(schema.event_config)
+                .where(eq(schema.event_config.name, "config"))
+                .limit(1);
+        console.log("[SITE-ONLINE]", data.status);
+        return data.status;
+    } catch (e: any) {
+        console.error("[-] Error", e);
+        return false;
+    }
+}
+
+export async function UpdateConfiguration(data: {
+    event_start: Date,
+    event_length: number,
+    site_active: boolean
+}) {
+    try {
+        await db.update(schema.event_config)
+            .set({
+                event_start: data.event_start,
+                event_length: data.event_length,
+                site_active: data.site_active,
+            })
+            .where(eq(schema.event_config.name, 'config'));
+
+        return { success: true, message: 'Config updated!' };
+    } catch (e: any) {
+        console.error("Error updating config:", e);
+        return { success: false, error: "Error updating config" };
+    }
+}
+
+/**
+ * Returns an array object consisting of the teams accumulated points
+ * and their most recent claim timestamp
+ * 
+ * @param team_id 
+ * @returns 
+ */
+async function GetTeamEntry(team_id: any): Promise<[number,string]> {
+    try {
+        const event_challenges = await db.select({
+            id: schema.challenges.id,
+            name: schema.challenges.name,
+            points: schema.challenges.points,
+            is_gym: schema.challenges.is_gym,
+        }).from(schema.challenges)
+          .where(eq(schema.challenges.is_gym, false));
+
+        // get all team members with their claims
+        const team_member_rows = await db
+            .select({ user_id: schema.team_members.user_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.team_id, team_id));
+
+        const member_ids = team_member_rows.map(m => m.user_id);
+
+        const member_claims = await db
+            .select({ id: schema.user.id, name: schema.user.name, claims: schema.user.claims })
+            .from(schema.user)
+            .where(inArray(schema.user.id, member_ids));
+
+        let score = 0;
+        let recent_claim = "";
+
+        for (const challenge of event_challenges) {
+            const completions = member_claims
+                .flatMap(m => (m.claims ?? [])
+                    .filter(c => String(c.challenge_id) === String(challenge.id))
+                    .map(c => ({ user_id: m.id, name: m.name, claimed_at: c.claimed_at }))
+                )
+                .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime());
+
+            console.log(completions);
+
+            if (completions.length > 0) {
+                score += challenge.points;
+
+                if (recent_claim.length === 0)
+                    recent_claim = completions[0].claimed_at;
+                else if (completions[0].claimed_at > recent_claim)
+                    recent_claim = completions[0].claimed_at;
+            }
+        }
+
+        return [ score, recent_claim ];
+    } catch (e: any) {
+        console.error();
+        return [0, new Date().toISOString()];
+    }
+}
+
+export interface LeaderboardEntry {
+    name: string;       // either a solo-player or team_name
+    score: number;      // primary sort criterion
+    rank: number;
+
+    // ISO timestamp
+    last_claim: string; // time of most recent claim (used to sort entries with the same score)
+}
+export async function GetLeaderboard(): Promise<LeaderboardEntry[]> {
+    try {
+        console.log("[*] Fetching Leaderboard Data");
+
+        let board: LeaderboardEntry[] = [];
+
+        // fetch the scores for all teams
+        const groups = await db.select({ id: schema.teams.id, name: schema.teams.name })
+                        .from(schema.teams);
+
+        for (const group of groups) {
+            const [ score, last_claim ] = await GetTeamEntry(group.id)
+            board.push({
+                name: group.name,
+                score,
+                rank: 0,
+                last_claim
+            });
+        }
+
+        // fetch the scores for all solo-players
+        const all_users = (process.env.PROD || env.PROD) ? (
+            await db.select({ id: schema.user.id, name: schema.user.name })
+            .from(schema.user).where(eq(schema.user.role, "user"))
+        ) : (
+            // show admin users in dev
+            await db.select({ id: schema.user.id, name: schema.user.name })
+            .from(schema.user)
+        );
+
+        const users_in_groups = await db.select({ uid: schema.team_members.user_id })
+                                    .from(schema.team_members);
+        
+                                    const solo_users = all_users.filter((user) => {
+            return !users_in_groups.find((u) => u.uid === user.id);
+        });
+
+        for (const user of solo_users) {
+            let user_score = 0;
+            let most_recent_claim = "";
+
+            const [data] = await db.select({ claims: schema.user.claims })
+                            .from(schema.user)
+                            .where(eq(schema.user.id, user.id));
+            for (const claim of data.claims ?? []) {
+                const [challenge] = await db.select({ points: schema.challenges.points })
+                                        .from(schema.challenges)
+                                        .where(and(
+                                            eq(schema.challenges.is_gym, false),
+                                            eq(schema.challenges.id, claim.challenge_id)
+                                        ));
+                user_score += challenge?.points ?? 0;
+
+                if (most_recent_claim.length === 0)
+                    most_recent_claim = claim.claimed_at;
+                else if (claim.claimed_at > most_recent_claim)
+                    most_recent_claim = claim.claimed_at;
+            }
+
+            board.push({
+                name: user.name,
+                score: user_score,
+                rank: 0,
+                last_claim: most_recent_claim
+            });
+        }
+        
+        // @todo - stress test with larger dataset
+        board.sort((a, b) => {
+            if (b.score - a.score === 0) {
+                return new Date(a.last_claim).getTime() - new Date(b.last_claim).getTime();
+            } else {
+                return b.score - a.score;
+            }
+        });
+
+        // apply ranks after sorting completes
+        for (let i = 0; i < board.length; ++i) {
+            board[i].rank = i+1;
+        }
+
+        return board;
+    } catch (e: any) {
+        console.error("Error Fetching Leaderboard:", e);
+        return [];
+    }
+}
+
+export async function GetTeamFromPlayer(uid: any) {
+    try {
+        const [entry] = await db.select({ team_id: schema.team_members.team_id })
+                            .from(schema.team_members)
+                            .where(eq(schema.team_members.user_id, uid)).limit(1);
+        if (entry) {
+            const [team] = await db.select({ name: schema.teams.name })
+                            .from(schema.teams)
+                            .where(eq(schema.teams.id, entry.team_id)).limit(1);
+            return team;
+        } else {
+            return;
+        }
+    } catch (e: any) {
+        console.error("[-] Error:", e);
+        return;
+    }
+}
+
+/**
+ * Generate a challenge instance and track it within the DB
+ * 
+ * @param uid 
+ * @param cid 
+ */
+export async function CreateInstance(uid: any, cid: any) {
+    try {
+        // if there is an existing instance we need to kill it
+        const activeInstance = await db.select().from(schema.instance_sessions)
+                                .where(eq(schema.instance_sessions.uid, uid)).limit(1);
+        if (activeInstance.length > 0) {
+            // signal handler to kill child-proc
+            console.log("[*] Fetching handler pkill...");
+            const res = await fetch("http://handler:3000/kill", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ cpid: activeInstance[0].cpid })
+            });
+            const resp = await res.text();
+            console.log(`[*] Sending cpid-kill: ${resp} (${res.status})`);
+
+            // remove row entry from db
+            await db.delete(schema.instance_sessions)
+                .where(eq(schema.instance_sessions.uid, uid));
+        }
+
+        if (await GetActiveSSHInstance(uid)) {
+            console.log("[*] Stopping existing SSH instance before creating an nc instance...");
+            await StopSSHInstance(uid);
+        }
+
+        const challenge_data = await db.select({
+            name: schema.challenges.name,
+            nsjail_conf: schema.challenges.nsjail_conf,
+            flag_value: schema.challenges.flag,
+        }).from(schema.challenges)
+        .where(eq(schema.challenges.id, cid)).limit(1);
+
+        if (challenge_data.length === 0) {
+            return {
+                success: false,
+                error: "Challenge Not Found"
+            }
+        } else if (!challenge_data[0].nsjail_conf) {
+            // challenges without a jail conf cannot generate instances
+            return {
+                success: false,
+                error: "Instance Not Supported"
+            }
+        }
+
+        // ask handler to create a new instance and log it
+        console.log("[*] Fetching create_instance...");
+        const res = await fetch("http://handler:3000/create_instance", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: challenge_data[0].name,
+                nsjail_conf: challenge_data[0].nsjail_conf,
+                flag_value: await decryptFlag(challenge_data[0].flag_value),
+            })
+        });
+        const instance_data = await res.json();
+
+        if (instance_data.success) {
+            // log the session information
+            await db.insert(schema.instance_sessions).values({
+                uid: uid,
+                sess_port: instance_data.port,
+                cpid: instance_data.cpid,
+                challenge_id: cid
+            })
+        }
+
+        return instance_data;
+    } catch (e: any) {
+        console.error("[-] Instance-Creation:", e);
+        return {
+            success: false,
+            error: "Error Occurred when creating Instance"
+        }
+    }
+}
+
+/**
+ * Fetch the handler port a players challenge instance is listening on
+ * 
+ * @param uid 
+ * @returns 
+ */
+export async function GetActiveInstance(uid: any) {
+    try {
+        const instance_info = await db.select({
+            port: schema.instance_sessions.sess_port,
+            created_at: schema.instance_sessions.created_at,
+            challenge_id: schema.instance_sessions.challenge_id,
+        }).from(schema.instance_sessions)
+        .where(eq(schema.instance_sessions.uid, uid)).limit(1);
+
+        return (instance_info.length > 0) ? {
+            port: instance_info[0].port,
+            created_at: instance_info[0].created_at,
+            challenge_id: instance_info[0].challenge_id,
+        } : undefined;
+    } catch (e: any) {
+        console.error("[-] GetActiveInstance:", e);
+        return undefined;
+    }
+}
+
+export async function GetActiveNcInstances() {
+    try {
+        return await db.select({
+            uid: schema.instance_sessions.uid,
+            player_name: schema.user.name,
+            challenge_name: schema.challenges.name,
+            port: schema.instance_sessions.sess_port,
+            cpid: schema.instance_sessions.cpid,
+            created_at: schema.instance_sessions.created_at,
+        }).from(schema.instance_sessions)
+        .innerJoin(schema.user, eq(schema.instance_sessions.uid, schema.user.id))
+        .leftJoin(schema.challenges, eq(schema.instance_sessions.challenge_id, schema.challenges.id));
+    } catch (e: any) {
+        console.error("[-] GetActiveNcInstances:", e);
+        return [];
+    }
+}
+
+export async function StopInstance(uid: any) {
+    try {
+        const [instance] = await db.select({ cpid: schema.instance_sessions.cpid })
+            .from(schema.instance_sessions)
+            .where(eq(schema.instance_sessions.uid, uid)).limit(1);
+
+        if (!instance) {
+            return { success: false, error: "Instance Not Found" };
+        }
+
+        const res = await fetch("http://handler:3000/kill", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cpid: instance.cpid })
+        });
+
+        if (!res.ok) {
+            return { success: false, error: "Failed to stop instance" };
+        }
+
+        await db.delete(schema.instance_sessions)
+            .where(eq(schema.instance_sessions.uid, uid));
+
+        return { success: true, message: "Instance stopped" };
+    } catch (e: any) {
+        console.error("[-] StopInstance:", e);
+        return { success: false, error: "Error Occurred when stopping Instance" };
+    }
+}
+
+export async function CreateSSHInstance(uid: any, cid: any) {
+    try {
+        // stop any existing SSH instance the participant already has
+        const existing = await GetActiveSSHInstance(uid);
+        if (existing) {
+            console.log("[*] Stopping existing SSH instance before creating a new one...");
+            const stopResult = await StopSSHInstance(uid);
+            if (!stopResult.success) {
+                // uid is the primary key of ssh_instance_sessions -- proceeding
+                // here would insert-conflict against the row we just failed to clear
+                return stopResult;
+            }
+        }
+
+        if (await GetActiveInstance(uid)) {
+            console.log("[*] Stopping existing nc instance before creating an SSH instance...");
+            await StopInstance(uid);
+        }
+
+        const challenge_data = await db.select({
+            image_ref: schema.challenges.image_ref,
+            flag: schema.challenges.flag,
+        }).from(schema.challenges)
+        .where(eq(schema.challenges.id, cid)).limit(1);
+
+        if (challenge_data.length === 0) {
+            return { success: false, error: "Challenge Not Found" };
+        } else if (!challenge_data[0].image_ref) {
+            return { success: false, error: "SSH Instance Not Supported" };
+        }
+
+        console.log("[*] Fetching ssh-orchestrator create_instance...");
+        const res = await fetch("http://ssh-orchestrator:3000/create_instance", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                uid,
+                image_ref: challenge_data[0].image_ref,
+                flag_value: await decryptFlag(challenge_data[0].flag),
+            })
+        });
+        const instance_data = await res.json();
+
+        if (instance_data.success) {
+            const row = {
+                challenge_id: cid,
+                container_id: instance_data.container_id,
+                port: instance_data.port,
+                password: instance_data.password,
+                expires_at: new Date(instance_data.expires_at),
+            };
+            // upsert as defense-in-depth against a stale row with this uid,
+            // even though the stop-and-check above should already prevent one
+            await db.insert(schema.ssh_instance_sessions).values({ uid, ...row })
+                .onConflictDoUpdate({ target: schema.ssh_instance_sessions.uid, set: row });
+        }
+
+        return instance_data;
+    } catch (e: any) {
+        console.error("[-] SSH-Instance-Creation:", e);
+        return {
+            success: false,
+            error: "Error Occurred when creating SSH Instance"
+        }
+    }
+}
+
+export async function GetActiveSSHInstance(uid: any) {
+    try {
+        const [instance] = await db.select({
+            container_id: schema.ssh_instance_sessions.container_id,
+            port: schema.ssh_instance_sessions.port,
+            password: schema.ssh_instance_sessions.password,
+            expires_at: schema.ssh_instance_sessions.expires_at,
+            challenge_id: schema.ssh_instance_sessions.challenge_id,
+        }).from(schema.ssh_instance_sessions)
+        .where(eq(schema.ssh_instance_sessions.uid, uid)).limit(1);
+
+        return instance;
+    } catch (e: any) {
+        console.error("[-] GetActiveSSHInstance:", e);
+        return undefined;
+    }
+}
+
+export async function StopSSHInstance(uid: any) {
+    try {
+        const [instance] = await db.select({ container_id: schema.ssh_instance_sessions.container_id })
+            .from(schema.ssh_instance_sessions)
+            .where(eq(schema.ssh_instance_sessions.uid, uid)).limit(1);
+
+        if (!instance) {
+            return { success: false, error: "SSH Instance Not Found" };
+        }
+
+        const res = await fetch("http://ssh-orchestrator:3000/stop_instance", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ container_id: instance.container_id })
+        });
+
+        if (!res.ok) {
+            return { success: false, error: "Failed to stop SSH instance" };
+        }
+
+        await db.delete(schema.ssh_instance_sessions)
+            .where(eq(schema.ssh_instance_sessions.uid, uid));
+
+        return { success: true, message: "SSH Instance stopped" };
+    } catch (e: any) {
+        console.error("[-] StopSSHInstance:", e);
+        return { success: false, error: "Error Occurred when stopping SSH Instance" };
+    }
+}
+
+export async function GetActiveInstances() {
+    await ReconcileInstances();
+
+    const nc = await GetActiveNcInstances();
+
+    let ssh: any[] = [];
+    try {
+        ssh = await db.select({
+            uid: schema.ssh_instance_sessions.uid,
+            player_name: schema.user.name,
+            challenge_name: schema.challenges.name,
+            port: schema.ssh_instance_sessions.port,
+            container_id: schema.ssh_instance_sessions.container_id,
+            expires_at: schema.ssh_instance_sessions.expires_at,
+        }).from(schema.ssh_instance_sessions)
+        .innerJoin(schema.user, eq(schema.ssh_instance_sessions.uid, schema.user.id))
+        .leftJoin(schema.challenges, eq(schema.ssh_instance_sessions.challenge_id, schema.challenges.id));
+    } catch (e: any) {
+        console.error("[-] GetActiveInstances (ssh):", e);
+    }
+
+    let web: any[] = [];
+    try {
+        web = await db.select({
+            challenge_id: schema.web_instances.challenge_id,
+            challenge_name: schema.challenges.name,
+            port: schema.web_instances.port,
+            container_id: schema.web_instances.container_id,
+            created_at: schema.web_instances.created_at,
+        }).from(schema.web_instances)
+        .leftJoin(schema.challenges, eq(schema.web_instances.challenge_id, schema.challenges.id));
+    } catch (e: any) {
+        console.error("[-] GetActiveInstances (web):", e);
+    }
+
+    return [
+        ...nc.map(row => ({ type: 'nc' as const, ...row })),
+        ...ssh.map(row => ({ type: 'ssh' as const, ...row })),
+        ...web.map(row => ({ type: 'web' as const, ...row })),
+    ];
+}
+
+async function isContainerAlive(containerId: string, listPath: string): Promise<boolean> {
+    try {
+        const res = await fetch(`http://ssh-orchestrator:3000/${listPath}`);
+        if (!res.ok) return true;
+        const { container_ids } = await res.json() as { container_ids: string[] };
+        return container_ids.includes(containerId);
+    } catch (e) {
+        console.error(`[-] isContainerAlive (${listPath}):`, e);
+        return true;
+    }
+}
+
+export async function ReconcileInstances() {
+    try {
+        const [sshRes, webRes] = await Promise.all([
+            fetch("http://ssh-orchestrator:3000/list_instances"),
+            fetch("http://ssh-orchestrator:3000/list_web_instances"),
+        ]);
+
+        if (sshRes.ok) {
+            const { container_ids } = await sshRes.json() as { container_ids: string[] };
+            const rows = await db.select({
+                uid: schema.ssh_instance_sessions.uid,
+                container_id: schema.ssh_instance_sessions.container_id,
+            }).from(schema.ssh_instance_sessions);
+
+            for (const row of rows) {
+                if (!container_ids.includes(row.container_id)) {
+                    console.log(`[*] Reconcile: removing orphaned SSH session for uid ${row.uid}`);
+                    await db.delete(schema.ssh_instance_sessions).where(eq(schema.ssh_instance_sessions.uid, row.uid));
+                }
+            }
+        }
+
+        if (webRes.ok) {
+            const { container_ids } = await webRes.json() as { container_ids: string[] };
+            const rows = await db.select({
+                challenge_id: schema.web_instances.challenge_id,
+                container_id: schema.web_instances.container_id,
+            }).from(schema.web_instances);
+
+            for (const row of rows) {
+                if (!container_ids.includes(row.container_id)) {
+                    console.log(`[*] Reconcile: removing orphaned web instance for challenge ${row.challenge_id}`);
+                    await db.delete(schema.web_instances).where(eq(schema.web_instances.challenge_id, row.challenge_id));
+                }
+            }
+        }
+    } catch (e) {
+        console.error("[-] ReconcileInstances:", e);
+    }
+}
+
+export async function EnsureWebInstance(cid: any) {
+    try {
+        const [existing] = await db.select({
+            container_id: schema.web_instances.container_id,
+            port: schema.web_instances.port,
+        }).from(schema.web_instances)
+        .where(eq(schema.web_instances.challenge_id, cid)).limit(1);
+
+        if (existing) {
+            if (await isContainerAlive(existing.container_id, 'list_web_instances')) {
+                return { success: true, port: existing.port };
+            }
+            console.log(`[*] Web instance for challenge ${cid} is orphaned (container gone) - recreating...`);
+            await db.delete(schema.web_instances).where(eq(schema.web_instances.challenge_id, cid));
+        }
+
+        const challenge_data = await db.select({
+            web_image_ref: schema.challenges.web_image_ref,
+            flag: schema.challenges.flag,
+        }).from(schema.challenges)
+        .where(eq(schema.challenges.id, cid)).limit(1);
+
+        if (challenge_data.length === 0) {
+            return { success: false, error: "Challenge Not Found" };
+        } else if (!challenge_data[0].web_image_ref) {
+            return { success: false, error: "Web Instance Not Supported" };
+        }
+
+        const res = await fetch("http://ssh-orchestrator:3000/create_web_instance", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                challenge_id: cid,
+                image_ref: challenge_data[0].web_image_ref,
+                flag_value: await decryptFlag(challenge_data[0].flag),
+            })
+        });
+        const instance_data = await res.json();
+
+        if (instance_data.success) {
+            await db.insert(schema.web_instances).values({
+                challenge_id: cid,
+                container_id: instance_data.container_id,
+                port: instance_data.port,
+            }).onConflictDoUpdate({
+                target: schema.web_instances.challenge_id,
+                set: { container_id: instance_data.container_id, port: instance_data.port },
+            });
+        }
+
+        return instance_data;
+    } catch (e: any) {
+        console.error("[-] EnsureWebInstance:", e);
+        return { success: false, error: "Error Occurred when creating Web Instance" };
+    }
+}
+
+export async function GetWebInstance(cid: any) {
+    try {
+        const [instance] = await db.select({
+            port: schema.web_instances.port,
+        }).from(schema.web_instances)
+        .where(eq(schema.web_instances.challenge_id, cid)).limit(1);
+
+        return instance;
+    } catch (e: any) {
+        console.error("[-] GetWebInstance:", e);
+        return undefined;
+    }
+}
+
+export async function RedeployWebInstance(cid: any) {
+    try {
+        const [existing] = await db.select({
+            container_id: schema.web_instances.container_id,
+        }).from(schema.web_instances)
+        .where(eq(schema.web_instances.challenge_id, cid)).limit(1);
+
+        if (existing) {
+            await fetch("http://ssh-orchestrator:3000/stop_web_instance", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ container_id: existing.container_id })
+            });
+            await db.delete(schema.web_instances)
+                .where(eq(schema.web_instances.challenge_id, cid));
+        }
+
+        return await EnsureWebInstance(cid);
+    } catch (e: any) {
+        console.error("[-] RedeployWebInstance:", e);
+        return { success: false, error: "Error Occurred when redeploying Web Instance" };
+    }
+}
+
+export async function StopWebInstance(cid: any) {
+    try {
+        const [instance] = await db.select({ container_id: schema.web_instances.container_id })
+            .from(schema.web_instances)
+            .where(eq(schema.web_instances.challenge_id, cid)).limit(1);
+
+        if (!instance) {
+            return { success: false, error: "Web Instance Not Found" };
+        }
+
+        const res = await fetch("http://ssh-orchestrator:3000/stop_web_instance", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ container_id: instance.container_id })
+        });
+
+        if (!res.ok) {
+            return { success: false, error: "Failed to stop web instance" };
+        }
+
+        await db.delete(schema.web_instances)
+            .where(eq(schema.web_instances.challenge_id, cid));
+
+        return { success: true, message: "Web Instance stopped" };
+    } catch (e: any) {
+        console.error("[-] StopWebInstance:", e);
+        return { success: false, error: "Error Occurred when stopping Web Instance" };
+    }
+}

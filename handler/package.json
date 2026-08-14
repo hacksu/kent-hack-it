@@ -1,0 +1,9 @@
+{
+	"name": "kent-hack-it-ctf-handler",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"dependencies": {
+		"express": "^5.2.1"
+	}
+}

@@ -1,0 +1,94 @@
+import express from 'express';
+import { exit } from 'process';
+import {
+    CreateSSHInstance, StopInstance,
+    CreateWebInstance, StopWebInstance,
+    ReconcileOnBoot, ListInstances, ListWebInstances,
+} from './orchestrator.js';
+
+const app = express();
+app.use(express.json());
+const port = 3000;
+
+if (!process.env.SSH_MIN_PORT || !process.env.SSH_MAX_PORT) {
+    console.error("[-] Missing values for SSH_MIN_PORT and SSH_MAX_PORT!");
+    exit(1);
+}
+
+if (!process.env.WEB_MIN_PORT || !process.env.WEB_MAX_PORT) {
+    console.error("[-] Missing values for WEB_MIN_PORT and WEB_MAX_PORT!");
+    exit(1);
+}
+
+app.get('/', (req, res) => {
+    return res.status(200).send('SSH Orchestrator Online!');
+});
+
+app.post('/create_instance', async (req, res) => {
+    try {
+        const { uid, image_ref, flag_value } = req.body;
+        const result = await CreateSSHInstance(uid, image_ref, flag_value);
+        return res.status(result.rc).json(result);
+    } catch (err) {
+        console.error("[-] create_instance error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to create SSH instance' });
+    }
+});
+
+app.post('/stop_instance', async (req, res) => {
+    try {
+        const { container_id } = req.body;
+        const result = await StopInstance(container_id);
+        return res.status(result.rc).json(result);
+    } catch (err) {
+        console.error("[-] stop_instance error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to stop SSH instance' });
+    }
+});
+
+app.post('/create_web_instance', async (req, res) => {
+    try {
+        const { challenge_id, image_ref, flag_value } = req.body;
+        const result = await CreateWebInstance(challenge_id, image_ref, flag_value);
+        return res.status(result.rc).json(result);
+    } catch (err) {
+        console.error("[-] create_web_instance error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to create web instance' });
+    }
+});
+
+app.post('/stop_web_instance', async (req, res) => {
+    try {
+        const { container_id } = req.body;
+        const result = await StopWebInstance(container_id);
+        return res.status(result.rc).json(result);
+    } catch (err) {
+        console.error("[-] stop_web_instance error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to stop web instance' });
+    }
+});
+
+app.get('/list_instances', async (req, res) => {
+    try {
+        const containers = await ListInstances();
+        return res.status(200).json({ container_ids: containers.map(c => c.Id) });
+    } catch (err) {
+        console.error("[-] list_instances error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to list SSH instances' });
+    }
+});
+
+app.get('/list_web_instances', async (req, res) => {
+    try {
+        const containers = await ListWebInstances();
+        return res.status(200).json({ container_ids: containers.map(c => c.Id) });
+    } catch (err) {
+        console.error("[-] list_web_instances error:", err);
+        return res.status(500).json({ success: false, error: 'Failed to list web instances' });
+    }
+});
+
+app.listen(port, "0.0.0.0", async () => {
+    console.log("SSH Orchestrator listening on port", port);
+    await ReconcileOnBoot();
+});

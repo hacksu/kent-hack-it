@@ -1,0 +1,2 @@
+ALTER TABLE "instance_sessions" ADD COLUMN "challenge_id" integer;--> statement-breakpoint
+ALTER TABLE "instance_sessions" ADD CONSTRAINT "instance_sessions_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE no action ON UPDATE no action;

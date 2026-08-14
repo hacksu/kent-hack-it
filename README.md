@@ -1,55 +1,101 @@
 # Kent-Hack-It
 Website repo for the Kent Hack It CTF
 
-## What is this?
-The frontend uses ReactJS that communicates to a ExpressJS backend that handles: user login/registration, team creation/joining, and flag submission.
+## Architecture
+KHI is a Svelte project that is compiled into a node project that uses better-auth for OAuth handling and Drizzle-ORM for Postgresql management. For challenge handling we use a mix of sub-containers and nsjail allowing us to host a challenge
+gym. This project is designed for Docker compose deployment.
 
-## :computer: Development Installation
-### :hammer: Install Dependencies
-```bash
-# if you do not have NodeJS installed
-sudo apt update && sudo apt install nodejs npm
+## Developer Section
+Managing [Drizzle ORM](https://orm.drizzle.team/docs/kit-overview)
+```ts
+import { defineConfig } from "drizzle-kit";
+
+// .env file read testing
+console.log(process.env.DB_HOST!);
+console.log(process.env.DB_USER!);
+console.log(process.env.DB_DATABASE!);
+
+export default defineConfig({
+  schema: "./src/lib/database/my-schema.ts",
+  out: "./drizzle",
+  dialect: "...", // supports: postgresql, mysql, sqlite, mssql --> https://orm.drizzle.team/docs/drizzle-config-file#dialect
+  dbCredentials: {
+    host: process.env.DB_HOST!,
+    port: Number(process.env.DB_PORT!),
+    user: process.env.DB_USER!,
+    password: process.env.DB_PASSWORD!,
+    database: process.env.DB_DATABASE!
+  }
+});
 ```
 
-### :wrench: Build
-```bash
-# installs dependencies/packages tracked by this project
-npm install .
-# compile and run the frontend locally
-npm start
+Preparing a .sql file based on a `drizzle.config.ts` config file
+```console
+npx drizzle-kit generate
+```
+To initialize your local PSQL container using psql in the command-line
+```console
+psql -h localhost -u DB_USER -p -d DB_DATABASE < file.sql
 ```
 
-Move the web related `.env` file into the project root directory, then run the following to run the backend locally.
-```bash
-nodejs backend/server.mjs
+Running the website in developer mode, make sure you have a local `.env` file
+containing the following:
+```text
+# false allows admins to test user actions without using a non-admin account
+PROD=false
+
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=
+
+PG_HOST=postgres
+PG_ADMIN_USER=
+PG_ADMIN_PASSWORD=
+PG_USER=
+PG_PASSWORD=
+PG_DATABASE=
+
+HACKSU_GUILD_ID=
+KHI_ADM_ROLE=
+
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+SSH_IMAGE_REGISTRY=
+SSH_REGISTRY_USER=
+SSH_REGISTRY_PASSWORD=
+
+JAIL_MIN_PORT=
+JAIL_MAX_PORT=
+SSH_MIN_PORT=
+SSH_MAX_PORT=
+WEB_MIN_PORT=
+WEB_MAX_PORT=
+
+# use produced string from "openssl rand -hex 32"
+FLAG_ENCRYPTION_KEY=
+
+# optional regarding build using compose
+UPLOADS_DIR=
+BIN_UPLOADS_DIR=
+JAIL_CONF_DIR=
 ```
 
-## :chart_with_upwards_trend: Production
-This project uses Docker :whale: for production set-up
+When creating challenges as an admin, you can link either an uploaded jail configuration or a registered challenge image.
+For more information regarding jail configurations click [here](./handler/HANDLER.md) to view documentation.
 
-**docker-compose became deprecated within latest versions of Ubuntu and some python packages have became deprecated**
-
-[> Jump to Latest Docker Compose](#how-to-use-docker-compose-on-latest-ubuntu-installs)
-
-```bash
-sudo apt update && sudo apt install docker.io docker-compose
-```
-The following commands will build the docker via compose which builds the multi-docker system.
-You will need to move the `.env` into the project root folder before running the following:
-```bash
-docker network create traefik
-docker-compose --env-file .env -p khi -f docker/docker-compose.yml up --build
+Running the svelte application
+```console
+bun install
+bun run dev -- --open
 ```
 
-### How to use docker compose on latest Ubuntu installs:
-- Follow install instructions from [Install Documentation](https://docs.docker.com/engine/install/ubuntu/)
-
-If the command `docker compose version` does not work go to the [releases page](https://github.com/docker/compose/releases) and find correct version
-```bash
-curl -SL https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
-chmod +x ~/.docker/cli-plugins/docker-compose
-```
-Prepare and run Docker container
-```bash
-docker compose --env-file .env -p khi -f docker/docker-compose.yml up --build
+If you'd prefer running the compose locally
+```console
+docker compose down -v && docker compose up -d --build
 ```

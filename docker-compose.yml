@@ -1,0 +1,194 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: psql_khi
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./psql/Dockerfile
+    environment:
+      POSTGRES_USER: ${PG_ADMIN_USER}
+      POSTGRES_PASSWORD: ${PG_ADMIN_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE}
+      DB_USER: ${PG_USER}
+      DB_USER_PASSWORD: ${PG_PASSWORD}
+      DB_NAME: ${PG_DATABASE}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_ADMIN_USER} -d ${PG_DATABASE}"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - khi_psql_data:/var/lib/postgresql/data
+      - ./psql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    networks:
+      - app_internal
+
+  handler:
+    container_name: handler_khi
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./handler/Dockerfile
+    environment:
+      MIN_PORT: ${JAIL_MIN_PORT}
+      MAX_PORT: ${JAIL_MAX_PORT}
+      BIN_UPLOADS_DIR: /app/ctf
+      JAIL_CONF_DIR: /app/nsjail_confs
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=./handler/seccomp-nsjail.json
+      - apparmor:unconfined
+    ports:
+      - "${JAIL_MIN_PORT}-${JAIL_MAX_PORT}:${JAIL_MIN_PORT}-${JAIL_MAX_PORT}"
+      - "3000"
+    volumes:
+      - khi_jail_files:/app/nsjail_confs
+      - khi_ctf_exec_files:/app/ctf
+      - khi_jobs:/app/jobs
+    networks:
+      # handler does not need to be on the same network as the database
+      - handler_net
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: docker_socket_proxy_khi
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      POST: 1
+      IMAGES: 1
+      NETWORKS: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - docker_proxy_net
+
+  ssh-orchestrator:
+    container_name: ssh_orchestrator_khi
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./ssh-orchestrator/Dockerfile
+    environment:
+      DOCKER_PROXY_HOST: docker-socket-proxy
+      DOCKER_PROXY_PORT: 2375
+      SSH_MIN_PORT: ${SSH_MIN_PORT}
+      SSH_MAX_PORT: ${SSH_MAX_PORT}
+      WEB_MIN_PORT: ${WEB_MIN_PORT}
+      WEB_MAX_PORT: ${WEB_MAX_PORT}
+      SSH_INSTANCE_MINUTES: ${SSH_INSTANCE_MINUTES:-45}
+      SSH_INSTANCE_CPU_NANOS: ${SSH_INSTANCE_CPU_NANOS:-1000000000}
+      SSH_INSTANCE_MEM_BYTES: ${SSH_INSTANCE_MEM_BYTES:-268435456}
+      SSH_INSTANCE_PIDS_LIMIT: ${SSH_INSTANCE_PIDS_LIMIT:-128}
+      WEB_INSTANCE_CPU_NANOS: ${WEB_INSTANCE_CPU_NANOS:-1000000000}
+      WEB_INSTANCE_MEM_BYTES: ${WEB_INSTANCE_MEM_BYTES:-268435456}
+      WEB_INSTANCE_PIDS_LIMIT: ${WEB_INSTANCE_PIDS_LIMIT:-128}
+      SSH_IMAGE_REGISTRY: ${SSH_IMAGE_REGISTRY:-}
+      SSH_REGISTRY_USER: ${SSH_REGISTRY_USER:-}
+      SSH_REGISTRY_PASSWORD: ${SSH_REGISTRY_PASSWORD:-}
+      SSH_IMAGE_PREFIX: ${SSH_IMAGE_PREFIX:-khi-ssh/}
+      WEB_IMAGE_PREFIX: ${WEB_IMAGE_PREFIX:-khi-web/}
+    networks:
+      - ssh_orch_net
+      - docker_proxy_net
+
+  migrate:
+    container_name: migrate_khi
+    build:
+      context: .
+      dockerfile: ./migrate/Dockerfile
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: ${PG_ADMIN_USER}
+      PG_PASSWORD: ${PG_ADMIN_PASSWORD}
+      PG_DATABASE: ${PG_DATABASE}
+      DB_USER: ${PG_USER}
+    networks:
+      - app_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    container_name: web_khi
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      # Svelte's CSRF is extremely annoying if ORIGIN is not present
+      ORIGIN: ${BETTER_AUTH_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      PG_DATABASE: ${PG_DATABASE}
+
+      HACKSU_GUILD_ID: ${HACKSU_GUILD_ID}
+      KHI_ADM_ROLE: ${KHI_ADM_ROLE}
+
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
+      UPLOADS_DIR: /app/uploads
+      BIN_UPLOADS_DIR: /app/ctf
+      JAIL_CONF_DIR: /app/nsjail_confs
+      
+      CHALLENGE_HOST: ${CHALLENGE_HOST:-ctf.hacksu.com}
+      FLAG_ENCRYPTION_KEY: ${FLAG_ENCRYPTION_KEY}
+      TESTING_READ: "C++ is the Best Language, the very best."
+
+      SSH_IMAGE_REGISTRY: ${SSH_IMAGE_REGISTRY:-}
+      SSH_REGISTRY_USER: ${SSH_REGISTRY_USER:-}
+      SSH_REGISTRY_PASSWORD: ${SSH_REGISTRY_PASSWORD:-}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.khi.rule=Host(`ctf.hacksu.com`)"
+      - "traefik.http.routers.khi.entrypoints=websecure"
+      - "traefik.http.routers.khi.tls.certresolver=letsencrypt"
+      - "traefik.http.services.khi.loadbalancer.server.port=80"
+    ports:
+      - "3333:3000" # dev only
+    volumes:
+      - khi_uploads:/app/uploads
+      - khi_ctf_exec_files:/app/ctf
+      - khi_jail_files:/app/nsjail_confs
+      # temp volume (destroyed on recompose on dokploy)
+      - ./khi_web_logs:/var/log/nginx
+    networks:
+      - app_internal
+      - handler_net
+      - ssh_orch_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  khi_psql_data:
+  khi_uploads:
+  khi_ctf_exec_files:
+  khi_jail_files:
+  khi_jobs:
+
+networks:
+  app_internal:
+  handler_net:
+  docker_proxy_net:
+  ssh_orch_net:
