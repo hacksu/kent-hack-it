@@ -1,7 +1,6 @@
 services:
   postgres:
     image: postgres:16
-    container_name: psql_khi
     restart: unless-stopped
     build:
       context: .
@@ -28,7 +27,6 @@ services:
       - app_internal
 
   handler:
-    container_name: handler_khi
     restart: unless-stopped
     build:
       context: .
@@ -56,7 +54,6 @@ services:
 
   docker-socket-proxy:
     image: tecnativa/docker-socket-proxy
-    container_name: docker_socket_proxy_khi
     restart: unless-stopped
     environment:
       CONTAINERS: 1
@@ -69,7 +66,6 @@ services:
       - docker_proxy_net
 
   ssh-orchestrator:
-    container_name: ssh_orchestrator_khi
     restart: unless-stopped
     build:
       context: .
@@ -98,7 +94,6 @@ services:
       - docker_proxy_net
 
   migrate:
-    container_name: migrate_khi
     build:
       context: .
       dockerfile: ./migrate/Dockerfile
@@ -116,7 +111,6 @@ services:
         condition: service_healthy
 
   app:
-    container_name: web_khi
     restart: unless-stopped
     build:
       context: .
@@ -162,8 +156,6 @@ services:
       - "traefik.http.routers.khi.entrypoints=websecure"
       - "traefik.http.routers.khi.tls.certresolver=letsencrypt"
       - "traefik.http.services.khi.loadbalancer.server.port=80"
-    ports:
-      - "3333:3000" # dev only
     volumes:
       - khi_uploads:/app/uploads
       - khi_ctf_exec_files:/app/ctf
