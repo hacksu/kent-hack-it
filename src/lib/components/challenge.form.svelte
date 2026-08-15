@@ -8,6 +8,7 @@
     import { Label } from "$lib/components/ui/label";
     import { Textarea } from "$lib/components/ui/textarea";
     import { Button } from "$lib/components/ui/button";
+    import * as Select from '$lib/components/ui/select';
     import Eye from "@lucide/svelte/icons/eye";
     import EyeOff from "@lucide/svelte/icons/eye-off";
 
@@ -32,6 +33,24 @@
         registry_images: RegistryImages,
         requireFlag: boolean
     } = $props();
+
+    const challenge_catagory: string[] = [
+        "Web Exploitation",
+        "Cryptography",
+        "Reverse Engineering",
+        "Privilege Escalation",
+        "Forensics",
+        "Steganography",
+        "Binary Exploitation",
+        "General"
+    ];
+    const challenge_difficulty: string[] = [
+        "Simple",
+        "Easy",
+        "Medium",
+        "Hard",
+        "Extreme"
+    ];
 
     // form fields are seeded once from the initial `challenge` prop (create vs.
     // edit), then locally editable - not meant to track the prop reactively
@@ -382,39 +401,32 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div class="mb-3 space-y-1.5">
                         <Label for="category" class="font-semibold">Category</Label>
-                        <select
-                            id="category"
-                            class={selectClass}
-                            name="category" required
-                            bind:value={category}
-                        >
-                            <option value="" disabled>Select Category</option>
-                            <option value="Web Exploitation">Web Exploitation</option>
-                            <option value="Cryptography">Cryptography</option>
-                            <option value="Reverse Engineering">Reverse Engineering</option>
-                            <option value="Privilege Escalation">Privilege Escalation</option>
-                            <option value="Forensics">Forensics</option>
-                            <option value="Steganography">Steganography</option>
-                            <option value="Binary Exploitation">Binary Exploitation</option>
-                            <option value="General">General</option>
-                        </select>
+
+                        <Select.Root type="single" bind:value={category} name="category" required={true}>
+                            <Select.Trigger class="w-full">
+                                {category || "Select category"}
+                            </Select.Trigger>
+                            <Select.Content>
+                                {#each challenge_catagory as t}
+                                    <Select.Item value={t}>{t}</Select.Item>
+                                {/each}
+                            </Select.Content>
+                        </Select.Root>
                     </div>
 
                     <div class="mb-3 space-y-1.5">
                         <Label for="difficulty" class="font-semibold">Difficulty</Label>
-                        <select
-                            id="difficulty"
-                            class={selectClass}
-                            name="difficulty" required
-                            bind:value={difficulty}
-                        >
-                            <option value="" disabled>Select difficulty</option>
-                            <option value="Simple">Simple</option>
-                            <option value="Easy">Easy</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Hard">Hard</option>
-                            <option value="Extreme">Extreme</option>
-                        </select>
+
+                        <Select.Root type="single" bind:value={difficulty} name="difficulty" required={true}>
+                            <Select.Trigger class="w-full">
+                                {difficulty || "Select difficulty"}
+                            </Select.Trigger>
+                            <Select.Content>
+                                {#each challenge_difficulty as diff}
+                                    <Select.Item value={diff}>{diff}</Select.Item>
+                                {/each}
+                            </Select.Content>
+                        </Select.Root>
                     </div>
                 </div>
 

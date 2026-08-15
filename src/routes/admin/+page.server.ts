@@ -1,3 +1,4 @@
+import { fromZonedTime } from 'date-fns-tz';
 import { redirect, fail } from '@sveltejs/kit';
 import { isAdmin } from '$lib/server/auth'
 import {
@@ -21,6 +22,7 @@ import { join, basename } from "path";
 import type { ChallengeForm } from "$lib/database/db";
 import { SHA256 } from '$lib/utilities';
 import { encryptFlag } from '$lib/server/flag-crypto';
+import { MAX_UPLOAD_FILE_SIZE } from '$lib/upload-limits';
 
 const uploadDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
 const binUploadDir = process.env.BIN_UPLOADS_DIR ?? join(process.cwd(), "ctf");
@@ -210,14 +212,16 @@ export const actions = {
             const form = await request.formData();
             const formData = Object.fromEntries(form.entries()) as Record<string, string>;
 
-            const start_date = new Date(formData['start-date']);
+            const start_date = fromZonedTime(formData['start-date'], 'America/New_York');
             const evt_duration = formData['event-length'];
-            const activation = formData['activation-status'].toLowerCase() === "true";
+            const event_status = formData['event-status'].toLowerCase() === "true";
+            const gym_status = formData['gym-status'].toLowerCase() === "true";
 
             return await UpdateConfiguration({
                 event_start: start_date,
                 event_length: Number(evt_duration),
-                site_active: activation
+                event_active: event_status,
+                gym_active: gym_status
             });
         } catch (e) {
             console.error(`[-] Update_Config -> ${e}`);
@@ -239,10 +243,8 @@ export const actions = {
             });
 
             // check for file sizes and remove large files
-            const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12 MB
-
-            const largeFiles = files.filter(f => f.size > MAX_FILE_SIZE);
-            files = files.filter(f => f.size <= MAX_FILE_SIZE);
+            const largeFiles = files.filter(f => f.size > MAX_UPLOAD_FILE_SIZE);
+            files = files.filter(f => f.size <= MAX_UPLOAD_FILE_SIZE);
 
             if (files.length === 0 || files.every(f => f.size === 0)) {
                 return { 
@@ -311,10 +313,8 @@ export const actions = {
             });
 
             // check for file sizes and remove large files
-            const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12 MB
-
-            const largeFiles = files.filter(f => f.size > MAX_FILE_SIZE);
-            files = files.filter(f => f.size <= MAX_FILE_SIZE);
+            const largeFiles = files.filter(f => f.size > MAX_UPLOAD_FILE_SIZE);
+            files = files.filter(f => f.size <= MAX_UPLOAD_FILE_SIZE);
 
             if (files.length === 0 || files.every(f => f.size === 0)) {
                 return { 
@@ -361,10 +361,8 @@ export const actions = {
             });
 
             // check for file sizes and remove large files
-            const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12 MB
-
-            const largeFiles = files.filter(f => f.size > MAX_FILE_SIZE);
-            files = files.filter(f => f.size <= MAX_FILE_SIZE);
+            const largeFiles = files.filter(f => f.size > MAX_UPLOAD_FILE_SIZE);
+            files = files.filter(f => f.size <= MAX_UPLOAD_FILE_SIZE);
 
             if (files.length === 0 || files.every(f => f.size === 0)) {
                 return { 

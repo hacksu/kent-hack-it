@@ -4,7 +4,7 @@ import { env } from "$env/dynamic/private";
 
 import {
     GetProgress, GetChallenges, CheckFlag,
-    IsSiteActive, GetCompletions, GetSolversCount,
+    GetCompletions, GetSolversCount,
     SubmitRating, GetRated,
     CreateInstance, CreateSSHInstance,
     type ViewableChallengeData,
@@ -65,17 +65,12 @@ export const actions = {
         const uid = session.user.id;
 
         if (!flag_value || !cid) {
-            return { success: false, message: !await IsSiteActive() ? 'No flag submitted' : 'Not accepting flags at this time' };
+            return { success: false, message: 'No flag submitted' };
         }
 
-        console.log(`[${uid}] Checking Flag (${cid})`);
-
         try {
-            if (!await IsSiteActive()) {
-                return { success: false, message: 'Not accepting flags at this time' };
-            } else {
-                return await CheckFlag(uid, cid, flag_value);
-            }
+            console.log(`[${uid}] Checking Flag (${cid})`);
+            return await CheckFlag(uid, cid, flag_value);
         } catch (e) {
             console.error(`[-] Submit Flag -> ${e}`);
             return fail(500, { success: false, error: 'An error occurred while adding the challenge' });
@@ -106,7 +101,7 @@ export const actions = {
         const uid = session.user.id;
         
         if (!formData.rating || !cid) {
-            return { success: false, message: !await IsSiteActive() ? 'No rating submitted' : 'Not accepting ratings at this time' };
+            return { success: false, message: 'Not accepting ratings at this time' };
         }
         
         const rating = Number(formData.rating);
@@ -116,12 +111,8 @@ export const actions = {
         }
 
         try {
-            if (!await IsSiteActive()) {
-                return { success: false, message: 'Not accepting ratings at this time' };
-            } else {
-                console.log("[*] Attempting to Submit a Rating");
-                return await SubmitRating(uid, cid, rating);
-            }
+            console.log("[*] Attempting to Submit a Rating");
+            return await SubmitRating(uid, cid, rating);
         } catch (e) {
             console.error(`[-] Submit Rating -> ${e}`);
             return fail(500, { success: false, error: 'An error occurred while rating the challenge' });
@@ -143,14 +134,10 @@ export const actions = {
         const uid = session.user.id;
 
         try {
-            if (!await IsSiteActive()) {
-                return { success: false, message: 'Cannot create Instances at this time, try again later!' };
-            } else {
-                console.log("[*] Attempting to prepare Instance");
-                const instance_data = await CreateInstance(uid, cid);
-                console.log(instance_data);
-                return instance_data;
-            }
+            console.log("[*] Attempting to prepare Instance");
+            const instance_data = await CreateInstance(uid, cid);
+            console.log(instance_data);
+            return instance_data;
         } catch (e) {
             console.error(`[-] Create Instance -> ${e}`);
             return fail(500, { success: false, error: 'An error occurred while preparing Instance' });
@@ -172,14 +159,10 @@ export const actions = {
         const uid = session.user.id;
 
         try {
-            if (!await IsSiteActive()) {
-                return { success: false, message: 'Cannot create Instances at this time, try again later!' };
-            } else {
-                console.log("[*] Attempting to prepare SSH Instance");
-                const instance_data = await CreateSSHInstance(uid, cid);
-                console.log(instance_data);
-                return instance_data;
-            }
+            console.log("[*] Attempting to prepare SSH Instance");
+            const instance_data = await CreateSSHInstance(uid, cid);
+            console.log(instance_data);
+            return instance_data;
         } catch (e) {
             console.error(`[-] Create SSH Instance -> ${e}`);
             return fail(500, { success: false, error: 'An error occurred while preparing SSH Instance' });

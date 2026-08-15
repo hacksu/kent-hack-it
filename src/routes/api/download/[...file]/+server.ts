@@ -1,13 +1,15 @@
-import { error } from "@sveltejs/kit";
+import { error, redirect } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 
 import { join, basename, normalize } from "path";
 import { readFile } from "fs/promises";
-import { IsSiteActive } from "$lib/database/db";
+import { auth } from "$lib/server/auth";
 
-export const GET: RequestHandler = async ({ params, url }) => {
-    if (!await IsSiteActive())
-        throw error(503, "Site Inactive (Download Unavailable)");
+export const GET: RequestHandler = async ({ params, url, request }) => {
+    // need to be authenticated to access downloadables
+    const session = await auth.api.getSession({ headers: request.headers });
+    const user = session?.user;
+    if (!user) throw redirect(303, '/auth/login');
 
     const type = url.searchParams.get('t');
     let basePath = "";
@@ -18,10 +20,20 @@ export const GET: RequestHandler = async ({ params, url }) => {
         basePath = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
         contentType = "application/zip";
     } else if (type === 'bin') {
+
+        // only admins need access to these resources
+        if (user.role !== 'admin')
+            throw error(401, '/');
+
         // search from binaries directory
         basePath = process.env.BIN_UPLOADS_DIR ?? join(process.cwd(), "ctf");
         contentType = "application/octet-stream";
     } else if (type === "nsjail") {
+
+        // only admins need access to these resources
+        if (user.role !== 'admin')
+            throw error(401, '/');
+
         basePath = process.env.JAIL_CONF_DIR ?? join(process.cwd(), "nsjail_confs");
         // we want json files to be downloaded not just displayed on screen
         contentType = "application/octet-stream";

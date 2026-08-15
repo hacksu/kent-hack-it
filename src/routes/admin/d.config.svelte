@@ -25,7 +25,9 @@
     let success = $state("");
 
     const { config } = $props();
-    let activation_status = $state(untrack(() => config?.site_active ?? false));
+
+    let event_status = $state(untrack(() => config?.event_active ?? false));
+    let gym_status = $state(untrack(() => config?.gym_active ?? false));
 
     let originalStart = $state(untrack(() => config?.event_start ? (() => {
         const d = new Date(config.event_start);
@@ -33,7 +35,9 @@
         return d.toISOString().slice(0, 16);
     })() : ''));
     let originalLength = $state(untrack(() => config?.event_length ?? 7));
-    let originalActive = $state(untrack(() => config?.site_active ?? false));
+
+    let originalEventActive = $state(untrack(() => config?.event_active ?? false));
+    let originalGymActive = $state(untrack(() => config?.gym_active ?? false));
 
     let currentStart  = $state(untrack(() => originalStart));
     let currentLength = $state(untrack(() => originalLength));
@@ -41,21 +45,25 @@
     let isDirty = $derived(
         currentStart !== originalStart ||
         currentLength !== originalLength ||
-        activation_status !== originalActive
+        event_status !== originalEventActive ||
+        gym_status !== originalGymActive
     );
 
     function resync() {
         const updated = new Date(config.event_start);
         updated.setMinutes(updated.getMinutes() - updated.getTimezoneOffset());
 
+        event_status = originalEventActive = config.event_active;
+        gym_status = originalGymActive = config.gym_active;
+
         currentStart  = updated.toISOString().slice(0, 16);
         currentLength = config.event_length;
-        activation_status = config.site_active;
 
         // update the baseline so isDirty resets
         originalStart  = currentStart;
         originalLength = currentLength;
-        originalActive = config.site_active;
+
+        console.log(config);
     }
 </script>
 
@@ -87,8 +95,11 @@
                     {#if isDirty}
                         <Badge class="bg-amber-500/15 text-amber-500">Unsaved</Badge>
                     {/if}
-                    <Badge variant={activation_status ? 'default' : 'secondary'}>
-                        {activation_status ? "Active" : "Inactive"}
+                    <Badge variant={event_status ? 'default' : 'secondary'}>
+                        Event: {event_status ? "Active" : "Inactive"}
+                    </Badge>
+                    <Badge variant={gym_status ? 'default' : 'secondary'}>
+                        Gym: {gym_status ? "Active" : "Inactive"}
                     </Badge>
                 </div>
             </Card.Header>
@@ -136,31 +147,42 @@
                         />
                     </div>
 
-                    <input type="hidden" name="activation-status" value={activation_status ? "true" : "false"} />
+                    <input type="hidden" name="event-status" value={event_status ? "true" : "false"} />
+                    <input type="hidden" name="gym-status" value={gym_status ? "true" : "false"} />
 
                     <Separator class="my-3" />
 
                     <div class="flex gap-2">
                         <Button
                             type="button"
-                            variant={activation_status ? 'destructive' : 'outline'}
+                            variant={event_status ? 'default' : 'outline'}
                             class="w-1/2"
-                            onclick={() => { activation_status = !activation_status }}
+                            onclick={() => { event_status = !event_status }}
                         >
                             <Power class="h-3.5 w-3.5" />
-                            {activation_status ? "Disable site" : "Enable site"}
+                            {event_status ? "Disable Event" : "Enable Event"}
                         </Button>
 
                         <Button
-                            type="submit"
-                            variant={isDirty ? 'default' : 'outline'}
+                            type="button"
+                            variant={gym_status ? 'default' : 'outline'}
                             class="w-1/2"
-                            disabled={!isDirty}
+                            onclick={() => { gym_status = !gym_status }}
                         >
-                            <Save class="h-3.5 w-3.5" />
-                            Save changes
+                            <Power class="h-3.5 w-3.5" />
+                            {gym_status ? "Disable Gym" : "Enable Gym"}
                         </Button>
                     </div>
+
+                    <Button
+                        type="submit"
+                        variant={isDirty ? 'default' : 'outline'}
+                        class="mt-2 w-full"
+                        disabled={!isDirty}
+                    >
+                        <Save class="h-3.5 w-3.5" />
+                        Save changes
+                    </Button>
 
                 </form>
             </Card.Content>
