@@ -12,14 +12,13 @@ RUN bun install --frozen-lockfile && \
     bun run build
 
 FROM nginx:latest
-RUN apt-get update && apt-get install -y supervisor net-tools && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y supervisor net-tools gettext-base && rm -rf /var/lib/apt/lists/*
 COPY --from=build /usr/local/bin/bun /usr/local/bin/bun
 
 # prepare necessary directories
 RUN mkdir -p /app
 
-# replace nginx config file
-COPY khi.conf /etc/nginx/conf.d/default.conf
+COPY khi.conf.template /etc/nginx/khi.conf.template
 
 WORKDIR /app
 COPY --from=build /app/build ./build
