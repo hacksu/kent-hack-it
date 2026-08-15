@@ -142,7 +142,10 @@ services:
       UPLOADS_DIR: /app/uploads
       BIN_UPLOADS_DIR: /app/ctf
       JAIL_CONF_DIR: /app/nsjail_confs
-      
+
+      PUBLIC_MAX_UPLOAD_SIZE_MB: ${PUBLIC_MAX_UPLOAD_SIZE_MB:-50}
+      BODY_SIZE_LIMIT: ${PUBLIC_MAX_UPLOAD_SIZE_MB:-50}M
+
       CHALLENGE_HOST: ${CHALLENGE_HOST:-ctf.hacksu.com}
       FLAG_ENCRYPTION_KEY: ${FLAG_ENCRYPTION_KEY}
       TESTING_READ: "C++ is the Best Language, the very best."

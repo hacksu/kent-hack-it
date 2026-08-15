@@ -11,6 +11,8 @@ server {
     listen 80;
     server_name ctf.hacksu.com dev.ctf.hacksu.com;
 
+    client_max_body_size ${PUBLIC_MAX_UPLOAD_SIZE_MB}m;
+
     # block access to all hidden files
     location ~ /\. {
         return 404;

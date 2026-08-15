@@ -8,6 +8,7 @@
     import ChevronDown from "@lucide/svelte/icons/chevron-down";
     import LoaderCircle from "@lucide/svelte/icons/loader-circle";
     import Trash2 from "@lucide/svelte/icons/trash-2";
+    import { MAX_UPLOAD_FILE_SIZE, MAX_UPLOAD_SIZE_MB } from "$lib/upload-limits";
 
     let {
         summaryText,
@@ -46,8 +47,6 @@
     }
 
     function handleFileInput(e: Event) {
-        const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12 MB
-
         const input = e.target as HTMLInputElement;
         const picked = Array.from(input.files ?? []);
 
@@ -69,9 +68,9 @@
             }
         }
 
-        const tooBig = picked.filter(f => f.size > MAX_FILE_SIZE);
+        const tooBig = picked.filter(f => f.size > MAX_UPLOAD_FILE_SIZE);
         if (tooBig.length > 0) {
-            error = `Files exceed 12 MB limit: ${tooBig.map(f => f.name).join(", ")}`;
+            error = `Files exceed ${MAX_UPLOAD_SIZE_MB} MB limit: ${tooBig.map(f => f.name).join(", ")}`;
             if (fileInput) fileInput.value = "";
             selectedFiles = [];
             return;
