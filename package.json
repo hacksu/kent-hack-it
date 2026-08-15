@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-        "test": "bun test",
+		"test": "bun test",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -34,6 +34,7 @@
 		"better-auth": "^1.6.24",
 		"bits-ui": "^2.18.1",
 		"clsx": "^2.1.1",
+		"date-fns-tz": "^3.2.0",
 		"dotenv": "^17.4.2",
 		"drizzle-orm": "^0.45.2",
 		"mode-watcher": "^1.1.0",

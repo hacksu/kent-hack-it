@@ -159,9 +159,10 @@ export const team_requests = pgTable("team_requests", {
 // only ever expect a single row to be in this table
 export const event_config = pgTable("event_config", {
     name: varchar("name", { length: 8 }).default("config").primaryKey(),
-    site_active: boolean("site_active").default(false).notNull(),    // controls if players can both see EVENT challenges and EVENT submit flags
-    event_start: timestamp("event_start").defaultNow().notNull(),    // after this time EVENT challenges and flags can be interacted with by players
-    event_length: integer("event_length").default(7).notNull()       // allows dynamic changing of event length incase we do a shorter or longer event
+    event_active: boolean("event_active").default(false).notNull(),     // controls if players can both see EVENT challenges and EVENT submit flags
+    gym_active: boolean("gym_active").default(false).notNull(),         // controls if players can both see GYM challenges and GYM submit flags
+    event_start: timestamp("event_start").defaultNow().notNull(),       // after this time EVENT challenges and flags can be interacted with by players
+    event_length: integer("event_length").default(7).notNull()          // allows dynamic changing of event length incase we do a shorter or longer EVENT
 });
 
 // one user can have only one instance at a time

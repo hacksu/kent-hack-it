@@ -163,9 +163,6 @@ export async function GetChallenges(is_admin: boolean, grab_mode: number = 0) {
     try {
         const selection = is_admin ? undefined : publicChallengeData;
 
-        if (!await IsSiteActive() && !is_admin)
-            return undefined;
-
         const q = (where?: any) => {
             const base = selection
                 ? db.select(selection).from(schema.challenges)
@@ -174,11 +171,23 @@ export async function GetChallenges(is_admin: boolean, grab_mode: number = 0) {
         };
 
         // grab all
-        if (grab_mode === 0) return await q();
+        if (grab_mode === 0 && is_admin)
+            return await q();
+
         // grab only event
-        if (grab_mode === 1) return await q(eq(schema.challenges.is_gym, false));
+        if (grab_mode === 1) {
+            if (!await IsEventActive() && !is_admin)
+                return undefined;
+            return await q(eq(schema.challenges.is_gym, false));
+        }
+
         // grab only gym
-        if (grab_mode === 2) return await q(eq(schema.challenges.is_gym, true));
+        if (grab_mode === 2) {
+            if (!await IsGymActive() && !is_admin)
+                return undefined;
+            return await q(eq(schema.challenges.is_gym, true));
+        }
+
         return undefined;
     } catch (error) {
         console.error('Failed to insert challenge:', error);
@@ -231,13 +240,18 @@ export async function ToggleChallenge(id: any, set_enabled: boolean, set_gym: bo
  */
 export async function GetChallenge(id: any) {
     try {
-        if (!await IsSiteActive())
-            return [];
 
-        return await db.select(publicChallengeData)
+        const res = await db.select(publicChallengeData)
                         .from(schema.challenges)
                         .where(eq(schema.challenges.id, id))
                         .limit(1);
+
+        if (!await IsEventActive() && !res[0].is_gym)
+            return [];
+        if (!await IsGymActive() && res[0].is_gym)
+            return [];
+
+        return res;
     } catch (error) {
         console.error(`Failed to fetch challenge (${id}):`, error);
         return [];
@@ -660,11 +674,24 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
             nsjail_conf: schema.challenges.nsjail_conf,
             image_ref: schema.challenges.image_ref,
             web_image_ref: schema.challenges.web_image_ref,
+            is_gym: schema.challenges.is_gym,
+            is_active: schema.challenges.is_active
         }).from(schema.challenges).where(eq(schema.challenges.id, cid)).limit(1);
 
         if (c_data.length === 0) {
             console.error("Error occurred challenge not found!");
             return { success: false, message: 'Error Occurred' };
+        }
+
+        // handle conditions where flags are rejected
+        if (!c_data[0].is_active) {
+            return { success: false, message: 'Not accepting flags at this time' };
+        }
+        if (!IsEventActive() && !c_data[0].is_gym) {
+            return { success: false, message: 'Not accepting flags at this time' };
+        }
+        if (!IsGymActive() && c_data[0].is_gym) {
+            return { success: false, message: 'Not accepting flags at this time' };
         }
 
         console.log("[*] Verifying Flag");
@@ -737,13 +764,29 @@ export async function SubmitRating(uid: any, cid: any, rating: number): Promise<
         }
 
         const [challenge] = await db
-            .select({ rating: schema.challenges.rating, user_rates: schema.challenges.user_rates })
+            .select({
+                rating: schema.challenges.rating,
+                user_rates: schema.challenges.user_rates,
+                is_gym: schema.challenges.is_gym,
+                is_active: schema.challenges.is_active
+            })
             .from(schema.challenges)
             .where(eq(schema.challenges.id, cid))
             .limit(1);
 
         if (!challenge) {
             return { success: false, message: 'Challenge not found' };
+        }
+
+        // handle conditions where flags are rejected
+        if (!challenge.is_active) {
+            return { success: false, message: 'Not accepting ratings at this time' };
+        }
+        if (!IsEventActive() && !challenge.is_gym) {
+            return { success: false, message: 'Not accepting ratings at this time' };
+        }
+        if (!IsGymActive() && challenge.is_gym) {
+            return { success: false, message: 'Not accepting ratings at this time' };
         }
 
         const prevCount  = challenge.user_rates?.length ?? 0;
@@ -1325,14 +1368,28 @@ export async function GetConfiguration() {
     }
 }
 
-export async function IsSiteActive() {
+export async function IsEventActive() {
     try {
-        const [data] = await db.select({ status: schema.event_config.site_active })
+        const [data] = await db.select({ event_status: schema.event_config.event_active })
                 .from(schema.event_config)
                 .where(eq(schema.event_config.name, "config"))
                 .limit(1);
-        console.log("[SITE-ONLINE]", data.status);
-        return data.status;
+        console.log("[EVENT-ONLINE]", data.event_status);
+        return data.event_status;
+    } catch (e: any) {
+        console.error("[-] Error", e);
+        return false;
+    }
+}
+
+export async function IsGymActive() {
+    try {
+        const [data] = await db.select({ gym_status: schema.event_config.gym_active })
+                .from(schema.event_config)
+                .where(eq(schema.event_config.name, "config"))
+                .limit(1);
+        console.log("[GYM-ONLINE]", data.gym_status);
+        return data.gym_status;
     } catch (e: any) {
         console.error("[-] Error", e);
         return false;
@@ -1342,14 +1399,16 @@ export async function IsSiteActive() {
 export async function UpdateConfiguration(data: {
     event_start: Date,
     event_length: number,
-    site_active: boolean
+    event_active: boolean,
+    gym_active: boolean
 }) {
     try {
         await db.update(schema.event_config)
             .set({
                 event_start: data.event_start,
                 event_length: data.event_length,
-                site_active: data.site_active,
+                event_active: data.event_active,
+                gym_active: data.gym_active,
             })
             .where(eq(schema.event_config.name, 'config'));
 
@@ -1573,6 +1632,8 @@ export async function CreateInstance(uid: any, cid: any) {
             name: schema.challenges.name,
             nsjail_conf: schema.challenges.nsjail_conf,
             flag_value: schema.challenges.flag,
+            is_gym: schema.challenges.is_gym,
+            is_active: schema.challenges.is_active
         }).from(schema.challenges)
         .where(eq(schema.challenges.id, cid)).limit(1);
 
@@ -1581,7 +1642,20 @@ export async function CreateInstance(uid: any, cid: any) {
                 success: false,
                 error: "Challenge Not Found"
             }
-        } else if (!challenge_data[0].nsjail_conf) {
+        }
+        
+        // handle conditions where flags are rejected
+        if (!challenge_data[0].is_active) {
+            return { success: false, message: 'Instance Unavailable' };
+        }
+        if (!IsEventActive() && !challenge_data[0].is_gym) {
+            return { success: false, message: 'Instance Unavailable' };
+        }
+        if (!IsGymActive() && challenge_data[0].is_gym) {
+            return { success: false, message: 'Instance Unavailable' };
+        }
+        
+        if (!challenge_data[0].nsjail_conf) {
             // challenges without a jail conf cannot generate instances
             return {
                 success: false,
@@ -1720,6 +1794,8 @@ export async function CreateSSHInstance(uid: any, cid: any) {
         const challenge_data = await db.select({
             image_ref: schema.challenges.image_ref,
             flag: schema.challenges.flag,
+            is_gym: schema.challenges.is_gym,
+            is_active: schema.challenges.is_active
         }).from(schema.challenges)
         .where(eq(schema.challenges.id, cid)).limit(1);
 
@@ -1727,6 +1803,17 @@ export async function CreateSSHInstance(uid: any, cid: any) {
             return { success: false, error: "Challenge Not Found" };
         } else if (!challenge_data[0].image_ref) {
             return { success: false, error: "SSH Instance Not Supported" };
+        }
+
+        // handle conditions where flags are rejected
+        if (!challenge_data[0].is_active) {
+            return { success: false, message: 'SSH Instance Unavailable' };
+        }
+        if (!IsEventActive() && !challenge_data[0].is_gym) {
+            return { success: false, message: 'SSH Instance Unavailable' };
+        }
+        if (!IsGymActive() && challenge_data[0].is_gym) {
+            return { success: false, message: 'SSH Instance Unavailable' };
         }
 
         console.log("[*] Fetching ssh-orchestrator create_instance...");

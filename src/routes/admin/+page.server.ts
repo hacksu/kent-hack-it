@@ -1,3 +1,4 @@
+import { fromZonedTime } from 'date-fns-tz';
 import { redirect, fail } from '@sveltejs/kit';
 import { isAdmin } from '$lib/server/auth'
 import {
@@ -210,14 +211,16 @@ export const actions = {
             const form = await request.formData();
             const formData = Object.fromEntries(form.entries()) as Record<string, string>;
 
-            const start_date = new Date(formData['start-date']);
+            const start_date = fromZonedTime(formData['start-date'], 'America/New_York');
             const evt_duration = formData['event-length'];
-            const activation = formData['activation-status'].toLowerCase() === "true";
+            const event_status = formData['event-status'].toLowerCase() === "true";
+            const gym_status = formData['gym-status'].toLowerCase() === "true";
 
             return await UpdateConfiguration({
                 event_start: start_date,
                 event_length: Number(evt_duration),
-                site_active: activation
+                event_active: event_status,
+                gym_active: gym_status
             });
         } catch (e) {
             console.error(`[-] Update_Config -> ${e}`);
