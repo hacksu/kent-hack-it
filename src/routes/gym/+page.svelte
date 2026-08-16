@@ -4,6 +4,7 @@
 
     import Feedback from '$lib/components/feedback.svelte';
     import Stats from '$lib/components/stats.svelte';
+    import ChallengeFilters from '$lib/components/challenge-filters.svelte';
 
     import { type ViewableChallengeData } from '$lib/database/db.js';
     import { handleFormResult } from "$lib/utilities.js";
@@ -11,9 +12,6 @@
     import { Button } from "$lib/components/ui/button";
     import { Badge } from "$lib/components/ui/badge";
     import { Input } from "$lib/components/ui/input";
-    import { Label } from "$lib/components/ui/label";
-    import { Separator } from "$lib/components/ui/separator";
-    import * as Select from "$lib/components/ui/select";
     import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
     import X from "@lucide/svelte/icons/x";
 
@@ -30,109 +28,10 @@
     let currentPage = $state(1);
     const challengesPerPage = 20;
 
-    let filters = $state({
-        category: '',
-        difficulty: '',
-        rating: '',
-        author: '',
-        searchText: '',
-        showCompleted: true,
-        showUncompleted: true,
-    });
-
-    let availableCategories = $derived(
-        [...new Set<string>(
-            (data.challenges ?? []).map((c: any) => c.category)
-        )].sort()
-    );
-
-    let availableDifficulties = $derived(() => {
-        const difficultyOrder = ['Simple', 'Easy', 'Medium', 'Hard', 'Extreme'];
-
-        const unique = [...new Set<string>(
-            (data.challenges ?? []).map((c: any) => c.difficulty)
-        )];
-
-        return difficultyOrder.filter(d => unique.includes(d));
-    });
-
     let selectedRating = $state(0);
     let hoveredRating  = $state(0);
-    let availableRatings = ['4.0', '3.0', '2.0', '1.0', '0.0'];
 
-    let availableAuthors = $derived(
-        [...new Set<string>(
-            (data.challenges ?? [])
-                .map((c: any) => c.written_by)
-                .filter(Boolean)
-        )].sort()
-    );
-
-    function applyFilters(dataSet: ViewableChallengeData[]) {
-        let filtered = [...dataSet];
-
-        // Category
-        if (filters.category) {
-            filtered = filtered.filter(
-                c => c.category === filters.category
-            );
-        }
-
-        // Difficulty
-        if (filters.difficulty) {
-            filtered = filtered.filter(
-                c => c.difficulty === filters.difficulty
-            );
-        }
-
-        // Rating
-        if (filters.rating) {
-            const threshold = parseFloat(filters.rating);
-
-            filtered = filtered.filter(
-                c => Number(c.rating) >= threshold
-            );
-        }
-
-        // Author
-        if (filters.author) {
-            filtered = filtered.filter(
-                c => c.written_by === filters.author
-            );
-        }
-
-        // Search
-        if (filters.searchText.trim()) {
-            const term = filters.searchText.toLowerCase();
-
-            filtered = filtered.filter((c) =>
-                c.name?.toLowerCase().includes(term) ||
-                c.category?.toLowerCase().includes(term) ||
-                c.written_by?.toLowerCase().includes(term) ||
-                c.description?.toLowerCase().includes(term)
-            );
-        }
-
-        // Completion Filters
-        filtered = filtered.filter((c) => {
-            const completed = data.completions?.user?.some(
-                (chall: any) => Number(c.id) === Number(chall.challenge_id)
-            ) ?? false;
-
-            // SELF-COMPLETIONS
-            if (completed && !filters.showCompleted) {
-                return false;
-            }
-
-            if (!completed && !filters.showUncompleted) {
-                return false;
-            }
-
-            return true;
-        });
-
-        return filtered;
-    }
+    let challenges = $state<ViewableChallengeData[]>([]);
 
     function hasSolved(cid: number) {
         return data.completions?.user?.some(
@@ -146,12 +45,8 @@
         ) ?? false;
     }
 
-    let challenges = $derived(
-        applyFilters(data.challenges ?? [])
-    );
-
     $effect(() => {
-        filters;
+        challenges;
         currentPage = 1;
     });
 
@@ -186,18 +81,6 @@
         }
     }
 
-    function clearFilters() {
-        filters = {
-            category: '',
-            difficulty: '',
-            rating: '',
-            author: '',
-            searchText: '',
-            showCompleted: true,
-            showUncompleted: true,
-        };
-    }
-
     let showPanel = $state<boolean>(false);
 
     let challengeInfo = $state<ViewableChallengeData | undefined>(
@@ -224,9 +107,6 @@
             default: return 'border-border bg-muted text-muted-foreground';
         }
     }
-
-    const ratingLabel = (rating: string) =>
-        `${rating}+ ⭐ (${rating === '4.0' ? 'Excellent' : rating === '3.0' ? 'Good' : rating === '2.0' ? 'Fair' : 'Any'})`;
 </script>
 
 <svelte:head>
@@ -426,122 +306,13 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
 
         <!-- Filter Sidebar -->
-        <aside class="rounded-2xl border border-border bg-card p-4 lg:h-fit">
-            <h5 class="mb-3 font-mono text-xs font-semibold tracking-widest text-muted-foreground uppercase">Filters</h5>
-
-            <div class="space-y-4">
-
-                <!-- Search -->
-                <div>
-                    <Label for="search-text" class="mb-1.5 block text-xs text-muted-foreground">Search</Label>
-                    <Input
-                        id="search-text"
-                        type="text"
-                        placeholder="Search challenges..."
-                        bind:value={filters.searchText}
-                    />
-                </div>
-
-                <!-- Category -->
-                <div>
-                    <Label for="catagory-search" class="mb-1.5 block text-xs text-muted-foreground">Category</Label>
-                    <Select.Root type="single" bind:value={filters.category}>
-                        <Select.Trigger id="catagory-search" class="w-full">
-                            {filters.category || "All Categories"}
-                        </Select.Trigger>
-                        <Select.Content>
-                            <Select.Item value="">All Categories</Select.Item>
-                            {#each availableCategories as category}
-                                <Select.Item value={category}>{category}</Select.Item>
-                            {/each}
-                        </Select.Content>
-                    </Select.Root>
-                </div>
-
-                <!-- Difficulty -->
-                <div>
-                    <Label for="difficulty-search" class="mb-1.5 block text-xs text-muted-foreground">Difficulty</Label>
-                    <Select.Root type="single" bind:value={filters.difficulty}>
-                        <Select.Trigger id="difficulty-search" class="w-full">
-                            {filters.difficulty || "All Difficulties"}
-                        </Select.Trigger>
-                        <Select.Content>
-                            <Select.Item value="">All Difficulties</Select.Item>
-                            {#each availableDifficulties() as difficulty}
-                                <Select.Item value={difficulty}>{difficulty}</Select.Item>
-                            {/each}
-                        </Select.Content>
-                    </Select.Root>
-                </div>
-
-                <!-- Rating -->
-                <div>
-                    <Label for="rating-search" class="mb-1.5 block text-xs text-muted-foreground">Minimum Rating</Label>
-                    <Select.Root type="single" bind:value={filters.rating}>
-                        <Select.Trigger id="rating-search" class="w-full">
-                            {filters.rating ? ratingLabel(filters.rating) : "All Ratings"}
-                        </Select.Trigger>
-                        <Select.Content>
-                            <Select.Item value="">All Ratings</Select.Item>
-                            {#each availableRatings as rating}
-                                <Select.Item value={rating}>{ratingLabel(rating)}</Select.Item>
-                            {/each}
-                        </Select.Content>
-                    </Select.Root>
-                </div>
-
-                <!-- Author -->
-                <div>
-                    <Label for="author-search" class="mb-1.5 block text-xs text-muted-foreground">Author</Label>
-                    <Select.Root type="single" bind:value={filters.author}>
-                        <Select.Trigger id="author-search" class="w-full">
-                            {filters.author || "All Authors"}
-                        </Select.Trigger>
-                        <Select.Content>
-                            <Select.Item value="">All Authors</Select.Item>
-                            {#each availableAuthors as author}
-                                <Select.Item value={author}>{author}</Select.Item>
-                            {/each}
-                        </Select.Content>
-                    </Select.Root>
-                </div>
-
-                <!-- Individual Completion -->
-                <div class="space-y-2">
-                    <Label class="block text-xs text-muted-foreground">Individual Progress</Label>
-                    <label class="flex items-center gap-2 text-sm text-foreground">
-                        <input
-                            type="checkbox"
-                            class="h-4 w-4 rounded border-border accent-brand-green"
-                            bind:checked={filters.showCompleted}
-                        />
-                        My Completed
-                    </label>
-                    <label class="flex items-center gap-2 text-sm text-foreground">
-                        <input
-                            type="checkbox"
-                            class="h-4 w-4 rounded border-border accent-brand-green"
-                            bind:checked={filters.showUncompleted}
-                        />
-                        My Uncompleted
-                    </label>
-                </div>
-
-                <Button variant="outline" size="sm" class="w-full" onclick={clearFilters}>
-                    Clear Filters
-                </Button>
-
-                <Separator />
-
-                <Button
-                    href="/challenge_help"
-                    class="w-full bg-gradient-to-r from-brand-green to-brand-blue text-[#08131f]! hover:brightness-105"
-                >
-                    Challenge Help
-                </Button>
-
-            </div>
-        </aside>
+        <ChallengeFilters
+            challenges={data.challenges ?? []}
+            bind:filtered={challenges}
+            completions={data.completions}
+            showCompletionFilters={true}
+            showHelpButton={true}
+        />
 
         <!-- Main Content -->
         <div class="flex flex-col">
