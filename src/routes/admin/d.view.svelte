@@ -7,6 +7,7 @@
     import { Badge } from '$lib/components/ui/badge';
     import * as Card from '$lib/components/ui/card';
     import * as Dialog from '$lib/components/ui/dialog';
+    import ChallengeFilters from '$lib/components/challenge-filters.svelte';
     import Pencil from '@lucide/svelte/icons/pencil';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import Power from '@lucide/svelte/icons/power';
@@ -85,6 +86,8 @@
         registry_images: RegistryImages,
         form: any
     } = $props();
+
+    let filteredChallenges = $state<ChallengeData[]>([]);
 </script>
 
 <!-- START OF PANEL -->
@@ -146,12 +149,20 @@
             <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Current Challenges</h2>
         </div>
         <Badge variant="secondary">
-            {challenges.length} Challenge{challenges.length !== 1 ? 's' : ''}
+            {filteredChallenges.length} of {challenges.length} Challenge{challenges.length !== 1 ? 's' : ''}
         </Badge>
     </div>
 
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {#each challenges as challenge}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
+
+        <ChallengeFilters
+            challenges={challenges}
+            bind:filtered={filteredChallenges}
+            showGymFilter={true}
+        />
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {#each filteredChallenges as challenge}
             <Card.Root class="gap-2 border-border bg-card p-3">
 
                 <div class="flex items-center justify-between gap-2">
@@ -217,5 +228,6 @@
 
             </Card.Root>
         {/each}
+        </div>
     </div>
 </div>
