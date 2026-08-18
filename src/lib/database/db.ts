@@ -693,10 +693,10 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
         if (!c_data[0].is_active) {
             return { success: false, message: 'Not accepting flags at this time' };
         }
-        if (!IsEventActive() && !c_data[0].is_gym) {
+        if (!await IsEventActive() && !c_data[0].is_gym) {
             return { success: false, message: 'Not accepting flags at this time' };
         }
-        if (!IsGymActive() && c_data[0].is_gym) {
+        if (!await IsGymActive() && c_data[0].is_gym) {
             return { success: false, message: 'Not accepting flags at this time' };
         }
 
@@ -794,10 +794,10 @@ export async function SubmitRating(uid: any, cid: any, rating: number): Promise<
         if (!challenge.is_active) {
             return { success: false, message: 'Not accepting ratings at this time' };
         }
-        if (!IsEventActive() && !challenge.is_gym) {
+        if (!await IsEventActive() && !challenge.is_gym) {
             return { success: false, message: 'Not accepting ratings at this time' };
         }
-        if (!IsGymActive() && challenge.is_gym) {
+        if (!await IsGymActive() && challenge.is_gym) {
             return { success: false, message: 'Not accepting ratings at this time' };
         }
 
@@ -1678,10 +1678,10 @@ export async function CreateInstance(uid: any, cid: any, bypass_gates: boolean =
             if (!challenge_data[0].is_active) {
                 return { success: false, message: 'Instance Unavailable' };
             }
-            if (!IsEventActive() && !challenge_data[0].is_gym) {
+            if (!await IsEventActive() && !challenge_data[0].is_gym) {
                 return { success: false, message: 'Instance Unavailable' };
             }
-            if (!IsGymActive() && challenge_data[0].is_gym) {
+            if (!await IsGymActive() && challenge_data[0].is_gym) {
                 return { success: false, message: 'Instance Unavailable' };
             }
         }
@@ -1841,10 +1841,10 @@ export async function CreateSSHInstance(uid: any, cid: any, bypass_gates: boolea
             if (!challenge_data[0].is_active) {
                 return { success: false, message: 'SSH Instance Unavailable' };
             }
-            if (!IsEventActive() && !challenge_data[0].is_gym) {
+            if (!await IsEventActive() && !challenge_data[0].is_gym) {
                 return { success: false, message: 'SSH Instance Unavailable' };
             }
-            if (!IsGymActive() && challenge_data[0].is_gym) {
+            if (!await IsGymActive() && challenge_data[0].is_gym) {
                 return { success: false, message: 'SSH Instance Unavailable' };
             }
         }
