@@ -117,7 +117,7 @@
                                 referrerpolicy="no-referrer"
                                 crossorigin="anonymous"
                             />
-                            <span>{member}</span>
+                            <span>{member.name}</span>
                         </li>
                     {/each}
                 </ul>

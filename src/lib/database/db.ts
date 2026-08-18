@@ -851,7 +851,7 @@ export async function GetTeams() {
                 id: team.id,
                 name: team.name,
                 leader: leader,
-                members: memberRows.map(m => {m.name,m.image}),
+                members: memberRows.map(m => ({ name: m.name, image: m.image })),
             };
         }));
     } catch (e: any) {
