@@ -6,8 +6,16 @@
     import * as Table from '$lib/components/ui/table';
     import CircleStop from '@lucide/svelte/icons/circle-stop';
     import RotateCw from '@lucide/svelte/icons/rotate-cw';
+    import Play from '@lucide/svelte/icons/play';
 
-    const { instances } = $props();
+    const { instances, challenges } = $props();
+
+    let notRunningWeb = $derived.by(() => {
+        const activeWebIds = new Set(
+            instances.filter((i: any) => i.type === 'web').map((i: any) => i.challenge_id)
+        );
+        return (challenges ?? []).filter((c: any) => c.web_image_ref && !activeWebIds.has(c.id));
+    });
 
     const TYPES = ['nc', 'ssh', 'web'] as const;
     let activeTypes = $state<Set<string>>(new Set(TYPES));
@@ -128,6 +136,26 @@
         await invalidateAll();
         setTimeout(clearResult, 5000);
     }
+
+    async function startInstance(challenge: any) {
+        if (!window.confirm(`Start the "${challenge.name}" web instance?`)) return;
+
+        const req = await fetch('/admin/api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ context: 'instance', action: 'start', type: 'web', cid: challenge.id })
+        });
+
+        const response = await req.json();
+        if (response?.success) {
+            success = `Started the "${challenge.name}" web instance`;
+        } else {
+            error = response?.error ?? "Failed to start instance";
+        }
+
+        await invalidateAll();
+        setTimeout(clearResult, 5000);
+    }
 </script>
 
 <div>
@@ -210,6 +238,47 @@
                                         Stop
                                     </Button>
                                 </div>
+                            </Table.Cell>
+                        </Table.Row>
+                    {/each}
+                </Table.Body>
+            </Table.Root>
+        </div>
+    {/if}
+
+    {#if notRunningWeb.length > 0}
+        <div class="mt-6 mb-3 flex items-center gap-2.5">
+            <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
+            <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Not Running (Web)</h2>
+        </div>
+
+        <div class="overflow-x-auto rounded-lg border border-border">
+            <Table.Root>
+                <Table.Header>
+                    <Table.Row class="hover:bg-transparent">
+                        <Table.Head>Challenge</Table.Head>
+                        <Table.Head>Status</Table.Head>
+                        <Table.Head></Table.Head>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    {#each notRunningWeb as challenge (challenge.id)}
+                        <Table.Row>
+                            <Table.Cell class="text-foreground">{challenge.name}</Table.Cell>
+                            <Table.Cell>
+                                <Badge variant={challenge.is_active ? "secondary" : "outline"}>
+                                    {challenge.is_active ? "Active, no instance" : "Disabled"}
+                                </Badge>
+                            </Table.Cell>
+                            <Table.Cell class="text-right">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onclick={() => startInstance(challenge)}
+                                >
+                                    <Play class="h-3.5 w-3.5" />
+                                    Start
+                                </Button>
                             </Table.Cell>
                         </Table.Row>
                     {/each}

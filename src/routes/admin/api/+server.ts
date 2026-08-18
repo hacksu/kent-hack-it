@@ -8,6 +8,7 @@ import {
     StopSSHInstance,
     StopWebInstance,
     RedeployWebInstance,
+    EnsureWebInstance,
 } from '$lib/database/db';
 import { json } from '@sveltejs/kit';
 
@@ -53,6 +54,13 @@ async function restartInstance(type: string, cid: string) {
         return json({ success: false, error: 'Restart is only supported for web instances' });
     }
     return json(await RedeployWebInstance(cid));
+}
+
+async function startInstance(type: string, cid: string) {
+    if (type !== 'web') {
+        return json({ success: false, error: 'Start is only supported for web instances' });
+    }
+    return json(await EnsureWebInstance(cid));
 }
 
 async function deleteTeam(id: string) {
@@ -152,6 +160,8 @@ export const POST = async (event) => {
             handler = await stopInstance(data.type, data.uid, data.cid);
         } else if (data.action === 'restart') {
             handler = await restartInstance(data.type, data.cid);
+        } else if (data.action === 'start') {
+            handler = await startInstance(data.type, data.cid);
         } else {
             // unknown action
             return json({ success: false, error: 'Unknown action' , status: 500 });

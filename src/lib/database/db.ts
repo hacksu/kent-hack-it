@@ -112,8 +112,6 @@ function uniqueConstraintName(error: any): string | undefined {
 
 export async function AddChallenge(data: ChallengeForm) {
     try {
-        // remove case-sensitivity to flag string
-        data.flag = data.flag.toLowerCase();
         const [row] = await db.insert(schema.challenges).values(data).returning();
         console.log(`[*] AddChallenge -> inserted ${row.id}`);
         return { success: true as const, id: row.id };
@@ -139,11 +137,6 @@ export async function AddChallenge(data: ChallengeForm) {
  */
 export async function UpdateChallenge(data: ChallengeEditForm, id: any) {
     try {
-        if (data.flag.length > 0) {
-            // remove case-sensitivity to flag string
-            data.flag = data.flag.toLowerCase();
-        }
-        
         const [row] = await db.update(schema.challenges)
                         .set(data)
                         .where(eq(schema.challenges.id, id)).returning();
