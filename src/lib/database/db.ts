@@ -351,10 +351,16 @@ export async function GetSolvers() {
         const solvers: Record<number, { name: string; claimed_at: string }[]> = {};
         const sorted: Record<number, string[]> = {};
         
-        const users = await db
-            .select({ name: schema.user.name, claims: schema.user.claims })
-            .from(schema.user)
-            .where(eq(schema.user.role, 'user'));
+        const users = (process.env.PROD || env.PROD) ? (
+            await db
+                .select({ name: schema.user.name, claims: schema.user.claims })
+                .from(schema.user)
+                .where(eq(schema.user.role, 'user'))
+        ) : (
+            await db
+                .select({ name: schema.user.name, claims: schema.user.claims })
+                .from(schema.user)
+        );
 
 
         for (const user of users) {
