@@ -17,6 +17,17 @@
         return (challenges ?? []).filter((c: any) => c.web_image_ref && !activeWebIds.has(c.id));
     });
 
+    let debugCandidates = $derived.by(() => {
+        const candidates: { key: string; cid: number; type: 'nc' | 'ssh'; label: string }[] = [];
+        for (const c of challenges ?? []) {
+            if (c.nsjail_conf) candidates.push({ key: `nc:${c.id}`, cid: c.id, type: 'nc', label: `[NC] ${c.name}` });
+            if (c.image_ref) candidates.push({ key: `ssh:${c.id}`, cid: c.id, type: 'ssh', label: `[SSH] ${c.name}` });
+        }
+        return candidates;
+    });
+
+    let selectedDebugKey = $state("");
+
     const TYPES = ['nc', 'ssh', 'web'] as const;
     let activeTypes = $state<Set<string>>(new Set(TYPES));
 
@@ -156,6 +167,35 @@
         await invalidateAll();
         setTimeout(clearResult, 5000);
     }
+
+    async function startDebugInstance() {
+        const candidate = debugCandidates.find((c: any) => c.key === selectedDebugKey);
+        if (!candidate) return;
+
+        if (!window.confirm(
+            `Start a ${candidate.type.toUpperCase()} debug instance for "${candidate.label}" as yourself? ` +
+            `This will replace any ${candidate.type.toUpperCase()} instance you currently have running.`
+        )) return;
+
+        const req = await fetch('/admin/api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ context: 'instance', action: 'start', type: candidate.type, cid: candidate.cid })
+        });
+
+        const response = await req.json();
+        if (response?.success) {
+            const details = candidate.type === 'ssh'
+                ? `port ${response.port}, password ${response.password}`
+                : `port ${response.port}`;
+            success = `Started ${candidate.label} (${details})`;
+        } else {
+            error = response?.error ?? response?.message ?? "Failed to start debug instance";
+        }
+
+        await invalidateAll();
+        setTimeout(clearResult, 5000);
+    }
 </script>
 
 <div>
@@ -200,6 +240,7 @@
                         <Table.Head>Challenge</Table.Head>
                         <Table.Head>ID</Table.Head>
                         <Table.Head>Port</Table.Head>
+                        <Table.Head>Password</Table.Head>
                         <Table.Head>Time Remaining</Table.Head>
                         <Table.Head></Table.Head>
                     </Table.Row>
@@ -214,6 +255,7 @@
                             <Table.Cell class="text-muted-foreground">{instance.challenge_name ?? "—"}</Table.Cell>
                             <Table.Cell class="font-mono text-xs text-muted-foreground">{shortId(instance)}</Table.Cell>
                             <Table.Cell class="font-mono text-xs text-muted-foreground">{instance.port}</Table.Cell>
+                            <Table.Cell class="font-mono text-xs text-muted-foreground select-all">{instance.type === 'ssh' ? instance.password : "—"}</Table.Cell>
                             <Table.Cell class="font-mono text-xs {timeRemaining(instance) === 'expired' ? 'text-destructive' : 'text-foreground'}">
                                 {timeRemaining(instance)}
                             </Table.Cell>
@@ -284,6 +326,34 @@
                     {/each}
                 </Table.Body>
             </Table.Root>
+        </div>
+    {/if}
+
+    {#if debugCandidates.length > 0}
+        <div class="mt-6 mb-3 flex items-center gap-2.5">
+            <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
+            <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Debug Instance (NC / SSH)</h2>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3">
+            <select
+                bind:value={selectedDebugKey}
+                class="min-w-64 flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm text-foreground"
+            >
+                <option value="" disabled>Select a challenge to start as yourself...</option>
+                {#each debugCandidates as candidate (candidate.key)}
+                    <option value={candidate.key}>{candidate.label}</option>
+                {/each}
+            </select>
+            <Button
+                variant="outline"
+                size="sm"
+                disabled={!selectedDebugKey}
+                onclick={startDebugInstance}
+            >
+                <Play class="h-3.5 w-3.5" />
+                Start
+            </Button>
         </div>
     {/if}
 </div>

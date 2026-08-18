@@ -1606,7 +1606,7 @@ export async function GetTeamFromPlayer(uid: any) {
  * @param uid 
  * @param cid 
  */
-export async function CreateInstance(uid: any, cid: any) {
+export async function CreateInstance(uid: any, cid: any, bypass_gates: boolean = false) {
     try {
         // if there is an existing instance we need to kill it
         const activeInstance = await db.select().from(schema.instance_sessions)
@@ -1651,16 +1651,18 @@ export async function CreateInstance(uid: any, cid: any) {
         }
         
         // handle conditions where flags are rejected
-        if (!challenge_data[0].is_active) {
-            return { success: false, message: 'Instance Unavailable' };
+        if (!bypass_gates) {
+            if (!challenge_data[0].is_active) {
+                return { success: false, message: 'Instance Unavailable' };
+            }
+            if (!IsEventActive() && !challenge_data[0].is_gym) {
+                return { success: false, message: 'Instance Unavailable' };
+            }
+            if (!IsGymActive() && challenge_data[0].is_gym) {
+                return { success: false, message: 'Instance Unavailable' };
+            }
         }
-        if (!IsEventActive() && !challenge_data[0].is_gym) {
-            return { success: false, message: 'Instance Unavailable' };
-        }
-        if (!IsGymActive() && challenge_data[0].is_gym) {
-            return { success: false, message: 'Instance Unavailable' };
-        }
-        
+
         if (!challenge_data[0].nsjail_conf) {
             // challenges without a jail conf cannot generate instances
             return {
@@ -1778,7 +1780,7 @@ export async function StopInstance(uid: any) {
     }
 }
 
-export async function CreateSSHInstance(uid: any, cid: any) {
+export async function CreateSSHInstance(uid: any, cid: any, bypass_gates: boolean = false) {
     try {
         // stop any existing SSH instance the participant already has
         const existing = await GetActiveSSHInstance(uid);
@@ -1812,14 +1814,16 @@ export async function CreateSSHInstance(uid: any, cid: any) {
         }
 
         // handle conditions where flags are rejected
-        if (!challenge_data[0].is_active) {
-            return { success: false, message: 'SSH Instance Unavailable' };
-        }
-        if (!IsEventActive() && !challenge_data[0].is_gym) {
-            return { success: false, message: 'SSH Instance Unavailable' };
-        }
-        if (!IsGymActive() && challenge_data[0].is_gym) {
-            return { success: false, message: 'SSH Instance Unavailable' };
+        if (!bypass_gates) {
+            if (!challenge_data[0].is_active) {
+                return { success: false, message: 'SSH Instance Unavailable' };
+            }
+            if (!IsEventActive() && !challenge_data[0].is_gym) {
+                return { success: false, message: 'SSH Instance Unavailable' };
+            }
+            if (!IsGymActive() && challenge_data[0].is_gym) {
+                return { success: false, message: 'SSH Instance Unavailable' };
+            }
         }
 
         console.log("[*] Fetching ssh-orchestrator create_instance...");
@@ -1918,6 +1922,7 @@ export async function GetActiveInstances() {
             player_name: schema.user.name,
             challenge_name: schema.challenges.name,
             port: schema.ssh_instance_sessions.port,
+            password: schema.ssh_instance_sessions.password,
             container_id: schema.ssh_instance_sessions.container_id,
             expires_at: schema.ssh_instance_sessions.expires_at,
         }).from(schema.ssh_instance_sessions)
