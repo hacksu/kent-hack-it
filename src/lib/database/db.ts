@@ -1284,7 +1284,7 @@ export async function GetProgress(uid: string) {
 
             const contributions: Contribution[] = [];
 
-            for (const challenge of all_challenges) {
+            for (const challenge of evt_challenges) {
                 const completions = member_claims
                     .flatMap(m => (m.claims ?? [])
                         .filter(c => String(c.challenge_id) === String(challenge.id))
@@ -1303,10 +1303,10 @@ export async function GetProgress(uid: string) {
             }
 
             // category bars — how many challenges per category are completed by anyone on the team
-            const categories = [...new Set(all_challenges.map(c => c.category))];
+            const categories = [...new Set(evt_challenges.map(c => c.category))];
 
             const categoryBars: Stat[] = categories.map((cat, index) => {
-                const group = all_challenges.filter(c => c.category === cat);
+                const group = evt_challenges.filter(c => c.category === cat);
 
                 const completed = group.filter(c =>
                     contributions.some(con => con.challenge_id === String(c.id))
@@ -1332,7 +1332,7 @@ export async function GetProgress(uid: string) {
                     {
                         label: 'Team Total',
                         value: contributions.length,
-                        total: all_challenges.length,
+                        total: evt_challenges.length,
                         color: '#5b93d8',
                     },
                     ...categoryBars,
