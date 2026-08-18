@@ -1149,6 +1149,23 @@ export async function AddMember(team_id: any, user_id: any) {
 
         if (existing) return { success: false, error: "User is already in a team!" };
 
+        const [team] = await db
+            .select({ leader_id: schema.teams.leader_id })
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        if (!team) return { success: false, error: "Team not found!" };
+
+        const [[leader], [joiner]] = await Promise.all([
+            db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, team.leader_id)).limit(1),
+            db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, user_id)).limit(1),
+        ]);
+
+        if (leader?.role !== joiner?.role) {
+            return { success: false, error: "Admins and players cannot share a team!" };
+        }
+
         const [count_row] = await db
             .select({ count: count() })
             .from(schema.team_members)
