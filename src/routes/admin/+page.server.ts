@@ -96,6 +96,7 @@ async function CreatChallenge(request: Request, is_gym: boolean) {
     if (!formData.name || !formData.description || !formData.written_by || 
         !formData.category || !formData.difficulty || !formData.flag)
         return fail(400, { error: 'Missing required data' });
+    formData.flag = formData.flag.toLowerCase();
 
     const points = PointValues[formData.difficulty.toLowerCase() as keyof typeof PointValues];
     if (!points)
@@ -165,6 +166,7 @@ export const actions = {
         if (!flag_value || flag_value.length === 0) {
             flag_value = await GetFlagHash(formData.id);
         } else {
+            formData.flag = formData.flag.toLowerCase();
             flag_value = (formData.nsjail_conf || formData.image_ref || formData.web_image_ref)
                 ? await encryptFlag(formData.flag) : await SHA256(formData.flag);
         }
