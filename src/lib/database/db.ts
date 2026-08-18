@@ -112,6 +112,8 @@ function uniqueConstraintName(error: any): string | undefined {
 
 export async function AddChallenge(data: ChallengeForm) {
     try {
+        // remove case-sensitivity to flag string
+        data.flag = data.flag.toLowerCase();
         const [row] = await db.insert(schema.challenges).values(data).returning();
         console.log(`[*] AddChallenge -> inserted ${row.id}`);
         return { success: true as const, id: row.id };
@@ -137,6 +139,11 @@ export async function AddChallenge(data: ChallengeForm) {
  */
 export async function UpdateChallenge(data: ChallengeEditForm, id: any) {
     try {
+        if (data.flag.length > 0) {
+            // remove case-sensitivity to flag string
+            data.flag = data.flag.toLowerCase();
+        }
+        
         const [row] = await db.update(schema.challenges)
                         .set(data)
                         .where(eq(schema.challenges.id, id)).returning();
@@ -695,11 +702,17 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
         }
 
         console.log("[*] Verifying Flag");
+        
         const challenge = c_data[0];
+        let dec_flag = await decryptFlag(challenge.flag);
+
+        dec_flag = dec_flag.toLowerCase();
+        flag_value = flag_value.toLowerCase();
+
         const flag_claimed = (challenge.nsjail_conf || challenge.image_ref || challenge.web_image_ref) ? (
-            await decryptFlag(challenge.flag) === flag_value
+            dec_flag === flag_value // ascii str comparision
         ) : (
-            challenge.flag === await SHA256(flag_value)
+            challenge.flag === await SHA256(flag_value) // hash str comparision
         );
 
         if (flag_claimed) {
