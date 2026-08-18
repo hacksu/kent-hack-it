@@ -1,23 +1,33 @@
 <script lang="ts">
-    import { enhance } from "$app/forms";
-    import { invalidateAll } from '$app/navigation';
-
-    import Feedback from '$lib/components/feedback.svelte';
     import Stats from '$lib/components/stats.svelte';
     import ChallengeFilters from '$lib/components/challenge-filters.svelte';
+    import ChallengePanel from '$lib/components/challenge.panel.svelte';
 
     import { type ViewableChallengeData } from '$lib/database/db.js';
-    import { handleFormResult } from "$lib/utilities.js";
+    import { onMount } from "svelte";
 
     import { Button } from "$lib/components/ui/button";
-    import { Badge } from "$lib/components/ui/badge";
-    import { Input } from "$lib/components/ui/input";
     import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-    import X from "@lucide/svelte/icons/x";
 
     let error = $state("");
     let warning = $state("");
     let success = $state("");
+
+    let instance_infomation = $state("");
+
+    let otherInstanceActive = $state(false);
+
+    let ssh_active = $state(false);
+    let ssh_host = $state("");
+    let ssh_port = $state<number|undefined>(undefined);
+    let ssh_password = $state("");
+    let ssh_expires_at = $state<Date|undefined>(undefined);
+    let ssh_command = $derived(`ssh ctf-player@${ssh_host} -p ${ssh_port}`);
+
+    let web_active = $state(false);
+    let web_host = $state("");
+    let web_port = $state<number|undefined>(undefined);
+    let web_url = $derived(`http://${web_host}:${web_port}`);
 
     function clearResult() {
         error = warning = success = "";
@@ -28,10 +38,16 @@
     let currentPage = $state(1);
     const challengesPerPage = 20;
 
-    let selectedRating = $state(0);
-    let hoveredRating  = $state(0);
-
     let challenges = $state<ViewableChallengeData[]>([]);
+
+    function InTeam() {
+        return data.completions?.team.length > 0;
+    };
+    function HasTeamCompleted(cid: any) {
+        return data.completions?.team.some(
+                (chall: Number) => Number(cid) === Number(chall)
+            ) ?? false;
+    }
 
     function hasSolved(cid: number) {
         return data.completions?.user?.some(
@@ -93,8 +109,135 @@
         );
 
         challengeInfo = challenge;
+        otherInstanceActive = false;
+
+        try {
+            const req = await fetch(`/api/cinstance?cid=${cid}`, {
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                cache: "no-store"
+            });
+            const res: {
+                active: boolean,
+                host?: string,
+                rport?: number,
+                created_at?: Date,
+                other_active?: boolean
+            } = await req.json();
+
+            instance_infomation = (res.active) ? `nc ${res.host} ${res.rport}` : "";
+            instanceStart = res.created_at;
+            if (res.other_active) otherInstanceActive = true;
+        } catch {}
+
+        try {
+            const sshReq = await fetch(`/api/sshinstance?cid=${cid}`, {
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                cache: "no-store"
+            });
+            const sshRes: {
+                active: boolean,
+                host?: string,
+                port?: number,
+                password?: string,
+                expires_at?: string,
+                other_active?: boolean
+            } = await sshReq.json();
+
+            ssh_active = sshRes.active;
+            ssh_host = sshRes.host ?? "";
+            ssh_port = sshRes.port;
+            ssh_password = sshRes.password ?? "";
+            ssh_expires_at = sshRes.expires_at ? new Date(sshRes.expires_at) : undefined;
+            if (sshRes.other_active) otherInstanceActive = true;
+        } catch {}
+
+        try {
+            const webReq = await fetch(`/api/webinstance?cid=${cid}`, {
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                cache: "no-store"
+            });
+            const webRes: {
+                active: boolean,
+                host?: string,
+                port?: number,
+            } = await webReq.json();
+
+            web_active = webRes.active;
+            web_host = webRes.host ?? "";
+            web_port = webRes.port;
+        } catch {}
+
         showPanel = challenge !== undefined;
     }
+
+    let timeLeft = $state("00:00");
+    let instanceLabel = $state("Time Remaining:");
+    let timer: NodeJS.Timeout|undefined = undefined;
+    let instanceStart = $state<Date|undefined>(undefined);
+
+    function updateInstanceTimer() {
+        if (!instanceStart) return;
+
+        const now = new Date().getTime();
+        const start = new Date(instanceStart).getTime();
+        const end = start + 15 * 60 * 1000; // 15 minutes after start
+
+        let distance;
+
+        if (now < start) {
+            instanceLabel = "Time Remaining::";
+            distance = start - now;
+        } else if (now < end) {
+            instanceLabel = "Time Remaining::";
+            distance = end - now;
+        } else {
+            timeLeft = "00:00";
+            clearInterval(timer);
+            return;
+        }
+
+        const totalSeconds = Math.floor(distance / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        timeLeft = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    let sshTimeLeft = $state("00:00");
+    let sshTimer: NodeJS.Timeout|undefined = undefined;
+
+    function updateSSHTimer() {
+        if (!ssh_expires_at) return;
+
+        const distance = new Date(ssh_expires_at).getTime() - Date.now();
+
+        if (distance <= 0) {
+            sshTimeLeft = "00:00";
+            return;
+        }
+
+        const totalSeconds = Math.floor(distance / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        sshTimeLeft = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    onMount(() => {
+        updateInstanceTimer();
+        timer = setInterval(updateInstanceTimer, 1000);
+
+        updateSSHTimer();
+        sshTimer = setInterval(updateSSHTimer, 1000);
+
+        return () => {
+            clearInterval(timer);
+            clearInterval(sshTimer);
+        };
+    });
 
     // Styling helper: maps a challenge difficulty to a badge color, mirroring
     // the previous Bootstrap bg-danger/bg-warning/bg-info/bg-success ramp.
@@ -107,158 +250,31 @@
             default: return 'border-border bg-muted text-muted-foreground';
         }
     }
+
 </script>
 
-<svelte:head>
-    <link rel="stylesheet" href="/css/overlay.css">
-</svelte:head>
-
-<!-- START OF PANEL -->
-{#if showPanel}
-    <div class="challenge-overlay" role="presentation" onclick={() => showPanel = false}>
-        <div style="background: transparent; padding: 0; border-radius: 0;">
-            {#if challengeInfo}
-                <Feedback success={success} warning={warning} error={error}  />
-
-                <div
-                    role="presentation"
-                    class="w-full max-w-[550px] overflow-hidden rounded-2xl border border-border bg-card! shadow-xl"
-                    onclick={(e) => e.stopPropagation()}
-                >
-                    <!-- Header banner -->
-                    <div class="flex items-start justify-between gap-3 bg-gradient-to-br from-brand-blue to-[#2e5c87] px-5 py-4">
-                        <div>
-                            <h5 class="mb-1 text-base font-semibold text-white!">{challengeInfo.name}</h5>
-                            <p class="mb-1.5 text-xs text-white/80!">Created By: {challengeInfo.written_by}</p>
-                            <div class="flex flex-wrap items-center gap-1.5">
-                                <Badge variant="secondary" class="border-white/20 bg-white/15 text-white!">{challengeInfo.category}</Badge>
-                                <Badge class={difficultyBadgeClass(challengeInfo.difficulty)}>{challengeInfo.difficulty}</Badge>
-                            </div>
-                        </div>
-                        <button
-                            title="Close Panel"
-                            aria-label="Close panel"
-                            class="rounded-md p-1 text-white/80! transition-colors hover:bg-white/10 hover:text-white!"
-                            onclick={() => showPanel = false}
-                        >
-                            <X class="h-4 w-4" />
-                        </button>
-                    </div>
-
-                    <div class="p-4">
-                        {#if !challengeInfo.is_active}
-                            <p class="mb-2 text-sm text-amber-400">Challenge is currently Out-of-Order and will be back online soon!</p>
-                        {/if}
-
-                        {#if challengeInfo.description}
-                            <p class="mb-3 text-xs text-muted-foreground">
-                                {challengeInfo.description}
-                            </p>
-                        {/if}
-
-                        <p class="mb-1 text-sm text-foreground">⭐ {Number(challengeInfo.rating).toFixed(1)} / 5</p>
-
-                        <details class="mt-2 rounded-lg border border-border p-3">
-                            <summary class="cursor-pointer text-xs font-medium text-muted-foreground select-none">Hints</summary>
-                            <div class="mt-2 space-y-1.5">
-                                {#each challengeInfo.hints as hint}
-                                    <span class="block rounded-md border border-border bg-muted px-2.5 py-1.5 text-xs text-foreground">{hint}</span>
-                                {/each}
-                            </div>
-                        </details>
-
-                        <p class="mt-3 text-sm text-foreground">Points: {challengeInfo.points}</p>
-                        <p class="text-sm text-muted-foreground">{challengeInfo.solves} Solves</p>
-                    </div>
-
-                    <!-- Footer action -->
-                    <div class="border-t border-border p-4">
-                        <form method="POST" action="/compete?/submit_flag" use:enhance={() => {
-                            return async ({ result, update }) => {
-                                await update();
-
-                                const formResult = await handleFormResult(result);
-                                success = formResult.success;
-                                warning = formResult.warning;
-                                error = formResult.error;
-
-                                await invalidateAll();
-                                setTimeout(clearResult, 5000);
-                            };
-                        }}>
-                            <input type="hidden" name="cid" value={challengeInfo.id} />
-                            <div class="flex gap-2">
-                                <Input
-                                    name="flag_value"
-                                    type="text"
-                                    placeholder="Enter Flag"
-                                    required
-                                    class="flex-1"
-                                />
-                                <Button type="submit">
-                                    Submit
-                                </Button>
-                            </div>
-                        </form>
-
-                        {#if !hasRated(challengeInfo.id) && hasSolved(challengeInfo.id)}
-                            <form method="POST" action="/compete?/submit_rating" use:enhance={() => {
-                                return async ({ result, update }) => {
-                                    await update();
-
-                                    const formResult = await handleFormResult(result);
-                                    success = formResult.success;
-                                    warning = formResult.warning;
-                                    error = formResult.error;
-
-                                    await invalidateAll();
-                                    setTimeout(clearResult, 5000);
-                                };
-                            }}>
-                                <input type="hidden" name="cid" value={challengeInfo.id} />
-                                <input type="hidden" name="rating" value={selectedRating} />
-
-                                <div class="mt-3 flex items-center gap-3">
-                                    <div class="flex items-center gap-1">
-                                        {#each [1, 2, 3, 4, 5] as star}
-                                            <button
-                                                type="button"
-                                                class="text-2xl leading-none transition-transform hover:scale-110 {star <= selectedRating || star <= hoveredRating ? 'text-amber-400' : 'text-muted-foreground/30'}"
-                                                onmouseenter={() => hoveredRating = star}
-                                                onmouseleave={() => hoveredRating = 0}
-                                                onclick={() => selectedRating = star}
-                                                aria-label="Rate {star} star{star !== 1 ? 's' : ''}"
-                                            >
-                                                ★
-                                            </button>
-                                        {/each}
-                                    </div>
-
-                                    <Button
-                                        type="submit"
-                                        size="sm"
-                                        disabled={selectedRating === 0}
-                                    >
-                                        Submit Rating
-                                    </Button>
-                                </div>
-                            </form>
-                        {/if}
-
-                    </div>
-
-                </div>
-            {:else}
-                <div class="rounded-2xl border border-border bg-card! p-4">
-                    <p class="text-sm text-destructive">Error getting challenge info.</p>
-                </div>
-            {/if}
-
-        </div>
-    </div>
-{/if}
-
-<!-- END OF PANEL -->
+<ChallengePanel
+    bind:showPanel
+    bind:success
+    bind:warning
+    bind:error
+    {challengeInfo}
+    {instance_infomation}
+    {instanceLabel}
+    {timeLeft}
+    {otherInstanceActive}
+    {ssh_active}
+    {ssh_command}
+    {ssh_password}
+    {sshTimeLeft}
+    {web_active}
+    {web_url}
+    {hasRated}
+    {hasSolved}
+    {difficultyBadgeClass}
+    {clearResult}
+    onViewChallenge={viewChallenge}
+/>
 
 <main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
 
