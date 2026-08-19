@@ -1783,7 +1783,8 @@ export async function GetLeaderboard(): Promise<LeaderboardEntry[]> {
                                             eq(schema.challenges.is_gym, false),
                                             eq(schema.challenges.id, claim.challenge_id)
                                         ));
-                user_score += challenge?.points ?? 0;
+                if (!challenge) continue;
+                user_score += challenge.points;
 
                 if (most_recent_claim.length === 0)
                     most_recent_claim = claim.claimed_at;
