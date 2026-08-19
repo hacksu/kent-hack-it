@@ -1827,8 +1827,6 @@ export interface ScoreRaceSeries {
     history: TeamScorePoint[];
 }
 
-// Same credited-first-claim-wins logic as GetTeamDashboard's credit(), generalized to
-// any member list so it can score both teams and solo players for the race chart.
 export async function GetLeaderboardScoreRace(topN: number = 4): Promise<ScoreRaceSeries[]> {
     try {
         const board = await GetLeaderboard();
@@ -1841,8 +1839,6 @@ export async function GetLeaderboardScoreRace(topN: number = 4): Promise<ScoreRa
         }).from(schema.challenges).where(eq(schema.challenges.is_gym, false));
 
         const teams = await db.select({ id: schema.teams.id, name: schema.teams.name }).from(schema.teams);
-        // Entries are matched back to a team/solo-user by name, same as GetLeaderboard itself -
-        // a name collision between a team and a solo player would be ambiguous here too.
         const teamIdByName = new Map(teams.map(t => [t.name, t.id]));
 
         const all_team_members = await db
