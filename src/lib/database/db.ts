@@ -1732,8 +1732,15 @@ export async function GetLeaderboard(): Promise<LeaderboardEntry[]> {
         let board: LeaderboardEntry[] = [];
 
         // fetch the scores for all teams
-        const groups = await db.select({ id: schema.teams.id, name: schema.teams.name })
-                        .from(schema.teams);
+        const groups = (process.env.PROD || env.PROD) ? (
+            await db.select({ id: schema.teams.id, name: schema.teams.name })
+            .from(schema.teams)
+            .innerJoin(schema.user, eq(schema.teams.leader_id, schema.user.id))
+            .where(eq(schema.user.role, "user"))
+        ) : (
+            await db.select({ id: schema.teams.id, name: schema.teams.name })
+            .from(schema.teams)
+        );
 
         for (const group of groups) {
             const [ score, last_claim ] = await GetTeamEntry(group.id)
