@@ -1296,6 +1296,31 @@ export async function AcceptMember(rid: any, r_checksum: any) {
     }
 }
 
+export async function DeclineRequest(rid: any, r_checksum: any) {
+    try {
+        const data = await db.select().from(schema.team_requests)
+                        .where(
+                            and(
+                                eq(schema.team_requests.id, rid),
+                                eq(schema.team_requests.checksum, r_checksum)
+                            )
+                        ).limit(1);
+
+        if (data.length === 0) {
+            console.log("[*] Bad_Decline | Request not found!");
+            return { success: false, error: "Decline Failed" };
+        }
+
+        await db.delete(schema.team_requests)
+                .where(eq(schema.team_requests.id, rid));
+
+        return { success: true, message: "Request declined!" };
+    } catch (e: any) {
+        console.error("Error occurred declining request:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
 export async function AddMember(team_id: any, user_id: any) {
     try {
         const [existing] = await db
