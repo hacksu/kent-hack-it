@@ -877,6 +877,12 @@ export async function IsTeamLeader(uid: string) {
 
 export async function GetOpenTeams(uid: string) {
     try {
+        const [requester] = await db
+            .select({ role: schema.user.role })
+            .from(schema.user)
+            .where(eq(schema.user.id, uid))
+            .limit(1);
+
         const counts = db
             .select({
                 team_id: schema.team_members.team_id,
@@ -892,10 +898,14 @@ export async function GetOpenTeams(uid: string) {
                 name: schema.teams.name,
             })
             .from(schema.teams)
+            .innerJoin(schema.user, eq(schema.teams.leader_id, schema.user.id))
             .leftJoin(counts, eq(schema.teams.id, counts.team_id))
-            .where(or(
-                isNull(counts.count),
-                lt(counts.count, 4)
+            .where(and(
+                or(
+                    isNull(counts.count),
+                    lt(counts.count, 4)
+                ),
+                eq(schema.user.role, requester?.role ?? 'user')
             ));
 
         const requests = await db
