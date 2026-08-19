@@ -1821,6 +1821,81 @@ export async function GetLeaderboard(): Promise<LeaderboardEntry[]> {
     }
 }
 
+export interface ScoreRaceSeries {
+    name: string;
+    rank: number;
+    history: TeamScorePoint[];
+}
+
+// Same credited-first-claim-wins logic as GetTeamDashboard's credit(), generalized to
+// any member list so it can score both teams and solo players for the race chart.
+export async function GetLeaderboardScoreRace(topN: number = 4): Promise<ScoreRaceSeries[]> {
+    try {
+        const board = await GetLeaderboard();
+        const top = board.slice(0, topN);
+        if (top.length === 0) return [];
+
+        const event_challenges = await db.select({
+            id: schema.challenges.id,
+            points: schema.challenges.points,
+        }).from(schema.challenges).where(eq(schema.challenges.is_gym, false));
+
+        const teams = await db.select({ id: schema.teams.id, name: schema.teams.name }).from(schema.teams);
+        // Entries are matched back to a team/solo-user by name, same as GetLeaderboard itself -
+        // a name collision between a team and a solo player would be ambiguous here too.
+        const teamIdByName = new Map(teams.map(t => [t.name, t.id]));
+
+        const all_team_members = await db
+            .select({ team_id: schema.team_members.team_id, user_id: schema.team_members.user_id })
+            .from(schema.team_members);
+
+        const all_users = await db
+            .select({ id: schema.user.id, name: schema.user.name, claims: schema.user.claims })
+            .from(schema.user);
+        const userById = new Map(all_users.map(u => [u.id, u]));
+        const userByName = new Map(all_users.map(u => [u.name, u]));
+
+        function historyFor(memberIds: string[]): TeamScorePoint[] {
+            const credited: { points: number; claimed_at: string }[] = [];
+
+            for (const challenge of event_challenges) {
+                const completions = memberIds
+                    .map(id => userById.get(id))
+                    .filter((u): u is (typeof all_users)[number] => !!u)
+                    .flatMap(u => (u.claims ?? [])
+                        .filter(c => String(c.challenge_id) === String(challenge.id))
+                        .map(c => ({ claimed_at: c.claimed_at }))
+                    )
+                    .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime());
+
+                if (completions.length > 0) {
+                    credited.push({ points: challenge.points, claimed_at: completions[0].claimed_at });
+                }
+            }
+
+            return credited
+                .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime())
+                .reduce((acc, c) => {
+                    const prev = acc.length ? acc[acc.length - 1].score : 0;
+                    acc.push({ t: c.claimed_at, score: prev + c.points });
+                    return acc;
+                }, [] as TeamScorePoint[]);
+        }
+
+        return top.map(entry => {
+            const teamId = teamIdByName.get(entry.name);
+            const memberIds = teamId !== undefined
+                ? all_team_members.filter(m => m.team_id === teamId).map(m => m.user_id)
+                : (userByName.get(entry.name) ? [userByName.get(entry.name)!.id] : []);
+
+            return { name: entry.name, rank: entry.rank, history: historyFor(memberIds) };
+        });
+    } catch (e: any) {
+        console.error("Error building leaderboard score race:", e);
+        return [];
+    }
+}
+
 export async function GetTeamFromPlayer(uid: any) {
     try {
         const [entry] = await db.select({ team_id: schema.team_members.team_id })
