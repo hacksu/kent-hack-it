@@ -1084,6 +1084,163 @@ export async function GetTeam(uid: string) {
     }
 }
 
+export interface TeamCategoryStrength {
+    label: string;
+    teamPct: number;
+    avgPct: number;
+}
+export interface TeamMemberContribution {
+    id: string;
+    name: string;
+    points: number;
+    pct: number;
+}
+export interface TeamScorePoint {
+    t: string;
+    score: number;
+}
+export interface TeamDashboard {
+    score: number;
+    rank: number;
+    totalRanked: number;
+    solved: number;
+    total: number;
+    scoreHistory: TeamScorePoint[];
+    categories: TeamCategoryStrength[];
+    members: TeamMemberContribution[];
+}
+
+export async function GetTeamDashboard(team_id: any): Promise<TeamDashboard> {
+    const empty: TeamDashboard = {
+        score: 0, rank: 0, totalRanked: 0, solved: 0, total: 0,
+        scoreHistory: [], categories: [], members: [],
+    };
+
+    try {
+        const event_challenges = await db.select({
+            id: schema.challenges.id,
+            category: schema.challenges.category,
+            points: schema.challenges.points,
+        }).from(schema.challenges).where(eq(schema.challenges.is_gym, false));
+
+        const all_team_members = await db
+            .select({ team_id: schema.team_members.team_id, user_id: schema.team_members.user_id })
+            .from(schema.team_members);
+
+        const all_claims = await db
+            .select({ id: schema.user.id, name: schema.user.name, claims: schema.user.claims })
+            .from(schema.user);
+
+        const claimsById = new Map(all_claims.map(u => [u.id, u]));
+
+        function credit(member_ids: string[]) {
+            const credited: {
+                challenge_id: number; category: string; points: number;
+                winner_id: string; winner_name: string; claimed_at: string;
+            }[] = [];
+
+            for (const challenge of event_challenges) {
+                const completions = member_ids
+                    .map(id => claimsById.get(id))
+                    .filter((u): u is (typeof all_claims)[number] => !!u)
+                    .flatMap(u => (u.claims ?? [])
+                        .filter(c => String(c.challenge_id) === String(challenge.id))
+                        .map(c => ({ id: u.id, name: u.name, claimed_at: c.claimed_at }))
+                    )
+                    .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime());
+
+                if (completions.length > 0) {
+                    credited.push({
+                        challenge_id: challenge.id,
+                        category: challenge.category,
+                        points: challenge.points,
+                        winner_id: completions[0].id,
+                        winner_name: completions[0].name,
+                        claimed_at: completions[0].claimed_at,
+                    });
+                }
+            }
+
+            return credited;
+        }
+
+        const my_member_ids = all_team_members
+            .filter(m => String(m.team_id) === String(team_id))
+            .map(m => m.user_id);
+
+        const myCredited = credit(my_member_ids);
+
+        const score = myCredited.reduce((sum, c) => sum + c.points, 0);
+        const solved = myCredited.length;
+        const total = event_challenges.length;
+
+        const scoreHistory = [...myCredited]
+            .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime())
+            .reduce((acc, c) => {
+                const prev = acc.length ? acc[acc.length - 1].score : 0;
+                acc.push({ t: c.claimed_at, score: prev + c.points });
+                return acc;
+            }, [] as TeamScorePoint[]);
+
+        const members: TeamMemberContribution[] = my_member_ids
+            .map(id => claimsById.get(id))
+            .filter((u): u is (typeof all_claims)[number] => !!u)
+            .map(u => {
+                const points = myCredited
+                    .filter(c => c.winner_id === u.id)
+                    .reduce((s, c) => s + c.points, 0);
+                return {
+                    id: u.id,
+                    name: u.name,
+                    points,
+                    pct: score > 0 ? Math.round((points / score) * 100) : 0,
+                };
+            })
+            .sort((a, b) => b.points - a.points);
+
+        const categoryNames = [...new Set(event_challenges.map(c => c.category))];
+        const teamIds = [...new Set(all_team_members.map(m => m.team_id))];
+        const perTeamCredited = teamIds.map(tid =>
+            credit(all_team_members.filter(m => m.team_id === tid).map(m => m.user_id))
+        );
+
+        const categories: TeamCategoryStrength[] = categoryNames.map(cat => {
+            const group = event_challenges.filter(c => c.category === cat);
+            if (group.length === 0) return { label: cat, teamPct: 0, avgPct: 0 };
+
+            const teamPct = Math.round(
+                (myCredited.filter(c => c.category === cat).length / group.length) * 100
+            );
+
+            const teamAverages = perTeamCredited.map(credited =>
+                (credited.filter(c => c.category === cat).length / group.length) * 100
+            );
+            const avgPct = Math.round(
+                teamAverages.reduce((s, v) => s + v, 0) / (teamAverages.length || 1)
+            );
+
+            return { label: cat, teamPct, avgPct };
+        });
+
+        const board = await GetLeaderboard();
+        const [team] = await db.select({ name: schema.teams.name })
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        const myIndex = board.findIndex(b => b.name === team?.name);
+        const rank = myIndex >= 0 ? board[myIndex].rank : 0;
+
+        return {
+            score, rank, totalRanked: board.length, solved, total,
+            scoreHistory, categories, members,
+        };
+    } catch (e: any) {
+        console.error("Error building team dashboard:", e);
+        return empty;
+    }
+}
+
 export async function CreateRequest(uid: any, team_id: any) {
     try {
         const existing = await db.select().from(schema.team_requests)
