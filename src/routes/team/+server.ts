@@ -1,4 +1,4 @@
-import { AcceptMember, IsTeamLeader, RemoveMember } from "$lib/database/db";
+import { AcceptMember, DeclineRequest, IsTeamLeader, RemoveMember } from "$lib/database/db";
 import { auth } from "$lib/server/auth";
 import { error, json } from "@sveltejs/kit";
 
@@ -25,6 +25,13 @@ export const POST = async ({ url , request }) => {
                 throw error(400, "Invalid Data");
     
             return json(await AcceptMember(rid, r_checksum));
+        } else if (mode === "decline") {
+            const { rid, r_checksum } = await request.json();
+
+            if (!rid || !r_checksum)
+                throw error(400, "Invalid Data");
+
+            return json(await DeclineRequest(rid, r_checksum));
         } else if (mode === "rm_member") {
             const { uid, name, team_id } = await request.json();
     
