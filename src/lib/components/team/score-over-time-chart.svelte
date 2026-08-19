@@ -1,7 +1,7 @@
 <script lang="ts">
     const { scoreHistory }: { scoreHistory: { t: string; score: number }[] } = $props();
 
-    const X0 = 34, X1 = 366, Y0 = 118, YTOP = 10;
+    const X0 = 34, X1 = 366, Y0 = 118, YTOP = 24;
 
     const chart = $derived.by(() => {
         if (scoreHistory.length === 0) return null;
