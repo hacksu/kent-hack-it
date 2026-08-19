@@ -12,6 +12,13 @@
     import * as Card from "$lib/components/ui/card";
     import Crown from "@lucide/svelte/icons/crown";
     import LogOut from "@lucide/svelte/icons/log-out";
+    import Check from "@lucide/svelte/icons/check";
+    import X from "@lucide/svelte/icons/x";
+
+    import ChallengesProgressBar from "$lib/components/team/challenges-progress-bar.svelte";
+    import ScoreOverTimeChart from "$lib/components/team/score-over-time-chart.svelte";
+    import CategoryStrengthChart from "$lib/components/team/category-strength-chart.svelte";
+    import ContributionDonut from "$lib/components/team/contribution-donut.svelte";
 
     function clearResult() {
         error = warning = success = "";
@@ -24,6 +31,26 @@
     async function AcceptRequest(rid: any, checksum: string, name: string) {
         if (window.confirm(`Are you sure you want to ${name} to join?`)) {
             const req = await fetch('/team?m=accept', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rid: rid, r_checksum: checksum })
+            });
+
+            const resp = await req.json();
+            if (resp.success) {
+                success = resp.message;
+            } else {
+                error = resp.error;
+            }
+
+            setTimeout(clearResult, 5000);
+            await invalidateAll();
+        }
+    }
+
+    async function DeclineRequest(rid: any, checksum: string, name: string) {
+        if (window.confirm(`Decline ${name}'s request to join?`)) {
+            const req = await fetch('/team?m=decline', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rid: rid, r_checksum: checksum })
@@ -64,130 +91,191 @@
     const { data } = $props();
 
     const sectionLabelClass = "mb-2 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase";
-    const panelHeaderClass = "border-b border-border px-4 py-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase";
+    const panelHeaderClass = "flex items-center justify-between border-b border-border px-4 py-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase";
+
+    const dashboard = $derived(data.dashboard);
 </script>
 
 {#if data.team}
-<div class="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6">
+<div class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
     <Feedback success={success} warning={warning} error={error}  />
 
-    <Card.Root class="overflow-hidden border border-border bg-card">
-        <div class="flex items-center justify-between border-b border-border px-4 py-3">
-            <span class="font-medium text-foreground">{data.team.name}</span>
-            <Badge variant="secondary">{data.team.members.length + 1} / 4 members</Badge>
-        </div>
+    <div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
 
-        <div class="border-b border-border px-4 pt-4 pb-3">
-            <p class={sectionLabelClass}>Leader</p>
-            <div class="flex items-center gap-2">
-                {#if data.team.leader.image}
-                    <img
-                        src={data.team.leader.image}
-                        alt={data.team.leader.name}
-                        class="h-8 w-8 rounded-full border border-border object-cover"
-                        referrerpolicy="no-referrer"
-                        crossorigin="anonymous"
-                    />
+        <Card.Root class="overflow-hidden border border-border bg-card">
+            <div class="flex items-center justify-between border-b border-border px-4 py-3">
+                <div>
+                    <span class="font-medium text-foreground">{data.team.name}</span>
+                    <p class="text-xs text-muted-foreground">{data.team.members.length + 1} / 4 members</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    {#if dashboard}
+                        <Badge variant="secondary">Rank #{dashboard.rank}</Badge>
+                    {/if}
+                    <form method="POST" action="?/leave_team" use:enhance>
+                        <input type="hidden" name="team_id" value={data.team.id} />
+                        <Button type="submit" variant="outline" size="icon-sm" title="Leave team" aria-label="Leave team">
+                            <LogOut class="h-3.5 w-3.5" />
+                        </Button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="border-b border-border px-4 pt-4 pb-3">
+                <p class={sectionLabelClass}>Leader</p>
+                <div class="flex items-center gap-2">
+                    {#if data.team.leader.image}
+                        <img
+                            src={data.team.leader.image}
+                            alt={data.team.leader.name}
+                            class="h-8 w-8 rounded-full border border-border object-cover"
+                            referrerpolicy="no-referrer"
+                            crossorigin="anonymous"
+                        />
+                    {:else}
+                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-blue text-xs font-medium text-[#08131f]">
+                            {data.team.leader.name.slice(0, 2).toUpperCase()}
+                        </div>
+                    {/if}
+                    <div>
+                        <p class="text-sm font-medium text-foreground">{data.team.leader.name}</p>
+                        <p class="text-xs text-muted-foreground">Team leader</p>
+                    </div>
+                    <Crown class="ml-auto h-4 w-4 text-[#BA7517]" />
+                </div>
+            </div>
+
+            <div class="border-b border-border px-4 pt-4 pb-3">
+                <p class={sectionLabelClass}>Members</p>
+                {#if data.team.members.length === 0}
+                    <p class="text-sm text-muted-foreground">No other members yet.</p>
                 {:else}
-                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-blue text-xs font-medium text-[#08131f]">
-                        {data.team.leader.name.slice(0, 2).toUpperCase()}
+                    {@const teamId = data.team.id}
+                    <div class="flex flex-col gap-2.5">
+                        {#each data.team.members as member}
+                            <div class="flex items-center gap-4">
+                                {#if member.image}
+                                    <img
+                                        src={member.image}
+                                        alt={member.name}
+                                        class="h-8 w-8 rounded-full border border-border object-cover"
+                                        referrerpolicy="no-referrer"
+                                        crossorigin="anonymous"
+                                    />
+                                {:else}
+                                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-medium text-secondary-foreground">
+                                        {member.name.slice(0, 2).toUpperCase()}
+                                    </div>
+                                {/if}
+
+                                <p class="text-sm font-medium text-foreground">{member.name}</p>
+
+                                {#if data.is_leader}
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        class="ml-auto"
+                                        onclick={ () => { RemoveMember(member.id, member.name, teamId) } }
+                                    >
+                                        Remove
+                                    </Button>
+                                {/if}
+                            </div>
+                        {/each}
                     </div>
                 {/if}
-                <div>
-                    <p class="text-sm font-medium text-foreground">{data.team.leader.name}</p>
-                    <p class="text-xs text-muted-foreground">Team leader</p>
-                </div>
-                <Crown class="ml-auto h-4 w-4 text-[#BA7517]" />
             </div>
-        </div>
 
-        <div class="border-b border-border px-4 pt-4 pb-3">
-            <p class={sectionLabelClass}>Members</p>
-            {#if data.team.members.length === 0}
-                <p class="text-sm text-muted-foreground">No other members yet.</p>
-            {:else}
-                {@const teamId = data.team.id}
-                <div class="flex flex-col gap-2.5">
-                    {#each data.team.members as member}
-                        <div class="flex items-center gap-4">
-                            {#if member.image}
+            {#if data.is_leader}
+                <div class="px-4 pt-4 pb-3">
+                    <p class={sectionLabelClass}>Join Requests</p>
+                    {#if data.team.requests.length === 0}
+                        <p class="text-sm text-muted-foreground">No pending requests.</p>
+                    {/if}
+                    {#each data.team.requests as req}
+                        <div class="flex items-center gap-2 py-1">
+                            {#if req.image}
                                 <img
-                                    src={member.image}
-                                    alt={member.name}
+                                    src={req.image}
+                                    alt={req.name}
                                     class="h-8 w-8 rounded-full border border-border object-cover"
                                     referrerpolicy="no-referrer"
                                     crossorigin="anonymous"
                                 />
                             {:else}
                                 <div class="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-medium text-secondary-foreground">
-                                    {member.name.slice(0, 2).toUpperCase()}
+                                    {req.name.slice(0, 2).toUpperCase()}
                                 </div>
                             {/if}
 
-                            <p class="text-sm font-medium text-foreground">{member.name}</p>
+                            <p class="text-sm text-foreground">{req.name}</p>
 
-                            <!-- only leader can see this -->
-                            {#if data.is_leader}
+                            <div class="ml-auto flex items-center gap-1.5">
                                 <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    class="ml-auto"
-                                    onclick={ () => { RemoveMember(member.id, member.name, teamId) } }
+                                    variant="outline"
+                                    size="icon-sm"
+                                    title="Decline"
+                                    class="text-destructive hover:text-destructive"
+                                    onclick={ () => { DeclineRequest(req.id, req.checksum, req.name) } }
                                 >
-                                    Remove
+                                    <X class="h-3.5 w-3.5" />
                                 </Button>
-                            {/if}
+                                <Button
+                                    variant="outline"
+                                    size="icon-sm"
+                                    title="Accept"
+                                    class="text-brand-green hover:text-brand-green"
+                                    onclick={ () => { AcceptRequest(req.id, req.checksum, req.name) } }
+                                >
+                                    <Check class="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
                         </div>
                     {/each}
                 </div>
             {/if}
-        </div>
+        </Card.Root>
 
-        <!-- only leader can see this -->
-        {#if data.is_leader}
-            <div class="border-b border-border px-4 pt-4 pb-3">
-                <p class={sectionLabelClass}>Join Requests</p>
-                {#each data.team.requests as req}
-                    <div class="flex items-center gap-2 py-1">
-                        {#if req.image}
-                            <img
-                                src={req.image}
-                                alt={req.name}
-                                class="h-8 w-8 rounded-full border border-border object-cover"
-                                referrerpolicy="no-referrer"
-                                crossorigin="anonymous"
-                            />
-                        {:else}
-                            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-medium text-secondary-foreground">
-                                {req.name.slice(0, 2).toUpperCase()}
-                            </div>
-                        {/if}
+        <Card.Root class="overflow-hidden border border-border bg-card">
+            <div class={panelHeaderClass}>Performance</div>
 
-                        <p class="text-sm text-foreground">{req.name}</p>
-
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            class="ml-auto"
-                            onclick={ () => { AcceptRequest(req.id, req.checksum, req.name) } }
-                        >
-                            Accept
-                        </Button>
+            {#if dashboard}
+                <div class="grid grid-cols-3 gap-px bg-border">
+                    <div class="flex flex-col gap-0.5 bg-card px-4 py-3">
+                        <span class="font-mono text-[0.62rem] tracking-widest text-muted-foreground uppercase">Score</span>
+                        <span class="text-lg font-bold tabular-nums text-foreground">{dashboard.score.toLocaleString()} <span class="text-[0.62rem] font-medium text-muted-foreground">pts</span></span>
                     </div>
-                {/each}
-            </div>
-        {/if}
+                    <div class="flex flex-col gap-0.5 bg-card px-4 py-3">
+                        <span class="font-mono text-[0.62rem] tracking-widest text-muted-foreground uppercase">Rank</span>
+                        <span class="text-lg font-bold tabular-nums text-brand-blue">#{dashboard.rank || '—'}</span>
+                    </div>
+                    <div class="flex flex-col gap-0.5 bg-card px-4 py-3">
+                        <span class="font-mono text-[0.62rem] tracking-widest text-muted-foreground uppercase">Solved</span>
+                        <span class="text-lg font-bold tabular-nums text-foreground">{dashboard.solved} <span class="text-[0.62rem] font-medium text-muted-foreground">/ {dashboard.total}</span></span>
+                    </div>
+                </div>
 
-        <div class="flex justify-end px-4 py-3">
-            <form method="POST" action="?/leave_team" use:enhance>
-                <input type="hidden" name="team_id" value={data.team.id} />
-                <Button type="submit" variant="outline" size="sm" class="gap-1.5">
-                    <LogOut class="h-3.5 w-3.5" /> Leave team
-                </Button>
-            </form>
-        </div>
+                <ChallengesProgressBar solved={dashboard.solved} total={dashboard.total} />
+                <ScoreOverTimeChart scoreHistory={dashboard.scoreHistory} />
+            {/if}
+        </Card.Root>
+    </div>
 
-    </Card.Root>
+    {#if dashboard && (dashboard.categories.length > 0 || dashboard.members.length > 0)}
+    <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+
+        <Card.Root class="overflow-hidden border border-border bg-card">
+            <div class={panelHeaderClass}>Category strength</div>
+            <CategoryStrengthChart categories={dashboard.categories} teamName={data.team.name} />
+        </Card.Root>
+
+        <Card.Root class="overflow-hidden border border-border bg-card">
+            <div class={panelHeaderClass}>Who&rsquo;s carrying the team</div>
+            <ContributionDonut members={dashboard.members} score={dashboard.score} />
+        </Card.Root>
+    </div>
+    {/if}
+
 </div>
 {:else}
 <div class="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
