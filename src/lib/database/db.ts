@@ -1108,6 +1108,23 @@ export async function CreateRequest(uid: any, team_id: any) {
             return { success: true, error: "Request Pending" };
         }
 
+        const [team] = await db
+            .select({ leader_id: schema.teams.leader_id })
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        if (!team) return { success: false, error: "Team not found!" };
+
+        const [[leader], [requester]] = await Promise.all([
+            db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, team.leader_id)).limit(1),
+            db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, uid)).limit(1),
+        ]);
+
+        if (leader?.role !== requester?.role) {
+            return { success: false, error: "Admins and players cannot share a team!" };
+        }
+
         await db.insert(schema.team_requests).values({
             to: team_id,
             from: uid,
