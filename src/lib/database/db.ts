@@ -1096,7 +1096,8 @@ export async function GetTeam(uid: string) {
 
 export interface TeamCategoryStrength {
     label: string;
-    teamPct: number;
+    value: number;
+    total: number;
     avgPct: number;
 }
 export interface TeamMemberContribution {
@@ -1216,11 +1217,9 @@ export async function GetTeamDashboard(team_id: any): Promise<TeamDashboard> {
 
         const categories: TeamCategoryStrength[] = categoryNames.map(cat => {
             const group = event_challenges.filter(c => c.category === cat);
-            if (group.length === 0) return { label: cat, teamPct: 0, avgPct: 0 };
+            if (group.length === 0) return { label: cat, value: 0, total: 0, avgPct: 0 };
 
-            const teamPct = Math.round(
-                (myCredited.filter(c => c.category === cat).length / group.length) * 100
-            );
+            const value = myCredited.filter(c => c.category === cat).length;
 
             const teamAverages = perTeamCredited.map(credited =>
                 (credited.filter(c => c.category === cat).length / group.length) * 100
@@ -1229,7 +1228,7 @@ export async function GetTeamDashboard(team_id: any): Promise<TeamDashboard> {
                 teamAverages.reduce((s, v) => s + v, 0) / (teamAverages.length || 1)
             );
 
-            return { label: cat, teamPct, avgPct };
+            return { label: cat, value, total: group.length, avgPct };
         });
 
         const board = await GetLeaderboard();
