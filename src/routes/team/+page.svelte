@@ -15,9 +15,9 @@
     import Check from "@lucide/svelte/icons/check";
     import X from "@lucide/svelte/icons/x";
 
-    import ChallengesProgressBar from "$lib/components/team/challenges-progress-bar.svelte";
+    import ChallengesProgressBar from "$lib/components/challenges-progress-bar.svelte";
     import ScoreOverTimeChart from "$lib/components/team/score-over-time-chart.svelte";
-    import CategoryStrengthChart from "$lib/components/team/category-strength-chart.svelte";
+    import CategoryStrengthChart from "$lib/components/category-strength-chart.svelte";
     import ContributionDonut from "$lib/components/team/contribution-donut.svelte";
 
     function clearResult() {
@@ -266,7 +266,7 @@
 
         <Card.Root class="overflow-hidden border border-border bg-card">
             <div class={panelHeaderClass}>Category strength</div>
-            <CategoryStrengthChart categories={dashboard.categories} teamName={data.team.name} />
+            <CategoryStrengthChart categories={dashboard.categories} />
         </Card.Root>
 
         <Card.Root class="overflow-hidden border border-border bg-card">
