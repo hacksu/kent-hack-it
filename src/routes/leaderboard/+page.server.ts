@@ -1,9 +1,10 @@
-import { type LeaderboardEntry, GetLeaderboard, GetTeamFromPlayer } from "$lib/database/db";
+import { type LeaderboardEntry, GetLeaderboard, GetLeaderboardScoreRace, GetTeamFromPlayer } from "$lib/database/db";
 
 export const load = async ({ parent }) => {
     const { user } = await parent();
 
     const leaderboard = await GetLeaderboard();
+    const scoreRace = await GetLeaderboardScoreRace(4);
     let self_placement: LeaderboardEntry | undefined = leaderboard.find(entry => entry.name === user?.name );
 
     async function FindSelf() {
@@ -20,6 +21,7 @@ export const load = async ({ parent }) => {
     
     return {
         board: leaderboard,
-        user_placement: self_placement
+        user_placement: self_placement,
+        scoreRace
     };
 };
