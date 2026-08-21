@@ -1,13 +1,19 @@
 <script lang="ts">
-    import Stats from '$lib/components/stats.svelte';
     import ChallengeFilters from '$lib/components/challenge-filters.svelte';
     import ChallengePanel from '$lib/components/challenge.panel.svelte';
+    import ChallengesProgressBar from '$lib/components/challenges-progress-bar.svelte';
+    import CategoryStrengthChart from '$lib/components/category-strength-chart.svelte';
 
     import { type ViewableChallengeData } from '$lib/database/db.js';
     import { onMount } from "svelte";
+    import { slide } from "svelte/transition";
 
     import { Button } from "$lib/components/ui/button";
     import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
+    import Check from "@lucide/svelte/icons/check";
+    import ChevronDown from "@lucide/svelte/icons/chevron-down";
+
+    let showCategoryBreakdown = $state(false);
 
     let error = $state("");
     let warning = $state("");
@@ -251,6 +257,19 @@
         }
     }
 
+    function difficultyEdgeClass(difficulty: string) {
+        switch (difficulty) {
+            case 'Extreme': return 'bg-destructive';
+            case 'Hard': return 'bg-amber-400';
+            case 'Medium': return 'bg-brand-blue';
+            case 'Easy': return 'bg-brand-green';
+            default: return 'bg-muted-foreground';
+        }
+    }
+
+    const overallProg = $derived(data.progressData?.totalProg?.[0] ?? { value: 0, total: 0 });
+    const categoryProg = $derived(data.progressData?.totalProg?.slice(1) ?? []);
+
 </script>
 
 <ChallengePanel
@@ -279,7 +298,28 @@
 <main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
 
     <div class="mb-6">
-        <Stats progressData={ data.progressData } showAll={ false } />
+        <div class="rounded-2xl border border-border bg-card">
+            <div class="border-b border-border px-4 py-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
+                Your progress
+            </div>
+            <ChallengesProgressBar solved={overallProg.value} total={overallProg.total} />
+            <button
+                type="button"
+                class="flex w-full items-center justify-between border-t border-border px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                onclick={() => showCategoryBreakdown = !showCategoryBreakdown}
+            >
+                <span>Category Breakdown</span>
+                <ChevronDown
+                    class="h-3.5 w-3.5 transition-transform duration-300"
+                    style="transform: rotate({showCategoryBreakdown ? 180 : 0}deg)"
+                />
+            </button>
+            {#if showCategoryBreakdown}
+                <div transition:slide={{ duration: 250 }}>
+                    <CategoryStrengthChart categories={categoryProg} />
+                </div>
+            {/if}
+        </div>
 
         <div class="mt-4 text-center">
             <h2 class="font-mono text-2xl font-bold text-foreground">Welcome to the Gym</h2>
@@ -338,11 +378,13 @@
                         {#each currentChallenges as challenge, idx (challenge.id ?? idx)}
                             <button
                                 type="button"
-                                class="h-full rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-brand-blue/40"
+                                class="relative h-full overflow-hidden rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-brand-blue/40"
                                 onclick={ () => { viewChallenge(challenge.id) } }
                             >
+                                <span class="absolute inset-x-0 top-0 h-[3px] {difficultyEdgeClass(challenge.difficulty)}"></span>
+
                                 {#if !challenge.is_active}
-                                    <div class="mb-3 flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3">
+                                    <div class="mt-1 mb-3 flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3">
                                         <TriangleAlert class="h-4.5 w-4.5 shrink-0 text-amber-400" />
 
                                         <div>
@@ -357,25 +399,43 @@
                                     </div>
                                 {/if}
 
-                                <div class={!challenge.is_active ? 'opacity-50' : ''}>
-                                    <div class="flex items-center justify-center gap-2.5">
+                                <div class="{!challenge.is_active ? 'opacity-50' : ''} mt-1">
+                                    <div class="flex items-start justify-between gap-2">
                                         <h6 class="text-sm font-semibold text-foreground">{challenge.name}</h6>
+                                        {#if hasSolved(challenge.id)}
+                                            <span
+                                                class="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-brand-green text-[#08131f]"
+                                                title="You solved this"
+                                            >
+                                                <Check class="h-3 w-3" />
+                                            </span>
+                                        {/if}
                                     </div>
 
-                                    <p class="mt-1 text-xs text-muted-foreground">
-                                        {challenge.category} | Difficulty: {challenge.difficulty}
-                                    </p>
-                                    <p class="mt-0.5 text-xs text-brand-blue">
-                                        By: {challenge.written_by || 'Unknown Author'}
-                                    </p>
                                     {#if challenge.description}
-                                        <p class="mt-2 text-xs text-muted-foreground">
+                                        <p class="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
                                             {challenge.description}
                                         </p>
                                     {/if}
-                                    <p class="mt-2 text-xs text-foreground">⭐ {Number(challenge.rating).toFixed(1)} / 5</p>
-                                    <p class="text-xs text-foreground">Points: {challenge.points}</p>
-                                    <p class="text-xs text-muted-foreground">{challenge.solves} Solves</p>
+
+                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                        <span class="rounded-full border border-brand-blue/30 bg-brand-blue/15 px-2 py-0.5 text-[0.65rem] font-medium text-brand-blue">
+                                            {challenge.category}
+                                        </span>
+                                        <span class="rounded-full border px-2 py-0.5 text-[0.65rem] font-medium {difficultyBadgeClass(challenge.difficulty)}">
+                                            {challenge.difficulty}
+                                        </span>
+                                    </div>
+
+                                    <p class="mt-2 text-xs text-brand-blue">
+                                        By: {challenge.written_by || 'Unknown Author'}
+                                    </p>
+
+                                    <div class="mt-2 flex items-center justify-between text-xs text-foreground">
+                                        <span>⭐ {Number(challenge.rating).toFixed(1)} / 5</span>
+                                        <span>{challenge.points} pts</span>
+                                    </div>
+                                    <p class="mt-0.5 text-xs text-muted-foreground">{challenge.solves} Solves</p>
                                 </div>
                             </button>
                         {/each}
@@ -396,9 +456,16 @@
                     <Button variant="outline" size="sm" onclick={prevPage} disabled={currentPage === 1}>
                         ← Prev
                     </Button>
-                    <span class="text-sm font-semibold text-muted-foreground">
-                        Page {currentPage} of {totalPages}
-                    </span>
+                    <div class="flex flex-col items-center gap-1.5">
+                        <span class="font-mono text-xs text-muted-foreground">
+                            {Math.min(indexOfFirst + 1, challenges.length)}–{Math.min(indexOfLast, challenges.length)} of {challenges.length}
+                        </span>
+                        <div class="flex items-center gap-1">
+                            {#each Array(totalPages) as _, i}
+                                <span class="h-1.5 rounded-full transition-all {i + 1 === currentPage ? 'w-4 bg-brand-green' : 'w-1.5 bg-border'}"></span>
+                            {/each}
+                        </div>
+                    </div>
                     <Button variant="outline" size="sm" onclick={nextPage} disabled={indexOfLast >= challenges.length}>
                         Next →
                     </Button>
