@@ -13,7 +13,6 @@
     import { slide } from "svelte/transition";
 
     import { Button } from "$lib/components/ui/button";
-    import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
     import Check from "@lucide/svelte/icons/check";
     import ChevronDown from "@lucide/svelte/icons/chevron-down";
 
@@ -358,18 +357,8 @@
                                 <span class="absolute inset-x-0 top-0 h-[3px] {difficultyEdgeClass(challenge.difficulty)}"></span>
 
                                 {#if !challenge.is_active}
-                                    <div class="mt-1 mb-3 flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3">
-                                        <TriangleAlert class="h-4.5 w-4.5 shrink-0 text-amber-400" />
-
-                                        <div>
-                                            <div class="text-sm font-semibold text-amber-300">
-                                                Challenge Offline
-                                            </div>
-
-                                            <p class="text-xs text-muted-foreground">
-                                                This challenge is currently out-of-order and will return soon.
-                                            </p>
-                                        </div>
+                                    <div class="mt-1 mb-2 inline-block w-fit rounded-md bg-amber-400/15 px-2 py-0.5 text-[0.68rem] font-semibold text-amber-300">
+                                        Offline, back soon
                                     </div>
                                 {/if}
 
