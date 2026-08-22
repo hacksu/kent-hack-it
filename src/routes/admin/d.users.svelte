@@ -68,6 +68,7 @@
     <div class="mb-4">
         <Input
             type="text"
+            class="inputText"
             placeholder="Search players by username..."
             bind:value={searchTerm}
         />

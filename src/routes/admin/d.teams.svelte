@@ -72,6 +72,7 @@
         <div class="flex gap-2">
             <Input
                 type="text"
+                class="inputText"
                 placeholder="Search team by name..."
                 bind:value={searchTerm}
             />
@@ -117,7 +118,7 @@
                                 referrerpolicy="no-referrer"
                                 crossorigin="anonymous"
                             />
-                            <span>{member}</span>
+                            <span>{member.name}</span>
                         </li>
                     {/each}
                 </ul>

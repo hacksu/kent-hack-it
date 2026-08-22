@@ -1,4 +1,4 @@
-import { CreateRequest, GetOpenTeams, GetTeam, LeaveTeam, MakeTeam } from '$lib/database/db.js';
+import { CreateRequest, GetOpenTeams, GetTeam, GetTeamDashboard, LeaveTeam, MakeTeam } from '$lib/database/db.js';
 import { auth } from '$lib/server/auth';
 import { redirect } from '@sveltejs/kit';
 import { env } from "$env/dynamic/private";
@@ -18,6 +18,7 @@ export const load = async ({ parent }) => {
         is_leader: results.is_leader,
         teams: await GetOpenTeams(user.id),
         team: results.team,
+        dashboard: results.team ? await GetTeamDashboard(results.team.id) : null,
     }
 };
 

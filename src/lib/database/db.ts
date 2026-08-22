@@ -351,10 +351,16 @@ export async function GetSolvers() {
         const solvers: Record<number, { name: string; claimed_at: string }[]> = {};
         const sorted: Record<number, string[]> = {};
         
-        const users = await db
-            .select({ name: schema.user.name, claims: schema.user.claims })
-            .from(schema.user)
-            .where(eq(schema.user.role, 'user'));
+        const users = (process.env.PROD || env.PROD) ? (
+            await db
+                .select({ name: schema.user.name, claims: schema.user.claims })
+                .from(schema.user)
+                .where(eq(schema.user.role, 'user'))
+        ) : (
+            await db
+                .select({ name: schema.user.name, claims: schema.user.claims })
+                .from(schema.user)
+        );
 
 
         for (const user of users) {
@@ -687,19 +693,25 @@ export async function CheckFlag(uid: any, cid: any, flag_value: any): Promise<{ 
         if (!c_data[0].is_active) {
             return { success: false, message: 'Not accepting flags at this time' };
         }
-        if (!IsEventActive() && !c_data[0].is_gym) {
+        if (!await IsEventActive() && !c_data[0].is_gym) {
             return { success: false, message: 'Not accepting flags at this time' };
         }
-        if (!IsGymActive() && c_data[0].is_gym) {
+        if (!await IsGymActive() && c_data[0].is_gym) {
             return { success: false, message: 'Not accepting flags at this time' };
         }
 
         console.log("[*] Verifying Flag");
+        
         const challenge = c_data[0];
+        let dec_flag = await decryptFlag(challenge.flag);
+
+        dec_flag = dec_flag.toLowerCase();
+        flag_value = flag_value.toLowerCase();
+
         const flag_claimed = (challenge.nsjail_conf || challenge.image_ref || challenge.web_image_ref) ? (
-            await decryptFlag(challenge.flag) === flag_value
+            dec_flag === flag_value // ascii str comparision
         ) : (
-            challenge.flag === await SHA256(flag_value)
+            challenge.flag === await SHA256(flag_value) // hash str comparision
         );
 
         if (flag_claimed) {
@@ -782,10 +794,10 @@ export async function SubmitRating(uid: any, cid: any, rating: number): Promise<
         if (!challenge.is_active) {
             return { success: false, message: 'Not accepting ratings at this time' };
         }
-        if (!IsEventActive() && !challenge.is_gym) {
+        if (!await IsEventActive() && !challenge.is_gym) {
             return { success: false, message: 'Not accepting ratings at this time' };
         }
-        if (!IsGymActive() && challenge.is_gym) {
+        if (!await IsGymActive() && challenge.is_gym) {
             return { success: false, message: 'Not accepting ratings at this time' };
         }
 
@@ -839,7 +851,7 @@ export async function GetTeams() {
                 id: team.id,
                 name: team.name,
                 leader: leader,
-                members: memberRows.map(m => {m.name,m.image}),
+                members: memberRows.map(m => ({ name: m.name, image: m.image })),
             };
         }));
     } catch (e: any) {
@@ -865,6 +877,12 @@ export async function IsTeamLeader(uid: string) {
 
 export async function GetOpenTeams(uid: string) {
     try {
+        const [requester] = await db
+            .select({ role: schema.user.role })
+            .from(schema.user)
+            .where(eq(schema.user.id, uid))
+            .limit(1);
+
         const counts = db
             .select({
                 team_id: schema.team_members.team_id,
@@ -880,10 +898,14 @@ export async function GetOpenTeams(uid: string) {
                 name: schema.teams.name,
             })
             .from(schema.teams)
+            .innerJoin(schema.user, eq(schema.teams.leader_id, schema.user.id))
             .leftJoin(counts, eq(schema.teams.id, counts.team_id))
-            .where(or(
-                isNull(counts.count),
-                lt(counts.count, 4)
+            .where(and(
+                or(
+                    isNull(counts.count),
+                    lt(counts.count, 4)
+                ),
+                eq(schema.user.role, requester?.role ?? 'user')
             ));
 
         const requests = await db
@@ -1072,6 +1094,162 @@ export async function GetTeam(uid: string) {
     }
 }
 
+export interface TeamCategoryStrength {
+    label: string;
+    value: number;
+    total: number;
+    avgPct: number;
+}
+export interface TeamMemberContribution {
+    id: string;
+    name: string;
+    points: number;
+    pct: number;
+}
+export interface TeamScorePoint {
+    t: string;
+    score: number;
+}
+export interface TeamDashboard {
+    score: number;
+    rank: number;
+    totalRanked: number;
+    solved: number;
+    total: number;
+    scoreHistory: TeamScorePoint[];
+    categories: TeamCategoryStrength[];
+    members: TeamMemberContribution[];
+}
+
+export async function GetTeamDashboard(team_id: any): Promise<TeamDashboard> {
+    const empty: TeamDashboard = {
+        score: 0, rank: 0, totalRanked: 0, solved: 0, total: 0,
+        scoreHistory: [], categories: [], members: [],
+    };
+
+    try {
+        const event_challenges = await db.select({
+            id: schema.challenges.id,
+            category: schema.challenges.category,
+            points: schema.challenges.points,
+        }).from(schema.challenges).where(eq(schema.challenges.is_gym, false));
+
+        const all_team_members = await db
+            .select({ team_id: schema.team_members.team_id, user_id: schema.team_members.user_id })
+            .from(schema.team_members);
+
+        const all_claims = await db
+            .select({ id: schema.user.id, name: schema.user.name, claims: schema.user.claims })
+            .from(schema.user);
+
+        const claimsById = new Map(all_claims.map(u => [u.id, u]));
+
+        function credit(member_ids: string[]) {
+            const credited: {
+                challenge_id: number; category: string; points: number;
+                winner_id: string; winner_name: string; claimed_at: string;
+            }[] = [];
+
+            for (const challenge of event_challenges) {
+                const completions = member_ids
+                    .map(id => claimsById.get(id))
+                    .filter((u): u is (typeof all_claims)[number] => !!u)
+                    .flatMap(u => (u.claims ?? [])
+                        .filter(c => String(c.challenge_id) === String(challenge.id))
+                        .map(c => ({ id: u.id, name: u.name, claimed_at: c.claimed_at }))
+                    )
+                    .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime());
+
+                if (completions.length > 0) {
+                    credited.push({
+                        challenge_id: challenge.id,
+                        category: challenge.category,
+                        points: challenge.points,
+                        winner_id: completions[0].id,
+                        winner_name: completions[0].name,
+                        claimed_at: completions[0].claimed_at,
+                    });
+                }
+            }
+
+            return credited;
+        }
+
+        const my_member_ids = all_team_members
+            .filter(m => String(m.team_id) === String(team_id))
+            .map(m => m.user_id);
+
+        const myCredited = credit(my_member_ids);
+
+        const score = myCredited.reduce((sum, c) => sum + c.points, 0);
+        const solved = myCredited.length;
+        const total = event_challenges.length;
+
+        const scoreHistory = [...myCredited]
+            .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime())
+            .reduce((acc, c) => {
+                const prev = acc.length ? acc[acc.length - 1].score : 0;
+                acc.push({ t: c.claimed_at, score: prev + c.points });
+                return acc;
+            }, [] as TeamScorePoint[]);
+
+        const members: TeamMemberContribution[] = my_member_ids
+            .map(id => claimsById.get(id))
+            .filter((u): u is (typeof all_claims)[number] => !!u)
+            .map(u => {
+                const points = myCredited
+                    .filter(c => c.winner_id === u.id)
+                    .reduce((s, c) => s + c.points, 0);
+                return {
+                    id: u.id,
+                    name: u.name,
+                    points,
+                    pct: score > 0 ? Math.round((points / score) * 100) : 0,
+                };
+            })
+            .sort((a, b) => b.points - a.points);
+
+        const categoryNames = [...new Set(event_challenges.map(c => c.category))];
+        const teamIds = [...new Set(all_team_members.map(m => m.team_id))];
+        const perTeamCredited = teamIds.map(tid =>
+            credit(all_team_members.filter(m => m.team_id === tid).map(m => m.user_id))
+        );
+
+        const categories: TeamCategoryStrength[] = categoryNames.map(cat => {
+            const group = event_challenges.filter(c => c.category === cat);
+            if (group.length === 0) return { label: cat, value: 0, total: 0, avgPct: 0 };
+
+            const value = myCredited.filter(c => c.category === cat).length;
+
+            const teamAverages = perTeamCredited.map(credited =>
+                (credited.filter(c => c.category === cat).length / group.length) * 100
+            );
+            const avgPct = Math.round(
+                teamAverages.reduce((s, v) => s + v, 0) / (teamAverages.length || 1)
+            );
+
+            return { label: cat, value, total: group.length, avgPct };
+        });
+
+        const board = await GetLeaderboard();
+        const [team] = await db.select({ name: schema.teams.name })
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        const myIndex = board.findIndex(b => b.name === team?.name);
+        const rank = myIndex >= 0 ? board[myIndex].rank : 0;
+
+        return {
+            score, rank, totalRanked: board.length, solved, total,
+            scoreHistory, categories, members,
+        };
+    } catch (e: any) {
+        console.error("Error building team dashboard:", e);
+        return empty;
+    }
+}
+
 export async function CreateRequest(uid: any, team_id: any) {
     try {
         const existing = await db.select().from(schema.team_requests)
@@ -1084,6 +1262,23 @@ export async function CreateRequest(uid: any, team_id: any) {
         if (existing.length > 0) {
             console.log("[*] Request has already been sent!");
             return { success: true, error: "Request Pending" };
+        }
+
+        const [team] = await db
+            .select({ leader_id: schema.teams.leader_id })
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        if (!team) return { success: false, error: "Team not found!" };
+
+        const [[leader], [requester]] = await Promise.all([
+            db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, team.leader_id)).limit(1),
+            db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, uid)).limit(1),
+        ]);
+
+        if (leader?.role !== requester?.role) {
+            return { success: false, error: "Admins and players cannot share a team!" };
         }
 
         await db.insert(schema.team_requests).values({
@@ -1127,6 +1322,31 @@ export async function AcceptMember(rid: any, r_checksum: any) {
     }
 }
 
+export async function DeclineRequest(rid: any, r_checksum: any) {
+    try {
+        const data = await db.select().from(schema.team_requests)
+                        .where(
+                            and(
+                                eq(schema.team_requests.id, rid),
+                                eq(schema.team_requests.checksum, r_checksum)
+                            )
+                        ).limit(1);
+
+        if (data.length === 0) {
+            console.log("[*] Bad_Decline | Request not found!");
+            return { success: false, error: "Decline Failed" };
+        }
+
+        await db.delete(schema.team_requests)
+                .where(eq(schema.team_requests.id, rid));
+
+        return { success: true, message: "Request declined!" };
+    } catch (e: any) {
+        console.error("Error occurred declining request:", e);
+        return { success: false, error: "Error occurred!" };
+    }
+}
+
 export async function AddMember(team_id: any, user_id: any) {
     try {
         const [existing] = await db
@@ -1136,6 +1356,23 @@ export async function AddMember(team_id: any, user_id: any) {
             .limit(1);
 
         if (existing) return { success: false, error: "User is already in a team!" };
+
+        const [team] = await db
+            .select({ leader_id: schema.teams.leader_id })
+            .from(schema.teams)
+            .where(eq(schema.teams.id, team_id))
+            .limit(1);
+
+        if (!team) return { success: false, error: "Team not found!" };
+
+        const [[leader], [joiner]] = await Promise.all([
+            db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, team.leader_id)).limit(1),
+            db.select({ role: schema.user.role }).from(schema.user).where(eq(schema.user.id, user_id)).limit(1),
+        ]);
+
+        if (leader?.role !== joiner?.role) {
+            return { success: false, error: "Admins and players cannot share a team!" };
+        }
 
         const [count_row] = await db
             .select({ count: count() })
@@ -1271,7 +1508,7 @@ export async function GetProgress(uid: string) {
 
             const contributions: Contribution[] = [];
 
-            for (const challenge of all_challenges) {
+            for (const challenge of evt_challenges) {
                 const completions = member_claims
                     .flatMap(m => (m.claims ?? [])
                         .filter(c => String(c.challenge_id) === String(challenge.id))
@@ -1290,10 +1527,10 @@ export async function GetProgress(uid: string) {
             }
 
             // category bars — how many challenges per category are completed by anyone on the team
-            const categories = [...new Set(all_challenges.map(c => c.category))];
+            const categories = [...new Set(evt_challenges.map(c => c.category))];
 
             const categoryBars: Stat[] = categories.map((cat, index) => {
-                const group = all_challenges.filter(c => c.category === cat);
+                const group = evt_challenges.filter(c => c.category === cat);
 
                 const completed = group.filter(c =>
                     contributions.some(con => con.challenge_id === String(c.id))
@@ -1319,7 +1556,7 @@ export async function GetProgress(uid: string) {
                     {
                         label: 'Team Total',
                         value: contributions.length,
-                        total: all_challenges.length,
+                        total: evt_challenges.length,
                         color: '#5b93d8',
                     },
                     ...categoryBars,
@@ -1494,8 +1731,15 @@ export async function GetLeaderboard(): Promise<LeaderboardEntry[]> {
         let board: LeaderboardEntry[] = [];
 
         // fetch the scores for all teams
-        const groups = await db.select({ id: schema.teams.id, name: schema.teams.name })
-                        .from(schema.teams);
+        const groups = (process.env.PROD || env.PROD) ? (
+            await db.select({ id: schema.teams.id, name: schema.teams.name })
+            .from(schema.teams)
+            .innerJoin(schema.user, eq(schema.teams.leader_id, schema.user.id))
+            .where(eq(schema.user.role, "user"))
+        ) : (
+            await db.select({ id: schema.teams.id, name: schema.teams.name })
+            .from(schema.teams)
+        );
 
         for (const group of groups) {
             const [ score, last_claim ] = await GetTeamEntry(group.id)
@@ -1538,7 +1782,8 @@ export async function GetLeaderboard(): Promise<LeaderboardEntry[]> {
                                             eq(schema.challenges.is_gym, false),
                                             eq(schema.challenges.id, claim.challenge_id)
                                         ));
-                user_score += challenge?.points ?? 0;
+                if (!challenge) continue;
+                user_score += challenge.points;
 
                 if (most_recent_claim.length === 0)
                     most_recent_claim = claim.claimed_at;
@@ -1575,6 +1820,77 @@ export async function GetLeaderboard(): Promise<LeaderboardEntry[]> {
     }
 }
 
+export interface ScoreRaceSeries {
+    name: string;
+    rank: number;
+    history: TeamScorePoint[];
+}
+
+export async function GetLeaderboardScoreRace(topN: number = 4): Promise<ScoreRaceSeries[]> {
+    try {
+        const board = await GetLeaderboard();
+        const top = board.slice(0, topN);
+        if (top.length === 0) return [];
+
+        const event_challenges = await db.select({
+            id: schema.challenges.id,
+            points: schema.challenges.points,
+        }).from(schema.challenges).where(eq(schema.challenges.is_gym, false));
+
+        const teams = await db.select({ id: schema.teams.id, name: schema.teams.name }).from(schema.teams);
+        const teamIdByName = new Map(teams.map(t => [t.name, t.id]));
+
+        const all_team_members = await db
+            .select({ team_id: schema.team_members.team_id, user_id: schema.team_members.user_id })
+            .from(schema.team_members);
+
+        const all_users = await db
+            .select({ id: schema.user.id, name: schema.user.name, claims: schema.user.claims })
+            .from(schema.user);
+        const userById = new Map(all_users.map(u => [u.id, u]));
+        const userByName = new Map(all_users.map(u => [u.name, u]));
+
+        function historyFor(memberIds: string[]): TeamScorePoint[] {
+            const credited: { points: number; claimed_at: string }[] = [];
+
+            for (const challenge of event_challenges) {
+                const completions = memberIds
+                    .map(id => userById.get(id))
+                    .filter((u): u is (typeof all_users)[number] => !!u)
+                    .flatMap(u => (u.claims ?? [])
+                        .filter(c => String(c.challenge_id) === String(challenge.id))
+                        .map(c => ({ claimed_at: c.claimed_at }))
+                    )
+                    .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime());
+
+                if (completions.length > 0) {
+                    credited.push({ points: challenge.points, claimed_at: completions[0].claimed_at });
+                }
+            }
+
+            return credited
+                .sort((a, b) => new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime())
+                .reduce((acc, c) => {
+                    const prev = acc.length ? acc[acc.length - 1].score : 0;
+                    acc.push({ t: c.claimed_at, score: prev + c.points });
+                    return acc;
+                }, [] as TeamScorePoint[]);
+        }
+
+        return top.map(entry => {
+            const teamId = teamIdByName.get(entry.name);
+            const memberIds = teamId !== undefined
+                ? all_team_members.filter(m => m.team_id === teamId).map(m => m.user_id)
+                : (userByName.get(entry.name) ? [userByName.get(entry.name)!.id] : []);
+
+            return { name: entry.name, rank: entry.rank, history: historyFor(memberIds) };
+        });
+    } catch (e: any) {
+        console.error("Error building leaderboard score race:", e);
+        return [];
+    }
+}
+
 export async function GetTeamFromPlayer(uid: any) {
     try {
         const [entry] = await db.select({ team_id: schema.team_members.team_id })
@@ -1600,7 +1916,7 @@ export async function GetTeamFromPlayer(uid: any) {
  * @param uid 
  * @param cid 
  */
-export async function CreateInstance(uid: any, cid: any) {
+export async function CreateInstance(uid: any, cid: any, bypass_gates: boolean = false) {
     try {
         // if there is an existing instance we need to kill it
         const activeInstance = await db.select().from(schema.instance_sessions)
@@ -1645,16 +1961,18 @@ export async function CreateInstance(uid: any, cid: any) {
         }
         
         // handle conditions where flags are rejected
-        if (!challenge_data[0].is_active) {
-            return { success: false, message: 'Instance Unavailable' };
+        if (!bypass_gates) {
+            if (!challenge_data[0].is_active) {
+                return { success: false, message: 'Instance Unavailable' };
+            }
+            if (!await IsEventActive() && !challenge_data[0].is_gym) {
+                return { success: false, message: 'Instance Unavailable' };
+            }
+            if (!await IsGymActive() && challenge_data[0].is_gym) {
+                return { success: false, message: 'Instance Unavailable' };
+            }
         }
-        if (!IsEventActive() && !challenge_data[0].is_gym) {
-            return { success: false, message: 'Instance Unavailable' };
-        }
-        if (!IsGymActive() && challenge_data[0].is_gym) {
-            return { success: false, message: 'Instance Unavailable' };
-        }
-        
+
         if (!challenge_data[0].nsjail_conf) {
             // challenges without a jail conf cannot generate instances
             return {
@@ -1772,7 +2090,7 @@ export async function StopInstance(uid: any) {
     }
 }
 
-export async function CreateSSHInstance(uid: any, cid: any) {
+export async function CreateSSHInstance(uid: any, cid: any, bypass_gates: boolean = false) {
     try {
         // stop any existing SSH instance the participant already has
         const existing = await GetActiveSSHInstance(uid);
@@ -1806,14 +2124,16 @@ export async function CreateSSHInstance(uid: any, cid: any) {
         }
 
         // handle conditions where flags are rejected
-        if (!challenge_data[0].is_active) {
-            return { success: false, message: 'SSH Instance Unavailable' };
-        }
-        if (!IsEventActive() && !challenge_data[0].is_gym) {
-            return { success: false, message: 'SSH Instance Unavailable' };
-        }
-        if (!IsGymActive() && challenge_data[0].is_gym) {
-            return { success: false, message: 'SSH Instance Unavailable' };
+        if (!bypass_gates) {
+            if (!challenge_data[0].is_active) {
+                return { success: false, message: 'SSH Instance Unavailable' };
+            }
+            if (!await IsEventActive() && !challenge_data[0].is_gym) {
+                return { success: false, message: 'SSH Instance Unavailable' };
+            }
+            if (!await IsGymActive() && challenge_data[0].is_gym) {
+                return { success: false, message: 'SSH Instance Unavailable' };
+            }
         }
 
         console.log("[*] Fetching ssh-orchestrator create_instance...");
@@ -1912,6 +2232,7 @@ export async function GetActiveInstances() {
             player_name: schema.user.name,
             challenge_name: schema.challenges.name,
             port: schema.ssh_instance_sessions.port,
+            password: schema.ssh_instance_sessions.password,
             container_id: schema.ssh_instance_sessions.container_id,
             expires_at: schema.ssh_instance_sessions.expires_at,
         }).from(schema.ssh_instance_sessions)

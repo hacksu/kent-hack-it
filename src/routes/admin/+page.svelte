@@ -32,7 +32,7 @@
         { title: "Upload",     value: "upload",   component: FileUploadTab,     props: () => ({ uploaded_files: data.files }) },
         { title: "Configuration",     value: "config",   component: ConfigTab,  props: () => ({ config: data.config }) },
         { title: "Logs",     value: "logs",   component: LogTab,                props: () => ({ entries: data.log_data }) },
-        { title: "Instances",     value: "instances",   component: InstancesTab, props: () => ({ instances: data.instances }) },
+        { title: "Instances",     value: "instances",   component: InstancesTab, props: () => ({ instances: data.instances, challenges: data.challenges }) },
     ];
 
     let activeComponent = $derived(tabs.find(t => t.value === activeTab));

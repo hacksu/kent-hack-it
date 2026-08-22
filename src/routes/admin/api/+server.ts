@@ -1,4 +1,4 @@
-import { isAdmin } from '$lib/server/auth';
+import { isAdmin, auth } from '$lib/server/auth';
 import {
     ToggleChallenge, DeleteChallenge,
     DeleteAdmin,
@@ -8,6 +8,9 @@ import {
     StopSSHInstance,
     StopWebInstance,
     RedeployWebInstance,
+    EnsureWebInstance,
+    CreateInstance,
+    CreateSSHInstance,
 } from '$lib/database/db';
 import { json } from '@sveltejs/kit';
 
@@ -53,6 +56,26 @@ async function restartInstance(type: string, cid: string) {
         return json({ success: false, error: 'Restart is only supported for web instances' });
     }
     return json(await RedeployWebInstance(cid));
+}
+
+async function startInstance(request: Request, type: string, cid: string) {
+    if (type === 'web') {
+        return json(await EnsureWebInstance(cid));
+    }
+
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session) {
+        return json({ success: false, error: 'Unauthorized' });
+    }
+
+    if (type === 'nc') {
+        return json(await CreateInstance(session.user.id, cid, true));
+    }
+    if (type === 'ssh') {
+        return json(await CreateSSHInstance(session.user.id, cid, true));
+    }
+
+    return json({ success: false, error: 'Unknown instance type' });
 }
 
 async function deleteTeam(id: string) {
@@ -152,6 +175,8 @@ export const POST = async (event) => {
             handler = await stopInstance(data.type, data.uid, data.cid);
         } else if (data.action === 'restart') {
             handler = await restartInstance(data.type, data.cid);
+        } else if (data.action === 'start') {
+            handler = await startInstance(event.request, data.type, data.cid);
         } else {
             // unknown action
             return json({ success: false, error: 'Unknown action' , status: 500 });
