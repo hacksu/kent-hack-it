@@ -384,3 +384,7 @@ h6 {
 .star:hover {
     transform: scale(1.2);
 }
+
+.inputText {
+    color: #d4d4d4;
+}

@@ -154,6 +154,7 @@
                     <Input
                         type="text"
                         id="name"
+                        class="inputText"
                         name="name" required
                         value={challenge?.name || ""}
                         placeholder="Enter challenge name"
@@ -178,6 +179,7 @@
                     <Input
                         type="text"
                         id="author"
+                        class="inputText"
                         name="written_by" required
                         value={challenge?.written_by || ""}
                         placeholder="Enter challenge author name"
@@ -203,7 +205,7 @@
                         <div class="mb-2">
                             <Input
                                 type="text"
-                                class="h-7 text-xs"
+                                class="h-7 text-xs inputText"
                                 placeholder="Search files..."
                                 bind:value={archiveSearch}
                             />
@@ -254,7 +256,7 @@
                         <div class="mb-2">
                             <Input
                                 type="text"
-                                class="h-7 text-xs"
+                                class="h-7 text-xs inputText"
                                 placeholder="Search files..."
                                 bind:value={jailConfSearch}
                             />
@@ -307,6 +309,7 @@
                             type="text"
                             id="image-ref"
                             name="image_ref"
+                            class="inputText"
                             bind:value={imageRef}
                             placeholder="e.g. khi-ssh/go1:latest"
                         />
@@ -341,6 +344,7 @@
                             type="text"
                             id="web-image-ref"
                             name="web_image_ref"
+                            class="inputText"
                             bind:value={webImageRef}
                             placeholder="e.g. khi-web/profilepeek:latest"
                         />
@@ -364,6 +368,7 @@
                         <div class="mb-2 flex gap-2">
                             <Input
                                 type="text"
+                                class="inputText"
                                 bind:value={hints[index]}
                                 placeholder={`Hint #${index + 1}`}
                             />
@@ -438,6 +443,7 @@
                             id="flag-value"
                             type={ showFlag ? "text" : "password" }
                             name="flag"
+                            class="inputText"
                             required={requireFlag}
                             placeholder="Enter flag"
                             autocomplete="off"
@@ -471,6 +477,7 @@
                     <input
                         type="text"
                         name="id"
+                        class="inputText"
                         value={challenge.id}
                         hidden
                     />

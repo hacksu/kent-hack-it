@@ -327,7 +327,7 @@
                                     type="text"
                                     placeholder="Enter Flag"
                                     required
-                                    class="flex-1"
+                                    class="flex-1 inputText"
                                 />
                                 <Button type="submit">
                                     Submit

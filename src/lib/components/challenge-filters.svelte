@@ -157,6 +157,7 @@
             <Input
                 id="search-text"
                 type="text"
+                class="inputText"
                 placeholder="Search challenges..."
                 bind:value={filters.searchText}
             />

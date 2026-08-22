@@ -72,6 +72,7 @@
         <div class="flex gap-2">
             <Input
                 type="text"
+                class="inputText"
                 placeholder="Search team by name..."
                 bind:value={searchTerm}
             />

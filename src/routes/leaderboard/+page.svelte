@@ -28,7 +28,7 @@
     <div class="text-center">
         <h2 class="font-mono text-2xl font-bold text-foreground">KHI Leaderboard</h2>
         <div class="mt-4 flex justify-center">
-            <Input type="text" placeholder="Search by name..." bind:value={searchValue} class="max-w-sm" />
+            <Input type="text" placeholder="Search by name..." bind:value={searchValue} class="max-w-sm inputText" />
         </div>
     </div>
 

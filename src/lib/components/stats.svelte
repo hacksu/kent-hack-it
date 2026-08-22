@@ -12,7 +12,7 @@
     const panelClass = "mt-1.5 w-full rounded-xl border border-border bg-card";
 </script>
 
-<div class="w-[90%]">
+<div>
     {#if showAll && progressData.teamProg}
         <button class={toggleClass} onclick={() => showTeam = !showTeam}>
             <span>Team Progress</span>

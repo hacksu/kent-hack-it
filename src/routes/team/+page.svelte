@@ -102,7 +102,7 @@
 
     <div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
 
-        <Card.Root class="overflow-hidden border border-border bg-card">
+        <Card.Root class="overflow-hidden border border-border bg-card h-full flex flex-col">
             <div class="flex items-center justify-between border-b border-border px-4 py-3">
                 <div>
                     <span class="font-medium text-foreground">{data.team.name}</span>
@@ -236,7 +236,7 @@
             {/if}
         </Card.Root>
 
-        <Card.Root class="overflow-hidden border border-border bg-card">
+        <Card.Root class="overflow-hidden border border-border bg-card h-full flex flex-col">
             <div class={panelHeaderClass}>Performance</div>
 
             {#if dashboard}
@@ -343,6 +343,7 @@
                             type="text"
                             id="team-name"
                             name="name"
+                            class="inputText"
                             placeholder="Enter team name" required
                         />
                     </div>

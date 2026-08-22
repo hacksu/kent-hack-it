@@ -98,7 +98,7 @@
         />
 
         <Select.Root type="single" bind:value={methodFilter}>
-            <Select.Trigger class="w-36">
+            <Select.Trigger class="w-36 text-muted-foreground">
                 {methodFilter === 'all' ? 'All methods' : methodFilter}
             </Select.Trigger>
             <Select.Content>
@@ -109,7 +109,7 @@
         </Select.Root>
 
         <Select.Root type="single" bind:value={statusFilter}>
-            <Select.Trigger class="w-32">
+            <Select.Trigger class="w-32 text-muted-foreground">
                 {statusFilter === 'all' ? 'All status' : statusFilter}
             </Select.Trigger>
             <Select.Content>
@@ -120,14 +120,14 @@
         </Select.Root>
 
         <div class="flex items-center gap-1">
-            <Input class="w-20" type="number" placeholder="Min RT" bind:value={minRt} min="0" step="0.001" />
+            <Input class="w-20 inputText" type="number" placeholder="Min RT" bind:value={minRt} min="0" step="0.001" />
             <span class="text-muted-foreground">–</span>
-            <Input class="w-20" type="number" placeholder="Max RT" bind:value={maxRt} min="0" step="0.001" />
+            <Input class="w-20 inputText" type="number" placeholder="Max RT" bind:value={maxRt} min="0" step="0.001" />
             <span class="text-xs text-muted-foreground">s</span>
         </div>
 
         <Select.Root type="single" bind:value={uaFilter}>
-            <Select.Trigger class="w-40">
+            <Select.Trigger class="w-40 text-muted-foreground">
                 {uaFilter === 'all' ? 'All agents' : uaFilter}
             </Select.Trigger>
             <Select.Content>
