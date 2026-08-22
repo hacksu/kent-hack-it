@@ -1,6 +1,5 @@
 <script lang="ts">
     import TeamCompleteIcon from "$lib/assets/team_complete.png";
-    import TeamIncompleteIcon from "$lib/assets/team_nocomplete.png";
 
     import Stats from '$lib/components/stats.svelte';
     import ChallengeFilters from '$lib/components/challenge-filters.svelte';
@@ -377,8 +376,6 @@
                                             {#if InTeam()}
                                                 {#if HasTeamCompleted(challenge.id)}
                                                     <img class="h-5 w-5" alt="Team Completed" src={TeamCompleteIcon}>
-                                                {:else}
-                                                    <img class="h-5 w-5" alt="Team Incompleted" src={TeamIncompleteIcon}>
                                                 {/if}
                                             {/if}
                                         </div>
