@@ -19,7 +19,7 @@
             const req = await fetch('/admin/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ context: 'admin', action: 'delete', id })
+                body: JSON.stringify({ context: 'admin', action: 'delete', id: id })
             });
 
             const response = await req.json();

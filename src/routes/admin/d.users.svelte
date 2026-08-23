@@ -18,10 +18,12 @@
 
     async function deleteUser(id: string, name: string) {
         if (window.confirm(`Are you sure you want to DELETE this player "${name}"?`)) {
+            console.log(`${name} : ${id}`);
+
             const req = await fetch('/admin/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ context: 'user', action: 'delete', id })
+                body: JSON.stringify({ context: 'user', action: 'delete', id: id })
             });
 
             const response = await req.json();
@@ -109,7 +111,7 @@
                         variant="destructive"
                         size="sm"
                         class="w-full"
-                        onclick={() => { deleteUser(user.id, user.name) }}
+                        onclick={() => { console.log(user); deleteUser(user.id, user.name) }}
                     >
                         <Trash2 class="h-3.5 w-3.5" />
                         Remove
