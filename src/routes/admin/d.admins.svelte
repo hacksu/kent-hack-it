@@ -27,7 +27,7 @@
                 if (response.success) {
                     success = `Successfully removed ${name}`;
                 } else {
-                    error = `Failed to remove ${name}`;
+                    error = response.error;
                 }
             } else {
                error = "Error Occurred";
