@@ -121,6 +121,12 @@ export const POST = async (event) => {
         return json({ success: false, error: 'Unauthorized' , status: 401 });
     }
 
+    const session = await auth.api.getSession({
+        headers: event.request.headers
+    });
+    if (!session)
+        return json({ success: false, error: 'Session not Found!' , status: 500 });
+
     const data = await event.request.json();
     let handler: Response;
 
@@ -149,6 +155,8 @@ export const POST = async (event) => {
         }
     } else if (data.context === 'admin') {
         if (data.action === 'delete') {
+            if (data.id === session?.user.id)
+                return json({ success: false, error: 'Cannot Self-Delete' , status: 500 });
             handler = await deleteAdmin(data.id);
         } else {
             // unknown action

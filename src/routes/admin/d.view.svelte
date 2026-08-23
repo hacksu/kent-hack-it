@@ -32,7 +32,7 @@
                 body: JSON.stringify({
                     context: 'challenge',
                     action: 'toggle',
-                    id,
+                    id: id,
                     is_active: data.is_active,
                     is_gym: data.is_gym,
                 })
@@ -56,7 +56,7 @@
             const req = await fetch('/admin/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ context: 'challenge', action: 'delete', id })
+                body: JSON.stringify({ context: 'challenge', action: 'delete', id: id })
             });
 
             const json = await req.json();

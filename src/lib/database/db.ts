@@ -391,9 +391,13 @@ export async function GetSolvers() {
  */
 export async function GetAdmins() {
     try {
-        return await db.select()
-                .from(schema.user)
-                .where(eq(schema.user.role, "admin"));
+        return await db.select({
+            id: schema.user.id,
+            name: schema.user.name,
+            email: schema.user.email,
+            image: schema.user.image,
+        }).from(schema.user)
+          .where(eq(schema.user.role, "admin"));
     } catch (error) {
         console.error('Failed to get admins:', error);
         return false;
@@ -443,6 +447,7 @@ export async function GetUsers() {
     try {
         const users = await db
             .select({
+                id: schema.user.id,
                 name: schema.user.name,
                 email: schema.user.email,
                 image: schema.user.image,
@@ -454,6 +459,7 @@ export async function GetUsers() {
             .where(eq(schema.user.role, "user"));
 
         return users.map(u => ({
+            id: u.id,
             name: u.name,
             email: u.email,
             image: u.image,
@@ -473,6 +479,15 @@ export async function GetUsers() {
  */
 export async function DeleteUser(id: any) {
     try {
+        // kick user from team if they are in a team
+        const [membership] = await db.select({ id: schema.team_members.team_id })
+                            .from(schema.team_members)
+                            .where(eq(schema.team_members.user_id, id)).limit(1);
+        if (membership) {
+            console.log(`[*] Removing CTF Player from team '${membership.id}'`);
+            await LeaveTeam(id, membership.id);
+        }
+
         // remove user entry
         const [user_data] = await db.delete(schema.user)
             .where(eq(schema.user.id, id))
