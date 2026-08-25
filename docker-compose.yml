@@ -153,12 +153,6 @@ services:
       SSH_IMAGE_REGISTRY: ${SSH_IMAGE_REGISTRY:-}
       SSH_REGISTRY_USER: ${SSH_REGISTRY_USER:-}
       SSH_REGISTRY_PASSWORD: ${SSH_REGISTRY_PASSWORD:-}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.khi.rule=Host(`ctf.hacksu.com`)"
-      - "traefik.http.routers.khi.entrypoints=websecure"
-      - "traefik.http.routers.khi.tls.certresolver=letsencrypt"
-      - "traefik.http.services.khi.loadbalancer.server.port=80"
     volumes:
       - khi_uploads:/app/uploads
       - khi_ctf_exec_files:/app/ctf
