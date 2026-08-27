@@ -12,8 +12,6 @@
     import Eye from "@lucide/svelte/icons/eye";
     import EyeOff from "@lucide/svelte/icons/eye-off";
 
-    let showArchiveFiles = $state<boolean>(false);
-    let showJailFiles = $state<boolean>(false);      // @todo - Swap for config files
     let creationDisabled = $state<boolean>(false);
     let showFlag = $state<boolean>(false);
     let flagValue = $state<string>("");
@@ -54,7 +52,7 @@
 
     // form fields are seeded once from the initial `challenge` prop (create vs.
     // edit), then locally editable - not meant to track the prop reactively
-    let archiveFiles = $state<string[]>(untrack(() => challenge?.hlinks || []));
+    let archiveFiles = $state<string[]>(untrack(() => challenge?.hlinks ?? []));
     let archiveSearch = $state("");
     let filteredArchives = $derived(
         uploaded_files.archives.filter(file =>
@@ -62,9 +60,9 @@
         )
     );
 
-    let nsjail_conf = $state<string|undefined>(untrack(() => challenge?.nsjail_conf || undefined));
-    let imageRef = $state<string>(untrack(() => challenge?.image_ref || ""));
-    let webImageRef = $state<string>(untrack(() => challenge?.web_image_ref || ""));
+    let nsjail_conf = $state<string|undefined>(untrack(() => challenge?.nsjail_conf ?? undefined));
+    let imageRef = $state<string>(untrack(() => challenge?.image_ref ?? ""));
+    let webImageRef = $state<string>(untrack(() => challenge?.web_image_ref ?? ""));
 
     let showManualImageRef = $state<boolean>(untrack(() => registry_images.ssh.length === 0));
     let showManualWebImageRef = $state<boolean>(untrack(() => registry_images.web.length === 0));
@@ -92,8 +90,8 @@
             : [""])
     );
 
-    let category = $state<string>(untrack(() => challenge?.category || ""));
-    let difficulty = $state<string>(untrack(() => challenge?.difficulty || ""));
+    let category = $state<string>(untrack(() => challenge?.category ?? ""));
+    let difficulty = $state<string>(untrack(() => challenge?.difficulty ?? ""));
 
     function addHint() {
         hints.push("");
@@ -156,7 +154,7 @@
                         id="name"
                         class="inputText"
                         name="name" required
-                        value={challenge?.name || ""}
+                        value={challenge?.name ?? ""}
                         placeholder="Enter challenge name"
                     />
                 </div>
@@ -167,7 +165,7 @@
                     <Textarea
                         id="desc"
                         name="description" required
-                        value={challenge?.description || ""}
+                        value={challenge?.description ?? ""}
                         class="min-h-[120px] resize-y"
                         placeholder="Enter a short challenge description"
                     ></Textarea>
@@ -181,7 +179,7 @@
                         id="author"
                         class="inputText"
                         name="written_by" required
-                        value={challenge?.written_by || ""}
+                        value={challenge?.written_by ?? ""}
                         placeholder="Enter challenge author name"
                     />
                 </div>
@@ -191,18 +189,16 @@
                     <Label for="attached-files" class="font-semibold">Challenge Files</Label>
                     <hr class="my-2 border-border" />
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        class="mb-2"
-                        onclick={() => { showArchiveFiles = !showArchiveFiles }}
-                    >
-                        {showArchiveFiles ? "Hide Files" : "Show Archives"}
-                    </Button>
+                    {#each archiveFiles as file}
+                        <input type="hidden" name="attached_files" value={file} />
+                    {/each}
 
-                    {#if showArchiveFiles}
-                        <div class="mb-2">
+                    <details class="rounded-lg border border-border p-3">
+                        <summary class="cursor-pointer text-xs font-medium text-muted-foreground select-none">
+                            {archiveFiles.length > 0 ? `Show Archives (${archiveFiles.length} attached)` : "Show Archives"}
+                        </summary>
+
+                        <div class="mt-2 mb-2">
                             <Input
                                 type="text"
                                 class="h-7 text-xs inputText"
@@ -223,7 +219,6 @@
                                     <input
                                         type="checkbox"
                                         id={`file-${file}`}
-                                        name="attached_files"
                                         value={file}
                                         bind:group={archiveFiles}
                                         class="m-0 accent-brand-green"
@@ -232,9 +227,7 @@
                                 </label>
                             {/each}
                         </div>
-
-                        <hr class="my-2 border-border" />
-                    {/if}
+                    </details>
                 </div>
 
                 <!-- nsjail configuration files -->
@@ -242,18 +235,16 @@
                     <Label for="attached-files" class="font-semibold">nsjail Configurations</Label>
                     <hr class="my-2 border-border" />
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        class="mb-2"
-                        onclick={() => { showJailFiles = !showJailFiles }}
-                    >
-                        {showJailFiles ? "Hide Files" : "Show nsjail Configs"}
-                    </Button>
+                    {#if nsjail_conf}
+                        <input type="hidden" name="nsjail_conf" value={nsjail_conf} />
+                    {/if}
 
-                    {#if showJailFiles}
-                        <div class="mb-2">
+                    <details class="rounded-lg border border-border p-3">
+                        <summary class="cursor-pointer text-xs font-medium text-muted-foreground select-none">
+                            {nsjail_conf ? `Show nsjail Configs (${nsjail_conf} selected)` : "Show nsjail Configs"}
+                        </summary>
+
+                        <div class="mt-2 mb-2">
                             <Input
                                 type="text"
                                 class="h-7 text-xs inputText"
@@ -274,7 +265,6 @@
                                     <input
                                         type="radio"
                                         id={`file-${file}`}
-                                        name="nsjail_conf"
                                         value={file}
                                         bind:group={nsjail_conf}
                                         class="m-0 accent-brand-green"
@@ -283,9 +273,7 @@
                                 </label>
                             {/each}
                         </div>
-
-                        <hr class="my-2 border-border" />
-                    {/if}
+                    </details>
                 </div>
 
                 <!-- SSH Instance Image -->
