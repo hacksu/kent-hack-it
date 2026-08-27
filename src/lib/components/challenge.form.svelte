@@ -201,6 +201,10 @@
                         {showArchiveFiles ? "Hide Files" : "Show Archives"}
                     </Button>
 
+                    {#each archiveFiles as file}
+                        <input type="hidden" name="attached_files" value={file} />
+                    {/each}
+
                     {#if showArchiveFiles}
                         <div class="mb-2">
                             <Input
@@ -223,7 +227,6 @@
                                     <input
                                         type="checkbox"
                                         id={`file-${file}`}
-                                        name="attached_files"
                                         value={file}
                                         bind:group={archiveFiles}
                                         class="m-0 accent-brand-green"
