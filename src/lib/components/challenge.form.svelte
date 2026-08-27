@@ -12,8 +12,6 @@
     import Eye from "@lucide/svelte/icons/eye";
     import EyeOff from "@lucide/svelte/icons/eye-off";
 
-    let showArchiveFiles = $state<boolean>(false);
-    let showJailFiles = $state<boolean>(false);      // @todo - Swap for config files
     let creationDisabled = $state<boolean>(false);
     let showFlag = $state<boolean>(false);
     let flagValue = $state<string>("");
@@ -191,22 +189,16 @@
                     <Label for="attached-files" class="font-semibold">Challenge Files</Label>
                     <hr class="my-2 border-border" />
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        class="mb-2"
-                        onclick={() => { showArchiveFiles = !showArchiveFiles }}
-                    >
-                        {showArchiveFiles ? "Hide Files" : "Show Archives"}
-                    </Button>
-
                     {#each archiveFiles as file}
                         <input type="hidden" name="attached_files" value={file} />
                     {/each}
 
-                    {#if showArchiveFiles}
-                        <div class="mb-2">
+                    <details class="rounded-lg border border-border p-3">
+                        <summary class="cursor-pointer text-xs font-medium text-muted-foreground select-none">
+                            {archiveFiles.length > 0 ? `Show Archives (${archiveFiles.length} attached)` : "Show Archives"}
+                        </summary>
+
+                        <div class="mt-2 mb-2">
                             <Input
                                 type="text"
                                 class="h-7 text-xs inputText"
@@ -235,9 +227,7 @@
                                 </label>
                             {/each}
                         </div>
-
-                        <hr class="my-2 border-border" />
-                    {/if}
+                    </details>
                 </div>
 
                 <!-- nsjail configuration files -->
@@ -245,18 +235,16 @@
                     <Label for="attached-files" class="font-semibold">nsjail Configurations</Label>
                     <hr class="my-2 border-border" />
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        class="mb-2"
-                        onclick={() => { showJailFiles = !showJailFiles }}
-                    >
-                        {showJailFiles ? "Hide Files" : "Show nsjail Configs"}
-                    </Button>
+                    {#if nsjail_conf}
+                        <input type="hidden" name="nsjail_conf" value={nsjail_conf} />
+                    {/if}
 
-                    {#if showJailFiles}
-                        <div class="mb-2">
+                    <details class="rounded-lg border border-border p-3">
+                        <summary class="cursor-pointer text-xs font-medium text-muted-foreground select-none">
+                            {nsjail_conf ? `Show nsjail Configs (${nsjail_conf} selected)` : "Show nsjail Configs"}
+                        </summary>
+
+                        <div class="mt-2 mb-2">
                             <Input
                                 type="text"
                                 class="h-7 text-xs inputText"
@@ -277,7 +265,6 @@
                                     <input
                                         type="radio"
                                         id={`file-${file}`}
-                                        name="nsjail_conf"
                                         value={file}
                                         bind:group={nsjail_conf}
                                         class="m-0 accent-brand-green"
@@ -286,9 +273,7 @@
                                 </label>
                             {/each}
                         </div>
-
-                        <hr class="my-2 border-border" />
-                    {/if}
+                    </details>
                 </div>
 
                 <!-- SSH Instance Image -->
