@@ -52,7 +52,7 @@
 
     // form fields are seeded once from the initial `challenge` prop (create vs.
     // edit), then locally editable - not meant to track the prop reactively
-    let archiveFiles = $state<string[]>(untrack(() => challenge?.hlinks || []));
+    let archiveFiles = $state<string[]>(untrack(() => challenge?.hlinks ?? []));
     let archiveSearch = $state("");
     let filteredArchives = $derived(
         uploaded_files.archives.filter(file =>
@@ -60,9 +60,9 @@
         )
     );
 
-    let nsjail_conf = $state<string|undefined>(untrack(() => challenge?.nsjail_conf || undefined));
-    let imageRef = $state<string>(untrack(() => challenge?.image_ref || ""));
-    let webImageRef = $state<string>(untrack(() => challenge?.web_image_ref || ""));
+    let nsjail_conf = $state<string|undefined>(untrack(() => challenge?.nsjail_conf ?? undefined));
+    let imageRef = $state<string>(untrack(() => challenge?.image_ref ?? ""));
+    let webImageRef = $state<string>(untrack(() => challenge?.web_image_ref ?? ""));
 
     let showManualImageRef = $state<boolean>(untrack(() => registry_images.ssh.length === 0));
     let showManualWebImageRef = $state<boolean>(untrack(() => registry_images.web.length === 0));
@@ -90,8 +90,8 @@
             : [""])
     );
 
-    let category = $state<string>(untrack(() => challenge?.category || ""));
-    let difficulty = $state<string>(untrack(() => challenge?.difficulty || ""));
+    let category = $state<string>(untrack(() => challenge?.category ?? ""));
+    let difficulty = $state<string>(untrack(() => challenge?.difficulty ?? ""));
 
     function addHint() {
         hints.push("");
@@ -154,7 +154,7 @@
                         id="name"
                         class="inputText"
                         name="name" required
-                        value={challenge?.name || ""}
+                        value={challenge?.name ?? ""}
                         placeholder="Enter challenge name"
                     />
                 </div>
@@ -165,7 +165,7 @@
                     <Textarea
                         id="desc"
                         name="description" required
-                        value={challenge?.description || ""}
+                        value={challenge?.description ?? ""}
                         class="min-h-[120px] resize-y"
                         placeholder="Enter a short challenge description"
                     ></Textarea>
@@ -179,7 +179,7 @@
                         id="author"
                         class="inputText"
                         name="written_by" required
-                        value={challenge?.written_by || ""}
+                        value={challenge?.written_by ?? ""}
                         placeholder="Enter challenge author name"
                     />
                 </div>
