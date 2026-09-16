@@ -108,18 +108,6 @@
                             </p>
                         {/if}
 
-                        {#if challengeInfo.hlinks != null && challengeInfo.hlinks.length > 0}
-                            <p class="mb-1 text-sm text-foreground">Challenge Files:</p>
-                            {#each challengeInfo.hlinks ?? [] as hlink}
-                                <a
-                                    href={`/api/download/${hlink}?t=archive`}
-                                    class="mb-1 block text-xs text-brand-blue! underline underline-offset-4 hover:text-brand-green!"
-                                >
-                                    {hlink}
-                                </a>
-                            {/each}
-                        {/if}
-
                         {#if instance_infomation.length === 0}
                             {#if challengeInfo && (challengeInfo.nsjail_conf != null && challengeInfo.nsjail_conf.length > 0)}
                                 {@const cid = challengeInfo.id}
