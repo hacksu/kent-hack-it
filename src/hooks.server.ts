@@ -5,7 +5,7 @@ import { building } from '$app/environment'
 
 export const handle: Handle = async ({ event, resolve }) => {
     // prevent AI crawling into non-root areas of KHI
-    const response = await resolve(event);
+    const response = await svelteKitHandler({event, resolve, auth, building});
 	if (event.url.pathname !== '/') {
 		response.headers.set(
 			'X-Robots-Tag',
@@ -13,5 +13,5 @@ export const handle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-    return svelteKitHandler({ event, resolve, auth, building });
+    return response;
 }
