@@ -1925,6 +1925,18 @@ export async function GetTeamFromPlayer(uid: any) {
     }
 }
 
+
+/**
+ * 
+ * 
+ * 
+ * @section - Instances
+ * 
+ * 
+ * 
+ */
+
+
 /**
  * Generate a challenge instance and track it within the DB
  * 
@@ -2453,5 +2465,47 @@ export async function StopWebInstance(cid: any) {
     } catch (e: any) {
         console.error("[-] StopWebInstance:", e);
         return { success: false, error: "Error Occurred when stopping Web Instance" };
+    }
+}
+
+/**
+ * 
+ * 
+ * 
+ * @section - Leaderboard Archiving
+ * 
+ * 
+ * 
+ */
+
+/**
+ * Return list of the names of members within a team based from a team name
+ * 
+ * @param name 
+ */
+export async function FindMembers(name: string) {
+    try {
+        const [teamData] = await db.select({ id: schema.teams.id })
+            .from(schema.teams)
+            .where(eq(schema.teams.name, name))
+            .limit(1);
+        if (!teamData) return []
+
+        const members = await db.select({ uid: schema.team_members.user_id })
+            .from(schema.team_members)
+            .where(eq(schema.team_members.team_id, teamData.id)) ?? [];
+
+        let teamMemberNames: string[] = [];
+        for (const member of members) {
+            const [userData] = await db.select({ name: schema.user.name })
+                .from(schema.user)
+                .where(eq(schema.user.id, member.uid)).limit(1);
+            if (!userData) continue;
+            teamMemberNames.push(userData.name);
+        }
+        return teamMemberNames;
+    } catch (e:any) {
+        console.error(`[-] FindMembers -> ${e}`);
+        return []
     }
 }

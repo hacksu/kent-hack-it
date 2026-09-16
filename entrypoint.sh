@@ -3,7 +3,10 @@ set -e
 
 # prep extern dirs
 echo "[*] Preparing www-data directories..."
+
 chown -R www-data:www-data "/app/build"
+chown -R www-data:www-data "/app/khi_history"
+
 mkdir -p "${UPLOADS_DIR}" && chown -R www-data:www-data "${UPLOADS_DIR}"
 mkdir -p "${BIN_UPLOADS_DIR}" && chown -R www-data:www-data "${BIN_UPLOADS_DIR}"
 

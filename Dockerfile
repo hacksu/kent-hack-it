@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y supervisor net-tools gettext-base && rm
 COPY --from=build /usr/local/bin/bun /usr/local/bin/bun
 
 # prepare necessary directories
-RUN mkdir -p /app
+RUN mkdir -p /app/khi_history
 
 COPY khi.conf.template /etc/nginx/khi.conf.template
 

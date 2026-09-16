@@ -22,6 +22,7 @@ services:
       start_period: 20s
     volumes:
       - khi_psql_data:/var/lib/postgresql/data
+      - khi_history:/var/lib/postgresql/khi_history
       - ./psql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     networks:
       - app_internal
@@ -157,6 +158,7 @@ services:
       - khi_uploads:/app/uploads
       - khi_ctf_exec_files:/app/ctf
       - khi_jail_files:/app/nsjail_confs
+      - khi_history:/app/khi_history
       # temp volume (destroyed on recompose on dokploy)
       - ./khi_web_logs:/var/log/nginx
     networks:
@@ -175,6 +177,7 @@ volumes:
   khi_ctf_exec_files:
   khi_jail_files:
   khi_jobs:
+  khi_history:
 
 networks:
   app_internal:
