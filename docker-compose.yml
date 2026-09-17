@@ -22,7 +22,6 @@ services:
       start_period: 20s
     volumes:
       - khi_psql_data:/var/lib/postgresql/data
-      - khi_history:/var/lib/postgresql/data/khi_history
       - ./psql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     networks:
       - app_internal

@@ -97,14 +97,13 @@
                     <Table.Root>
                         <Table.Body>
                             {#each filtered as entry (entry.name)}
-                                {@const isMe = entry.name === data.user_placement?.name}
                                 {@const hasMembers = !!entry.members?.length}
                                 {@const isOpen = openMembers.has(entry.name)}
-                                <Table.Row class="{isMe ? 'bg-brand-green/8' : ''} border-border transition-colors hover:bg-muted/40">
+                                <Table.Row border-border transition-colors hover:bg-muted/40">
                                     <Table.Cell class="w-12 py-3 pl-4 text-center align-middle font-mono text-sm text-muted-foreground">
                                         {entry.rank}
                                     </Table.Cell>
-                                    <Table.Cell class="py-3 align-middle text-sm {isMe ? 'font-medium text-foreground' : 'text-foreground/90'}">
+                                    <Table.Cell class="py-3 align-middle text-sm 'text-foreground/90'">
                                         {#if hasMembers}
                                             <Collapsible.Root open={isOpen} onOpenChange={() => toggleMembers(entry.name)}>
                                                 <Collapsible.Trigger class="flex items-center gap-1.5">
