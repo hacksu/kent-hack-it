@@ -9,8 +9,22 @@ import { GetEventDate } from '$lib/utilities';
 import { ArchiveLeaderboard } from '$lib/preserveLeaderboard';
 import { GetLeaderboard } from '$lib/database/db';
 
+declare global {
+    var __cronJobStarted: boolean | undefined;
+}
+
 function runBackgroundJob() {
+    if (building) return;
+
+    if (globalThis.__cronJobStarted) {
+        console.log("[*] Background cron-job already running, skipping re-registration.");
+        return;
+    }
+    globalThis.__cronJobStarted = true;
+
     console.log("[*] Starting background cron-jobs...");
+
+    /** @todo - Need singleton approach so we do not have 20 cronjobs running */
     
     // Runs once a day at 2:00 AM server time
     cron.schedule(`0 2 * * *`, async () => {
