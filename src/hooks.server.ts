@@ -2,7 +2,9 @@ import type { Handle } from '@sveltejs/kit';
 import { svelteKitHandler } from "better-auth/svelte-kit";
 import { building } from '$app/environment'
 import { auth } from "$lib/server/auth";
+
 import cron from 'node-cron';
+import { setTimeout } from 'node:timers/promises';
 import { GetEventDate } from '$lib/utilities';
 import { ArchiveLeaderboard } from '$lib/preserveLeaderboard';
 import { GetLeaderboard } from '$lib/database/db';
@@ -12,22 +14,32 @@ function runBackgroundJob() {
     
     // Runs once a day at 2:00 AM server time
     cron.schedule(`0 2 * * *`, async () => {
-        const currYear = new Date().getFullYear().toString();
+        const currYear = new Date().getFullYear();
 
         const eventData = await GetEventDate();
         if (!eventData.end || new Date() < eventData.end) return;
 
 
         let leaderboard = await GetLeaderboard();
-        while (leaderboard.length === 0) {
+        let retry = 0;
+        while (leaderboard.length === 0 && retry < 5) {
             console.warn("[!] Leaderboard fetch Failed, retrying...");
             leaderboard = await GetLeaderboard();
+            ++retry;
+
+            // Sleep for 2000 milliseconds
+            await setTimeout(2000);
         }
 
         let result = await ArchiveLeaderboard(currYear, leaderboard);
-        while (!result.success) {
+        retry = 0;
+        while (!result.success && retry < 5) {
             console.warn("[!] Auto-Archive Failed, retrying...");
             result = await ArchiveLeaderboard(currYear, leaderboard);
+            ++retry;
+            
+            // Sleep for 2000 milliseconds
+            await setTimeout(2000);
         }
 
         console.log(`[+] KHI ${currYear} leaderboard has been auto-archived!`)

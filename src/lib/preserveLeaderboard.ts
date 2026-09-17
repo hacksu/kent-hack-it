@@ -17,7 +17,7 @@ import * as path from 'path';
 }
 */
 
-export async function ArchiveLeaderboard(year: string, board: LeaderboardEntry[]) {
+export async function ArchiveLeaderboard(year: number, board: LeaderboardEntry[]) {
     try {
         let entries = [];
         for (const entry of board) {
