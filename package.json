@@ -39,6 +39,7 @@
 		"dotenv": "^17.4.2",
 		"drizzle-orm": "^0.45.2",
 		"mode-watcher": "^1.1.0",
+		"node-cron": "^4.6.0",
 		"pg": "^8.22.0",
 		"postgres": "^3.4.9",
 		"tailwind-merge": "^3.6.0",

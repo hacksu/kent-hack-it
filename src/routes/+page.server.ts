@@ -1,15 +1,10 @@
-import { GetConfiguration } from "$lib/database/db";
+import { GetEventDate } from "$lib/utilities";
 
 export const load = async () => {
-    const config = await GetConfiguration();
-    if (!config) return {};
-
-    const start = new Date(config.event_start);
-    const end = new Date(config.event_start);
-    end.setDate(end.getDate() + config.event_length);
+    const eventData = await GetEventDate();
 
     return {
-        eventStartDate: start.toISOString(),
-        eventEndDate: end.toISOString(),
+        eventStartDate: eventData.start?.toISOString(),
+        eventEndDate: eventData.end?.toISOString(),
     };
 };
