@@ -30,6 +30,10 @@ function runBackgroundJob() {
             // Sleep for 2000 milliseconds
             await setTimeout(2000);
         }
+        if (retry >= 5) {
+            console.error("[-] Could not fetch leaderboard!")
+            return
+        }
 
         let result = await ArchiveLeaderboard(currYear, leaderboard);
         retry = 0;
@@ -40,6 +44,10 @@ function runBackgroundJob() {
             
             // Sleep for 2000 milliseconds
             await setTimeout(2000);
+        }
+        if (retry >= 5) {
+            console.error("[-] Could not archive leaderboard!")
+            return
         }
 
         console.log(`[+] KHI ${currYear} leaderboard has been auto-archived!`)
