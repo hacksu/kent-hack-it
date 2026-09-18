@@ -1,4 +1,5 @@
 import type { ActionResult } from "@sveltejs/kit";
+import { GetConfiguration } from "./database/db";
 
 export function randomString(length: number = 12): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -57,4 +58,22 @@ export async function handleFormResult(result: ActionResult<Record<string, unkno
     }
 
     return {success, warning, error};
+}
+
+/**
+ * 
+ * @returns date information regarding when the event starts and ends
+ */
+export async function GetEventDate() {
+    const config = await GetConfiguration();
+    if (!config) return {};
+
+    const start = new Date(config.event_start);
+    const end = new Date(config.event_start);
+    end.setDate(end.getDate() + config.event_length);
+
+    return {
+        start: start,
+        end: end
+    }
 }

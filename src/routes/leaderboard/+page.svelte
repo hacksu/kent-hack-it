@@ -1,13 +1,30 @@
 <script lang="ts">
+    import { enhance } from "$app/forms";
+    import { handleFormResult } from "$lib/utilities";
+    import Feedback from "$lib/components/feedback.svelte";
+    
     import { Input } from "$lib/components/ui/input";
     import * as Table from "$lib/components/ui/table";
     import * as Card from "$lib/components/ui/card";
+    import { Label } from '$lib/components/ui/label';
+    import { Button } from "$lib/components/ui/button";
     import Trophy from "@lucide/svelte/icons/trophy";
     import Podium from "$lib/components/leaderboard/podium.svelte";
     import ScoreRaceChart from "$lib/components/leaderboard/score-race-chart.svelte";
+    import { invalidateAll } from "$app/navigation";
 
     const { data } = $props();
+    
+    function clearResult() {
+        error = warning = success = "";
+    }
+
+    let error = $state("");
+    let warning = $state("");
+    let success = $state("");
+
     let searchValue = $state("");
+    let yearValue = $state<number>(0);
 
     const filtered = $derived(
         data.board.filter((entry: any) => {
@@ -25,10 +42,13 @@
 </script>
 
 <main class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 md:py-10">
+    <Feedback success={success} warning={warning} error={error} />
+
     <div class="text-center">
         <h2 class="font-mono text-2xl font-bold text-foreground">KHI Leaderboard</h2>
-        <div class="mt-4 flex justify-center">
+        <div class="mt-4 gap-4 flex justify-center">
             <Input type="text" placeholder="Search by name..." bind:value={searchValue} class="max-w-sm inputText" />
+            <a href="/history">Archived Leaderboards</a>
         </div>
     </div>
 
@@ -50,6 +70,50 @@
                 <div class="flex items-center gap-2 border-b border-border px-4 py-3">
                     <Trophy class="h-4.5 w-4.5 text-[#BA7517]" />
                     <span class="font-medium text-foreground">Leaderboard</span>
+
+                    {#if data.isAdmin}
+                        <form
+                            method="POST"
+                            action="?/archive_leaderboard"
+                            class="flex items-end gap-3"
+                            use:enhance={({ formData }) => {
+                                if (!window.confirm(`Do you want to archive this leaderboard for KHI ${yearValue}`)) {
+                                    return;
+                                }
+
+                                formData.set('leaderboard', JSON.stringify({ board: data.board }));
+
+                                return async ({ result, update }) => {
+                                    await update();
+
+                                    const formResult = await handleFormResult(result);
+                                    success = formResult.success;
+                                    warning = formResult.warning;
+                                    error = formResult.error;
+
+                                    await invalidateAll();
+                                    setTimeout(clearResult, 5000);
+                                };
+                            }}
+                        >
+                            <div class="flex flex-col gap-1.5">
+                                <Label for="year" class="text-xs text-muted-foreground">Year</Label>
+                                <Input
+                                    type="number"
+                                    id="year"
+                                    name="year"
+                                    bind:value={yearValue}
+                                    class="w-24"
+                                />
+                            </div>
+                            <Button
+                                type="submit"
+                                class="bg-brand-green text-[#08131f]! hover:brightness-105"
+                            >
+                                Archive
+                            </Button>
+                        </form>
+                    {/if}
                 </div>
                 <Table.Root>
                     <Table.Body>
