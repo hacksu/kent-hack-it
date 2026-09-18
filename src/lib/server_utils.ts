@@ -1,4 +1,3 @@
-import type { ActionResult } from "@sveltejs/kit";
 import { GetConfiguration } from "./database/db";
 
 export function randomString(length: number = 12): string {
@@ -20,44 +19,6 @@ export async function SHA256(message: string): Promise<string> {
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-/**
- * Reviews the result from a form's use:enhance and returns
- * the Feedback success, error, warning messages
- * 
- * @param result 
- * @returns 
- */
-export async function handleFormResult(result: ActionResult<Record<string, unknown> | undefined, Record<string, unknown> | undefined>) {
-    let error = "";
-    let warning = "";
-    let success = "";
-
-    if (result.type === 'success' && result.data) {
-        if (result.type === 'success' && result.data) {
-            // perform a cast to avoid error/warning popups
-            const data = result.data as {
-                success: boolean;
-                message?: string;
-                warning?: string;
-                error?: string;
-            };
-            
-            if (data.success && data.message) {
-                success = data.message;
-                warning = data.warning ?? "";
-            } else {
-                error = data.message ?? data.error ?? 'Error Occurred!';
-            }
-        } else {
-            error = 'Error Occurred!';
-        }
-    } else {
-        error = "Error Occurred!";
-    }
-
-    return {success, warning, error};
 }
 
 /**

@@ -4,8 +4,8 @@
 
     import Feedback from "$lib/components/feedback.svelte";
 
-    import { type ViewableChallengeData } from "$lib/database/db.js";
-    import { handleFormResult } from "$lib/utilities.js";
+    import { type ViewableChallengeData } from "$lib/database/db";
+    import { handleFormResult } from "$lib/browser_utils";
 
     import { Button } from "$lib/components/ui/button";
     import { Badge } from "$lib/components/ui/badge";

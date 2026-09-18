@@ -10,7 +10,7 @@ import {
 import * as schema from "./auth-schema";
 import { env } from "$env/dynamic/private"; // dynamic allows the .env file to be read at runtime
 
-import { randomString, SHA256 } from "$lib/utilities";
+import { randomString, SHA256 } from "$lib/server_utils";
 import { decryptFlag } from "$lib/server/flag-crypto";
 import { type Stat } from "$lib/mtypes";
 

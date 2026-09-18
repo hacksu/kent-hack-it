@@ -2,7 +2,7 @@
 	"$schema": "https://shadcn-svelte.com/schema.json",
 	"aliases": {
 		"lib": "$lib",
-		"utils": "$lib/utils",
+		"utils": "$lib/server_utils",
 		"hooks": "$lib/hooks",
 		"components": "$lib/components",
 		"ui": "$lib/components/ui"

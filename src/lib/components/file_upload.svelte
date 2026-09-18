@@ -1,6 +1,6 @@
 <script lang="ts">
     import Feedback from '$lib/components/feedback.svelte';
-    import { handleFormResult } from "$lib/utilities";
+    import { handleFormResult } from "$lib/browser_utils";
     import { enhance } from "$app/forms";
     import * as Card from "$lib/components/ui/card";
     import { Input } from "$lib/components/ui/input";

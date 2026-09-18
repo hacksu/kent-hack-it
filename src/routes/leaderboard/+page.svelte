@@ -1,17 +1,19 @@
 <script lang="ts">
     import { enhance } from "$app/forms";
-    import { handleFormResult } from "$lib/utilities";
-    import Feedback from "$lib/components/feedback.svelte";
+    import { invalidateAll } from "$app/navigation";
+    import { handleFormResult } from "$lib/browser_utils.js";
     
     import { Input } from "$lib/components/ui/input";
     import * as Table from "$lib/components/ui/table";
     import * as Card from "$lib/components/ui/card";
     import { Label } from '$lib/components/ui/label';
     import { Button } from "$lib/components/ui/button";
-    import Trophy from "@lucide/svelte/icons/trophy";
+
+    import Feedback from "$lib/components/feedback.svelte";
     import Podium from "$lib/components/leaderboard/podium.svelte";
     import ScoreRaceChart from "$lib/components/leaderboard/score-race-chart.svelte";
-    import { invalidateAll } from "$app/navigation";
+    
+    import Trophy from "@lucide/svelte/icons/trophy";
 
     const { data } = $props();
     

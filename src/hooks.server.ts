@@ -5,7 +5,7 @@ import { auth } from "$lib/server/auth";
 
 import cron from 'node-cron';
 import { setTimeout } from 'node:timers/promises';
-import { GetEventDate } from '$lib/utilities';
+import { GetEventDate } from '$lib/server_utils';
 import { ArchiveLeaderboard } from '$lib/preserveLeaderboard';
 import { GetLeaderboard } from '$lib/database/db';
 
