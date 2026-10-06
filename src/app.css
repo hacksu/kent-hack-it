@@ -5,6 +5,28 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* bits-ui exposes state as data-state="..."; the generated ui/ components
+   use the shorter data-open / data-closed / data-active spellings. */
+@custom-variant data-open (&[data-state="open"]);
+@custom-variant data-closed (&[data-state="closed"]);
+@custom-variant data-active (&[data-state="active"]);
+
+@font-face {
+	font-family: "Geist";
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url("/fonts/geist-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+@font-face {
+	font-family: "JetBrains Mono";
+	font-style: normal;
+	font-weight: 100 800;
+	font-display: swap;
+	src: url("/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2-variations");
+}
+
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
@@ -38,21 +60,31 @@
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
-	/* KHI brand accents (theme-aware: bright in dark, deeper in light) */
+	/* KHI brand pair, sampled from the logo (blue K -> green I) */
 	--color-brand-green: var(--brand-green);
 	--color-brand-blue: var(--brand-blue);
+	/* Status + surface tokens */
+	--color-warning: var(--warning);
+	--color-gold: var(--gold);
+	--color-terminal: var(--terminal);
+	--color-terminal-foreground: var(--terminal-foreground);
+	/* Challenge difficulty ramp */
+	--color-diff-simple: var(--diff-simple);
+	--color-diff-easy: var(--diff-easy);
+	--color-diff-medium: var(--diff-medium);
+	--color-diff-hard: var(--diff-hard);
+	--color-diff-extreme: var(--diff-extreme);
 	/* Typography tokens */
-	--font-sans: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", ui-sans-serif, system-ui, sans-serif;
-	--font-mono: ui-monospace, "JetBrains Mono", "Fira Code", "Cascadia Code", "Roboto Mono", "Courier New", monospace;
-	/* Accent glow shadows */
-	--shadow-glow: 0 0 34px -8px oklch(0.79 0.2 145 / 0.5);
-	--shadow-glow-blue: 0 0 34px -8px oklch(0.7 0.17 250 / 0.5);
+	--font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
 	--radius-xl: calc(var(--radius) + 4px);
 	--animate-accordion-down: accordion-down 0.2s ease-out;
 	--animate-accordion-up: accordion-up 0.2s ease-out;
+	--animate-overlay-in: overlay-in 0.15s ease-out;
+	--animate-pop-in: pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes accordion-down {
@@ -73,47 +105,67 @@
 	}
 }
 
+@keyframes overlay-in {
+	from {
+		opacity: 0;
+	}
+}
+
+@keyframes pop-in {
+	from {
+		opacity: 0;
+		scale: 0.97;
+	}
+}
+
 :root {
 	--radius: 0.5rem;
 	color-scheme: light;
-	/* Light theme: faint cool-white with deep brand accents for contrast */
-	--background: oklch(0.985 0.004 210);
-	--foreground: oklch(0.2 0.02 230);
+	--background: oklch(0.985 0.003 255);
+	--foreground: oklch(0.21 0.025 262);
 	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.2 0.02 230);
+	--card-foreground: oklch(0.21 0.025 262);
 	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.2 0.02 230);
-	/* Brand accents (deeper variants read on light surfaces) */
-	--brand-green: #3e6a3d;
-	--brand-blue: #2e5c87;
-	/* KHI brand green */
-	--primary: #3e6a3d;
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.95 0.006 210);
-	--secondary-foreground: oklch(0.24 0.02 230);
-	--muted: oklch(0.95 0.006 210);
-	--muted-foreground: oklch(0.47 0.02 230);
-	/* Neutral surface for component hovers (menus/accents) */
-	--accent: oklch(0.94 0.01 210);
-	--accent-foreground: oklch(0.24 0.02 230);
-	--destructive: oklch(0.577 0.245 27.325);
+	--popover-foreground: oklch(0.21 0.025 262);
+	/* Deeper brand variants so they hold contrast on light surfaces */
+	--brand-green: oklch(0.52 0.13 158);
+	--brand-blue: oklch(0.5 0.19 262);
+	--primary: oklch(0.52 0.13 158);
+	--primary-foreground: oklch(0.99 0 0);
+	--secondary: oklch(0.955 0.006 255);
+	--secondary-foreground: oklch(0.25 0.025 262);
+	--muted: oklch(0.955 0.006 255);
+	--muted-foreground: oklch(0.48 0.02 262);
+	--accent: oklch(0.94 0.008 255);
+	--accent-foreground: oklch(0.25 0.025 262);
+	--destructive: oklch(0.56 0.22 27);
 	--destructive-foreground: oklch(0.985 0 0);
-	--border: oklch(0.9 0.008 220);
-	--input: oklch(0.9 0.008 220);
-	--ring: #3e6a3d;
-	--chart-1: oklch(0.646 0.222 41.116);
-	--chart-2: oklch(0.6 0.118 184.704);
-	--chart-3: oklch(0.398 0.07 227.392);
-	--chart-4: oklch(0.828 0.189 84.429);
-	--chart-5: oklch(0.769 0.188 70.08);
-	--sidebar: oklch(0.97 0.006 210);
-	--sidebar-foreground: oklch(0.24 0.02 230);
-	--sidebar-primary: #3e6a3d;
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.93 0.01 210);
-	--sidebar-accent-foreground: oklch(0.24 0.02 230);
-	--sidebar-border: oklch(0.9 0.008 220);
-	--sidebar-ring: #3e6a3d;
+	--warning: oklch(0.6 0.14 70);
+	--gold: oklch(0.66 0.14 80);
+	--border: oklch(0.91 0.008 255);
+	--input: oklch(0.87 0.01 255);
+	--ring: oklch(0.52 0.13 158);
+	/* Terminal blocks stay dark in both themes */
+	--terminal: oklch(0.19 0.025 262);
+	--terminal-foreground: oklch(0.93 0.01 255);
+	--diff-simple: oklch(0.5 0.03 255);
+	--diff-easy: oklch(0.52 0.13 158);
+	--diff-medium: oklch(0.5 0.19 262);
+	--diff-hard: oklch(0.6 0.14 70);
+	--diff-extreme: oklch(0.56 0.22 27);
+	--chart-1: oklch(0.52 0.13 158);
+	--chart-2: oklch(0.5 0.19 262);
+	--chart-3: oklch(0.66 0.14 80);
+	--chart-4: oklch(0.55 0.2 303);
+	--chart-5: oklch(0.58 0.2 16);
+	--sidebar: oklch(0.97 0.005 255);
+	--sidebar-foreground: oklch(0.25 0.025 262);
+	--sidebar-primary: oklch(0.52 0.13 158);
+	--sidebar-primary-foreground: oklch(0.99 0 0);
+	--sidebar-accent: oklch(0.93 0.008 255);
+	--sidebar-accent-foreground: oklch(0.25 0.025 262);
+	--sidebar-border: oklch(0.91 0.008 255);
+	--sidebar-ring: oklch(0.52 0.13 158);
 	--series-1: #2a78d6;
 	--series-2: #eb6834;
 	--series-3: #1baf7a;
@@ -126,72 +178,134 @@
 
 .dark {
 	color-scheme: dark;
-	/* Dark-first: deep navy / blue-black, tuned to the reference dashboard */
-	--background: oklch(0.155 0.032 262);
-	--foreground: oklch(0.95 0.012 230);
-	--card: #16223f;
-	--card-foreground: oklch(0.95 0.012 230);
-	--popover: #131d36;
-	--popover-foreground: oklch(0.95 0.012 230);
-	/* Neon brand accents */
-	--brand-green: #61cf5a;
-	--brand-blue: #4a9eff;
-	/* Primary = neon green; dark text keeps AA contrast on the bright fill */
-	--primary: #61cf5a;
-	--primary-foreground: oklch(0.19 0.03 150);
-	--secondary: oklch(0.25 0.038 262);
-	--secondary-foreground: oklch(0.95 0.012 230);
-	--muted: oklch(0.25 0.038 262);
-	--muted-foreground: oklch(0.72 0.03 245);
-	/* Neutral surface for component hovers (menus/accents) */
-	--accent: oklch(0.29 0.045 262);
-	--accent-foreground: oklch(0.95 0.012 230);
-	--destructive: oklch(0.704 0.191 22.216);
+	/* Ink navy: four surface steps (background < sidebar < card < popover) */
+	--background: oklch(0.165 0.022 262);
+	--foreground: oklch(0.95 0.008 255);
+	--card: oklch(0.2 0.026 262);
+	--card-foreground: oklch(0.95 0.008 255);
+	--popover: oklch(0.23 0.028 262);
+	--popover-foreground: oklch(0.95 0.008 255);
+	--brand-green: oklch(0.78 0.16 158);
+	--brand-blue: oklch(0.7 0.16 258);
+	/* Primary = logo green; dark ink text keeps AA contrast on the fill */
+	--primary: oklch(0.78 0.16 158);
+	--primary-foreground: oklch(0.19 0.03 160);
+	--secondary: oklch(0.26 0.028 262);
+	--secondary-foreground: oklch(0.95 0.008 255);
+	--muted: oklch(0.25 0.026 262);
+	--muted-foreground: oklch(0.71 0.025 258);
+	--accent: oklch(0.28 0.03 262);
+	--accent-foreground: oklch(0.95 0.008 255);
+	--destructive: oklch(0.7 0.18 22);
 	--destructive-foreground: oklch(0.985 0 0);
-	--border: oklch(0.5 0.04 255 / 26%);
-	--input: oklch(0.5 0.04 255 / 32%);
-	/* Focus ring = neon green glow */
-	--ring: #61cf5a;
-	--chart-1: oklch(0.696 0.17 162.48);
-	--chart-2: oklch(0.65 0.16 250);
-	--chart-3: oklch(0.769 0.188 70.08);
-	--chart-4: oklch(0.627 0.265 303.9);
-	--chart-5: oklch(0.645 0.246 16.439);
-	--sidebar: oklch(0.175 0.035 264);
-	--sidebar-foreground: oklch(0.95 0.012 230);
-	--sidebar-primary: #61cf5a;
-	--sidebar-primary-foreground: oklch(0.19 0.03 150);
-	--sidebar-accent: oklch(0.28 0.045 262);
-	--sidebar-accent-foreground: oklch(0.95 0.012 230);
-	--sidebar-border: oklch(0.5 0.04 255 / 24%);
-	--sidebar-ring: #61cf5a;
+	--warning: oklch(0.8 0.15 80);
+	--gold: oklch(0.82 0.14 85);
+	--border: oklch(0.29 0.028 262);
+	--input: oklch(0.34 0.03 262);
+	--ring: oklch(0.78 0.16 158);
+	--terminal: oklch(0.13 0.02 262);
+	--terminal-foreground: oklch(0.93 0.01 255);
+	--diff-simple: oklch(0.74 0.03 255);
+	--diff-easy: oklch(0.78 0.16 158);
+	--diff-medium: oklch(0.7 0.16 258);
+	--diff-hard: oklch(0.8 0.15 80);
+	--diff-extreme: oklch(0.7 0.18 22);
+	--chart-1: oklch(0.78 0.16 158);
+	--chart-2: oklch(0.7 0.16 258);
+	--chart-3: oklch(0.8 0.15 80);
+	--chart-4: oklch(0.68 0.2 303);
+	--chart-5: oklch(0.68 0.2 16);
+	--sidebar: oklch(0.182 0.024 262);
+	--sidebar-foreground: oklch(0.95 0.008 255);
+	--sidebar-primary: oklch(0.78 0.16 158);
+	--sidebar-primary-foreground: oklch(0.19 0.03 160);
+	--sidebar-accent: oklch(0.25 0.028 262);
+	--sidebar-accent-foreground: oklch(0.95 0.008 255);
+	--sidebar-border: oklch(0.26 0.026 262);
+	--sidebar-ring: oklch(0.78 0.16 158);
 	--series-1: #3987e5;
 	--series-2: #d95926;
 	--series-3: #199e70;
 	--series-4: #c98500;
 }
 
-/* App background: deep navy base with a subtle brand glow. Unlayered so it
-   overrides the legacy `body { background-color: #f8f9fa }` from index.css. */
-html {
-	background-color: var(--background);
+@layer base {
+	* {
+		border-color: var(--border);
+	}
+
+	html {
+		background-color: var(--background);
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+	}
+
+	body {
+		background-color: var(--background);
+		color: var(--foreground);
+		font-family: var(--font-sans);
+	}
+
+	::selection {
+		background-color: color-mix(in oklch, var(--brand-green) 35%, transparent);
+	}
+
+	button:not(:disabled),
+	[role="button"]:not([aria-disabled="true"]),
+	summary {
+		cursor: pointer;
+	}
+
+	/* Thin, theme-matched scrollbars */
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--input) transparent;
+	}
 }
 
-/* Matrix-esque ambient backdrop: neon-green + electric-blue glows over deep
-   navy, with faint vertical "code rain" streaks. Viewport-fixed so it stays
-   ambient on long pages. */
-.app-bg {
-	background-color: var(--background);
-	background-image:
-		radial-gradient(48% 42% at 22% -4%, color-mix(in oklch, var(--brand-green) 20%, transparent), transparent 62%),
-		radial-gradient(52% 46% at 92% 6%, color-mix(in oklch, var(--brand-blue) 22%, transparent), transparent 62%),
-		radial-gradient(60% 55% at 55% 118%, color-mix(in oklch, var(--brand-green) 12%, transparent), transparent 58%),
-		repeating-linear-gradient(
-			90deg,
-			transparent 0,
-			transparent 46px,
-			color-mix(in oklch, var(--brand-green) 6%, transparent) 47px,
-			transparent 48px
-		);
-	background-attachment: fixed;
+@layer components {
+	/* Mono caps label used for section eyebrows and panel headers */
+	.eyebrow {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		line-height: 1rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--muted-foreground);
+	}
+
+	/* Inline text link inside prose */
+	.link {
+		color: var(--brand-blue);
+		font-weight: 500;
+		text-decoration: underline;
+		text-decoration-color: color-mix(in oklch, var(--brand-blue) 40%, transparent);
+		text-underline-offset: 3px;
+		transition:
+			color 0.15s,
+			text-decoration-color 0.15s;
+	}
+
+	.link:hover {
+		text-decoration-color: currentColor;
+	}
+
+	/* The logo gradient, for the wordmark and the rare hero accent */
+	.text-brand-gradient {
+		background-image: linear-gradient(90deg, var(--brand-blue), var(--brand-green));
+		background-clip: text;
+		-webkit-background-clip: text;
+		color: transparent;
+	}
+
+	/* Ambient backdrop: one soft brand wash behind the top of the content */
+	.app-bg {
+		background-color: var(--background);
+		background-image:
+			radial-gradient(60% 420px at 20% -80px, color-mix(in oklch, var(--brand-blue) 13%, transparent), transparent 70%),
+			radial-gradient(50% 380px at 85% -120px, color-mix(in oklch, var(--brand-green) 10%, transparent), transparent 70%);
+		background-repeat: no-repeat;
+	}
 }

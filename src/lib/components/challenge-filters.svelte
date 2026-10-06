@@ -1,8 +1,8 @@
 <script lang="ts" generics="T extends { id: number; name: string; description: string; category: string; difficulty: string; written_by: string | null; rating: string | null; is_gym?: boolean | null }">
     import { Button } from '$lib/components/ui/button';
     import { Input } from '$lib/components/ui/input';
-    import { Label } from '$lib/components/ui/label';
-    import { Separator } from '$lib/components/ui/separator';
+    import Search from '@lucide/svelte/icons/search';
+    import X from '@lucide/svelte/icons/x';
     import * as Select from '$lib/components/ui/select';
 
     const DIFFICULTY_ORDER = ['Simple', 'Easy', 'Medium', 'Hard', 'Extreme'];
@@ -14,7 +14,6 @@
         completions = undefined,
         showCompletionFilters = false,
         showTeamFilters = false,
-        showHelpButton = false,
         showGymFilter = false,
     }: {
         challenges: T[];
@@ -22,7 +21,6 @@
         completions?: { user?: { challenge_id: number }[] | null; team?: number[] | null };
         showCompletionFilters?: boolean;
         showTeamFilters?: boolean;
-        showHelpButton?: boolean;
         showGymFilter?: boolean;
     } = $props();
 
@@ -144,163 +142,158 @@
     }
 
     const ratingLabel = (rating: string) =>
-        `${rating}+ ⭐ (${rating === '4.0' ? 'Excellent' : rating === '3.0' ? 'Good' : rating === '2.0' ? 'Fair' : 'Any'})`;
+        `${rating}+ (${rating === '4.0' ? 'Excellent' : rating === '3.0' ? 'Good' : rating === '2.0' ? 'Fair' : 'Any'})`;
+
+    const hasActiveFilters = $derived(
+        !!(filters.category || filters.difficulty || filters.rating || filters.author ||
+            filters.searchText.trim() || filters.gymStatus) ||
+        !(filters.showCompleted && filters.showUncompleted &&
+            filters.showTeamCompleted && filters.showTeamUncompleted)
+    );
+
+    const triggerClass = "w-full sm:w-auto sm:min-w-36";
+    // A checkbox rendered as a toggle chip; the input stays in the DOM for keyboard and form semantics.
+    const chipClass =
+        "inline-flex h-7 cursor-pointer items-center rounded-full border border-border px-2.5 text-xs font-medium text-muted-foreground transition-colors select-none hover:text-foreground has-checked:border-brand-green/40 has-checked:bg-brand-green/12 has-checked:text-brand-green has-focus-visible:ring-3 has-focus-visible:ring-ring/40";
+    const teamChipClass =
+        "inline-flex h-7 cursor-pointer items-center rounded-full border border-border px-2.5 text-xs font-medium text-muted-foreground transition-colors select-none hover:text-foreground has-checked:border-brand-blue/40 has-checked:bg-brand-blue/12 has-checked:text-brand-blue has-focus-visible:ring-3 has-focus-visible:ring-ring/40";
 </script>
 
-<aside class="rounded-2xl border border-border bg-card p-4 lg:h-fit">
-    <h5 class="mb-3 font-mono text-xs font-semibold tracking-widest text-muted-foreground uppercase">Filters</h5>
-
-    <div class="space-y-4">
-
-        <div>
-            <Label for="search-text" class="mb-1.5 block text-xs text-muted-foreground">Search</Label>
+<div class="rounded-xl border border-border bg-card p-3" role="search" aria-label="Filter challenges">
+    <div class="flex flex-col gap-2 lg:flex-row lg:items-center">
+        <div class="relative min-w-0 flex-1">
+            <Search class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
                 id="search-text"
-                type="text"
-                class="inputText"
-                placeholder="Search challenges..."
+                type="search"
+                class="pl-8"
+                placeholder="Search by name, category, author…"
+                aria-label="Search challenges"
                 bind:value={filters.searchText}
             />
         </div>
 
-        <div>
-            <Label for="catagory-search" class="mb-1.5 block text-xs text-muted-foreground">Category</Label>
+        <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Select.Root type="single" bind:value={filters.category}>
-                <Select.Trigger id="catagory-search" class="w-full">
-                    {filters.category || "All Categories"}
+                <Select.Trigger class={triggerClass} aria-label="Category">
+                    {filters.category || "All categories"}
                 </Select.Trigger>
                 <Select.Content>
-                    <Select.Item value="">All Categories</Select.Item>
+                    <Select.Item value="">All categories</Select.Item>
                     {#each availableCategories as category}
                         <Select.Item value={category}>{category}</Select.Item>
                     {/each}
                 </Select.Content>
             </Select.Root>
-        </div>
 
-        <div>
-            <Label for="difficulty-search" class="mb-1.5 block text-xs text-muted-foreground">Difficulty</Label>
             <Select.Root type="single" bind:value={filters.difficulty}>
-                <Select.Trigger id="difficulty-search" class="w-full">
-                    {filters.difficulty || "All Difficulties"}
+                <Select.Trigger class={triggerClass} aria-label="Difficulty">
+                    {filters.difficulty || "All difficulties"}
                 </Select.Trigger>
                 <Select.Content>
-                    <Select.Item value="">All Difficulties</Select.Item>
+                    <Select.Item value="">All difficulties</Select.Item>
                     {#each availableDifficulties() as difficulty}
                         <Select.Item value={difficulty}>{difficulty}</Select.Item>
                     {/each}
                 </Select.Content>
             </Select.Root>
-        </div>
 
-        <div>
-            <Label for="rating-search" class="mb-1.5 block text-xs text-muted-foreground">Minimum Rating</Label>
             <Select.Root type="single" bind:value={filters.rating}>
-                <Select.Trigger id="rating-search" class="w-full">
-                    {filters.rating ? ratingLabel(filters.rating) : "All Ratings"}
+                <Select.Trigger class={triggerClass} aria-label="Minimum rating">
+                    {filters.rating ? `Rated ${ratingLabel(filters.rating)}` : "Any rating"}
                 </Select.Trigger>
                 <Select.Content>
-                    <Select.Item value="">All Ratings</Select.Item>
+                    <Select.Item value="">Any rating</Select.Item>
                     {#each RATING_OPTIONS as rating}
                         <Select.Item value={rating}>{ratingLabel(rating)}</Select.Item>
                     {/each}
                 </Select.Content>
             </Select.Root>
-        </div>
 
-        <div>
-            <Label for="author-search" class="mb-1.5 block text-xs text-muted-foreground">Author</Label>
             <Select.Root type="single" bind:value={filters.author}>
-                <Select.Trigger id="author-search" class="w-full">
-                    {filters.author || "All Authors"}
+                <Select.Trigger class={triggerClass} aria-label="Author">
+                    {filters.author || "All authors"}
                 </Select.Trigger>
                 <Select.Content>
-                    <Select.Item value="">All Authors</Select.Item>
+                    <Select.Item value="">All authors</Select.Item>
                     {#each availableAuthors as author}
                         <Select.Item value={author}>{author}</Select.Item>
                     {/each}
                 </Select.Content>
             </Select.Root>
-        </div>
 
-        {#if showGymFilter}
-            <div>
-                <Label for="gym-status-search" class="mb-1.5 block text-xs text-muted-foreground">Status</Label>
+            {#if showGymFilter}
                 <Select.Root type="single" bind:value={filters.gymStatus}>
-                    <Select.Trigger id="gym-status-search" class="w-full">
-                        {filters.gymStatus === 'gym' ? 'Gym' : filters.gymStatus === 'live' ? 'Live' : 'All'}
+                    <Select.Trigger class={triggerClass} aria-label="Status">
+                        {filters.gymStatus === 'gym' ? 'Gym' : filters.gymStatus === 'live' ? 'Live' : 'Gym and live'}
                     </Select.Trigger>
                     <Select.Content>
-                        <Select.Item value="">All</Select.Item>
+                        <Select.Item value="">Gym and live</Select.Item>
                         <Select.Item value="gym">Gym</Select.Item>
                         <Select.Item value="live">Live</Select.Item>
                     </Select.Content>
                 </Select.Root>
-            </div>
-        {/if}
+            {/if}
+        </div>
+    </div>
 
+    <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-3">
         {#if showCompletionFilters}
-            <div class="space-y-2">
-                <Label class="block text-xs text-muted-foreground">Individual Progress</Label>
-                <label class="flex items-center gap-2 text-sm text-foreground">
+            <fieldset class="flex items-center gap-1.5">
+                <legend class="float-left mr-1 text-xs text-muted-foreground">Mine</legend>
+                <label class={chipClass}>
                     <input
                         type="checkbox"
-                        class="h-4 w-4 rounded border-border accent-brand-green"
+                        class="sr-only"
                         onchange={showTeamFilters ? disableTeamFilters : undefined}
                         bind:checked={filters.showCompleted}
                     />
-                    My Completed
+                    Solved
                 </label>
-                <label class="flex items-center gap-2 text-sm text-foreground">
+                <label class={chipClass}>
                     <input
                         type="checkbox"
-                        class="h-4 w-4 rounded border-border accent-brand-green"
+                        class="sr-only"
                         onchange={showTeamFilters ? disableTeamFilters : undefined}
                         bind:checked={filters.showUncompleted}
                     />
-                    My Uncompleted
+                    Unsolved
                 </label>
-            </div>
+            </fieldset>
 
             {#if showTeamFilters}
-                <div class="space-y-2">
-                    <Label class="block text-xs text-muted-foreground">Team Progress</Label>
-                    <label class="flex items-center gap-2 text-sm text-foreground">
+                <fieldset class="flex items-center gap-1.5">
+                    <legend class="float-left mr-1 text-xs text-muted-foreground">Team</legend>
+                    <label class={teamChipClass}>
                         <input
                             type="checkbox"
-                            class="h-4 w-4 rounded border-border accent-brand-blue"
+                            class="sr-only"
                             onchange={disableUserFilters}
                             bind:checked={filters.showTeamCompleted}
                         />
-                        Team Completed
+                        Solved
                     </label>
-                    <label class="flex items-center gap-2 text-sm text-foreground">
+                    <label class={teamChipClass}>
                         <input
                             type="checkbox"
-                            class="h-4 w-4 rounded border-border accent-brand-blue"
+                            class="sr-only"
                             onchange={disableUserFilters}
                             bind:checked={filters.showTeamUncompleted}
                         />
-                        Team Uncompleted
+                        Unsolved
                     </label>
-                </div>
+                </fieldset>
             {/if}
         {/if}
 
-        <Button variant="outline" size="sm" class="w-full" onclick={clearFilters}>
-            Clear Filters
-        </Button>
-
-        {#if showHelpButton}
-            <Separator />
-
-            <Button
-                href="/challenge_help"
-                class="w-full bg-gradient-to-r from-brand-green to-brand-blue text-[#08131f]! hover:brightness-105"
-            >
-                Challenge Help
+        <div class="ml-auto flex items-center gap-3">
+            <span class="text-xs text-muted-foreground tabular-nums" aria-live="polite">
+                {filtered.length} of {challenges.length}
+            </span>
+            <Button variant="ghost" size="sm" onclick={clearFilters} disabled={!hasActiveFilters}>
+                <X />
+                Clear
             </Button>
-        {/if}
-
+        </div>
     </div>
-</aside>
+</div>

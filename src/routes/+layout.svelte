@@ -7,9 +7,11 @@
 
     import { Button } from '$lib/components/ui/button';
     import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+    import UserAvatar from '$lib/components/user-avatar.svelte';
     import Menu from '@lucide/svelte/icons/menu';
     import X from '@lucide/svelte/icons/x';
-    import ChevronUp from '@lucide/svelte/icons/chevron-up';
+    import ChevronsUpDown from '@lucide/svelte/icons/chevrons-up-down';
+    import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import LogOut from '@lucide/svelte/icons/log-out';
     import Home from '@lucide/svelte/icons/home';
     import Shield from '@lucide/svelte/icons/shield';
@@ -19,11 +21,14 @@
     import Trophy from '@lucide/svelte/icons/trophy';
     import Wrench from '@lucide/svelte/icons/wrench';
     import MessageSquare from '@lucide/svelte/icons/message-square';
+    import LifeBuoy from '@lucide/svelte/icons/life-buoy';
     import LogIn from '@lucide/svelte/icons/log-in';
 
     import favicon from '$lib/assets/favicon.ico';
 	import logo from '$lib/assets/2026_KHI_Logo_Transparent.png';
     import apple_touch_icon from '$lib/assets/logo192.png';
+
+    let { data, children } = $props();
 
     async function handleLogout() {
         await authClient.signOut();
@@ -32,23 +37,37 @@
 
     const session = authClient.useSession();
 
+    // The client session store starts out pending; fall back to the server-loaded
+    // user until it resolves so the sidebar doesn't flash the logged-out state.
+    const currentUser = $derived($session.isPending ? data.user : ($session.data?.user ?? null));
+
     let mobileMenuOpen = $state(false);
 
     type NavLink = { href: string; label: string; icon: typeof Home; external?: boolean };
+    type NavGroup = { label: string; links: NavLink[] };
 
-    const navLinks = $derived.by((): NavLink[] => {
-        const role = $session.data?.user.role;
-        const links: NavLink[] = [{ href: "/", label: "Home", icon: Home }];
-        if (role === "admin") links.push({ href: "/admin", label: "Admin", icon: Shield });
-        else if (role === "user") links.push({ href: "/team", label: "Team", icon: Users });
-        links.push(
-            { href: "/gym", label: "Gym", icon: Dumbbell },
+    const navGroups = $derived.by((): NavGroup[] => {
+        const role = currentUser?.role;
+        const play: NavLink[] = [
+            { href: "/", label: "Home", icon: Home },
             { href: "/compete", label: "Compete", icon: Flag },
+            { href: "/gym", label: "Gym", icon: Dumbbell },
             { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
-            { href: "/tools", label: "Tools", icon: Wrench, external: true },
-            { href: "/discord", label: "Community", icon: MessageSquare, external: true }
-        );
-        return links;
+        ];
+        if (role === "admin") play.push({ href: "/admin", label: "Admin", icon: Shield });
+        else if (role === "user") play.push({ href: "/team", label: "Team", icon: Users });
+
+        return [
+            { label: "Play", links: play },
+            {
+                label: "Resources",
+                links: [
+                    { href: "/challenge_help", label: "Challenge help", icon: LifeBuoy },
+                    { href: "/tools", label: "Tools", icon: Wrench, external: true },
+                    { href: "/discord", label: "Community", icon: MessageSquare, external: true },
+                ],
+            },
+        ];
     });
 
     function isActive(href: string): boolean {
@@ -56,149 +75,125 @@
         return href === "/" ? path === "/" : path === href || path.startsWith(href + "/");
     }
 
-    // Link styling. `!` modifiers defeat the legacy global `a { color: ... !important }`
-    // and `a:hover { text-decoration: underline !important }` rules from static/css/index.css.
     const linkBase =
-        "group/nav relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium no-underline! transition-colors";
-    const linkIdle =
-        "text-muted-foreground! hover:bg-sidebar-accent/70 hover:text-foreground! hover:no-underline!";
-    const linkActive =
-        "bg-gradient-to-r from-brand-green/15 to-brand-blue/10 text-foreground! hover:no-underline!";
+        "group/nav relative flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring";
+    const linkIdle = "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground";
+    const linkActive = "bg-sidebar-accent text-foreground";
 
-	let { data, children } = $props();
 </script>
 
 {#snippet sidebar()}
     <!-- Brand header -->
-    <div class="flex items-center gap-3.5 border-b border-black/5 px-4 py-5 dark:border-white/5">
-        <img src={logo} alt="KHI Logo" class="logo h-12 w-auto shrink-0" />
-        <div class="min-w-0 leading-tight">
-            <p class="font-mono text-base font-bold whitespace-nowrap text-foreground">KENT HACK IT</p>
-            <p class="font-mono text-[0.65rem] tracking-[0.22em] text-brand-blue uppercase">HacKSU CTF</p>
-        </div>
-    </div>
+    <a
+        href="/"
+        class="flex items-center gap-3 px-4 py-4 outline-none focus-visible:bg-sidebar-accent/60"
+        onclick={() => (mobileMenuOpen = false)}
+    >
+        <img src={logo} alt="" class="pointer-events-none -my-2 -ml-1 size-14 shrink-0 object-contain" />
+        <span class="min-w-0 leading-tight">
+            <span class="block text-[0.9375rem] font-semibold tracking-tight whitespace-nowrap text-foreground">Kent Hack It</span>
+            <span class="eyebrow block text-[0.625rem]">HacKSU CTF</span>
+        </span>
+    </a>
 
     <!-- Nav links -->
-    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        <p class="px-3 pb-2 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-            // navigate
-        </p>
-        {#each navLinks as link (link.href)}
-            {@const Icon = link.icon}
-            {@const active = isActive(link.href)}
-            <a
-                href={link.href}
-                target={link.external ? "_blank" : undefined}
-                rel={link.external ? "noopener noreferrer" : undefined}
-                aria-current={active ? "page" : undefined}
-                class="{linkBase} {active ? linkActive : linkIdle}"
-                onclick={() => (mobileMenuOpen = false)}
-            >
-                <Icon class="h-4 w-4 shrink-0 {active ? 'text-brand-green' : ''}" />
-                <span>{link.label}</span>
-            </a>
+    <nav class="flex-1 space-y-5 overflow-y-auto px-3 py-2" aria-label="Main">
+        {#each navGroups as group (group.label)}
+            <div class="space-y-0.5">
+                <p class="eyebrow px-3 pb-1.5 text-[0.625rem] text-muted-foreground/70">{group.label}</p>
+                {#each group.links as link (link.href)}
+                    {@const Icon = link.icon}
+                    {@const active = isActive(link.href)}
+                    <a
+                        href={link.href}
+                        target={link.external ? "_blank" : undefined}
+                        rel={link.external ? "noopener noreferrer" : undefined}
+                        aria-current={active ? "page" : undefined}
+                        class="{linkBase} {active ? linkActive : linkIdle}"
+                        onclick={() => (mobileMenuOpen = false)}
+                    >
+                        {#if active}
+                            <span class="absolute inset-y-2 left-0 w-0.5 rounded-full bg-brand-green" aria-hidden="true"></span>
+                        {/if}
+                        <Icon class="size-4 shrink-0 {active ? 'text-brand-green' : ''}" />
+                        <span class="flex-1">{link.label}</span>
+                        {#if link.external}
+                            <ArrowUpRight
+                                class="size-3.5 shrink-0 opacity-0 transition-opacity group-hover/nav:opacity-60 group-focus-visible/nav:opacity-60"
+                                aria-label="opens in a new tab"
+                            />
+                        {/if}
+                    </a>
+                {/each}
+            </div>
         {/each}
     </nav>
 
-    <!-- Footer: profile + controls, borderless and integrated -->
-    <div class="mt-auto border-t border-sidebar-border p-3">
-        {#if $session.data?.user}
-            {@const user = $session.data.user}
-            <div class="flex items-center gap-3">
-                {#if user.image}
-                    <img
-                        src={user.image}
-                        alt=""
-                        class="h-9 w-9 shrink-0 rounded-full border border-sidebar-border object-cover"
-                    />
-                {:else}
-                    <div
-                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-blue font-mono text-sm font-bold text-[#08131f] select-none"
-                        aria-hidden="true"
-                    >
-                        {(user.name ?? "?").trim().charAt(0).toUpperCase()}
-                    </div>
-                {/if}
-                <div class="min-w-0 flex-1 leading-tight">
-                    <p class="truncate text-sm font-semibold text-foreground">{user.name}</p>
-                    <p class="font-mono text-[0.6rem] tracking-widest text-brand-blue uppercase">
-                        {(user as { role?: string }).role ?? "member"}
-                    </p>
-                </div>
-                <div class="flex items-center gap-1">
-                    <DropdownMenu.Root>
-                        <DropdownMenu.Trigger>
-                            {#snippet child({ props })}
-                                <Button
-                                    {...props}
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Account menu"
-                                    class="size-8 shrink-0 rounded-lg bg-[color-mix(in_oklch,var(--brand-green)_16%,var(--card))] text-foreground! hover:bg-[color-mix(in_oklch,var(--brand-green)_28%,var(--card))] hover:text-foreground!"
-                                >
-                                    <ChevronUp class="h-4 w-4" />
-                                </Button>
-                            {/snippet}
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Content
-                            align="end"
-                            side="top"
-                            sideOffset={8}
-                            class="w-[13.5rem] border border-white/10 bg-card text-foreground shadow-xl"
-                        >
-                            <DropdownMenu.Item onclick={handleLogout} class="gap-2 px-2 py-2 text-sm">
-                                <LogOut class="h-4 w-4 text-brand-green" />
-                                Logout
-                            </DropdownMenu.Item>
-                        </DropdownMenu.Content>
-                    </DropdownMenu.Root>
-                </div>
-            </div>
+    <!-- Footer: account -->
+    <div class="border-t border-sidebar-border p-2">
+        {#if currentUser}
+            {@const user = currentUser}
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger
+                    class="flex w-full items-center gap-2.5 rounded-lg p-2 text-left transition-colors outline-none hover:bg-sidebar-accent/60 focus-visible:ring-2 focus-visible:ring-sidebar-ring aria-expanded:bg-sidebar-accent"
+                >
+                    <UserAvatar name={user.name} image={user.image} />
+                    <span class="min-w-0 flex-1 leading-tight">
+                        <span class="block truncate text-sm font-medium text-foreground">{user.name}</span>
+                        <span class="block text-xs text-muted-foreground capitalize">
+                            {(user as { role?: string }).role ?? "member"}
+                        </span>
+                    </span>
+                    <ChevronsUpDown class="size-4 shrink-0 text-muted-foreground" />
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="start" side="top" sideOffset={6}>
+                    <DropdownMenu.Item onclick={handleLogout}>
+                        <LogOut />
+                        Log out
+                    </DropdownMenu.Item>
+                </DropdownMenu.Content>
+            </DropdownMenu.Root>
         {:else}
-            <a
-                href="/auth/login"
-                class="{linkBase} justify-center bg-gradient-to-r from-brand-green to-brand-blue font-semibold text-[#08131f]! shadow-glow hover:no-underline! hover:brightness-105"
-                onclick={() => (mobileMenuOpen = false)}
-            >
-                <LogIn class="h-4 w-4" />
-                <span>Login</span>
-            </a>
+            <Button href="/auth/login" size="lg" class="w-full" onclick={() => (mobileMenuOpen = false)}>
+                <LogIn />
+                Log in
+            </Button>
         {/if}
     </div>
 {/snippet}
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-    <link rel="stylesheet" href="/css/index.css">
     <link rel="apple-touch-icon" href={apple_touch_icon} />
+    <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
 
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#0f1420" />
     <meta name="description" content="Kent Hack It - A HacKSU sponsored Capture The Flag competition" />
 
     <title>Kent Hack It</title>
 </svelte:head>
 
+<svelte:window onkeydown={(e) => { if (e.key === "Escape") mobileMenuOpen = false; }} />
+
 <!-- Mobile top bar -->
-<div class="sticky top-0 z-30 flex items-center gap-3 border-b border-border/60 bg-background/90 px-4 py-2.5 backdrop-blur md:hidden">
+<div class="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur md:hidden">
     <Button
         variant="ghost"
-        size="icon"
+        size="icon-lg"
         aria-label="Open menu"
         aria-expanded={mobileMenuOpen}
         onclick={() => (mobileMenuOpen = true)}
     >
-        <Menu class="h-5 w-5" />
+        <Menu class="size-5" />
     </Button>
-    <a href="/" class="flex items-center gap-2 no-underline!">
-        <img src={logo} alt="KHI Logo" class="logo h-7 w-auto" />
-        <span class="font-mono text-sm font-bold tracking-tight text-foreground!">KENT HACK IT</span>
+    <a href="/" class="flex items-center gap-2">
+        <img src={logo} alt="" class="pointer-events-none size-10 object-contain" />
+        <span class="text-sm font-semibold tracking-tight text-foreground">Kent Hack It</span>
     </a>
 </div>
 
 <!-- Desktop fixed sidebar -->
-<aside class="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-black/5 bg-sidebar md:flex dark:border-white/5">
+<aside class="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar md:flex">
     {@render sidebar()}
 </aside>
 
@@ -206,18 +201,18 @@
 {#if mobileMenuOpen}
     <button
         type="button"
-        class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+        class="fixed inset-0 z-40 animate-overlay-in bg-black/60 backdrop-blur-sm md:hidden"
         aria-label="Close menu"
         onclick={() => (mobileMenuOpen = false)}
     ></button>
-    <aside class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-black/5 bg-sidebar shadow-glow md:hidden dark:border-white/5">
+    <aside class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-sidebar-border bg-sidebar shadow-2xl md:hidden">
         <button
             type="button"
             class="absolute top-4 right-3 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
             aria-label="Close menu"
             onclick={() => (mobileMenuOpen = false)}
         >
-            <X class="h-5 w-5" />
+            <X class="size-5" />
         </button>
         {@render sidebar()}
     </aside>
@@ -227,7 +222,8 @@
 <div class="app-bg flex min-h-screen flex-col md:pl-60">
     {#if data.error}
         <div
-            class="mx-4 mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-sm text-destructive"
+            role="alert"
+            class="mx-4 mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive sm:mx-6"
         >
             {data.error}
         </div>
@@ -237,7 +233,11 @@
         {@render children()}
     </div>
 
-    <footer class="border-t border-border/60 px-4 py-6 text-center font-mono text-sm text-muted-foreground">
-        &copy; HacKSU 2026
+    <footer class="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 border-t border-border px-4 py-5 text-xs text-muted-foreground sm:px-6">
+        <span>&copy; HacKSU {new Date().getFullYear()}</span>
+        <span class="flex items-center gap-4">
+            <a href="https://hacksu.com/" class="transition-colors hover:text-foreground">hacksu.com</a>
+            <a href="/kali-setup-guide" class="transition-colors hover:text-foreground">Kali setup guide</a>
+        </span>
     </footer>
 </div>
