@@ -159,6 +159,18 @@
         "inline-flex h-7 cursor-pointer items-center rounded-full border border-border px-2.5 text-xs font-medium text-muted-foreground transition-colors select-none hover:text-foreground has-checked:border-brand-blue/40 has-checked:bg-brand-blue/12 has-checked:text-brand-blue has-focus-visible:ring-3 has-focus-visible:ring-ring/40";
 </script>
 
+{#snippet summary()}
+    <div class="ml-auto flex shrink-0 items-center gap-3">
+        <span class="text-xs whitespace-nowrap text-muted-foreground tabular-nums" aria-live="polite">
+            {filtered.length} of {challenges.length}
+        </span>
+        <Button variant="ghost" size="sm" onclick={clearFilters} disabled={!hasActiveFilters}>
+            <X />
+            Clear
+        </Button>
+    </div>
+{/snippet}
+
 <div class="rounded-xl border border-border bg-card p-3" role="search" aria-label="Filter challenges">
     <div class="flex flex-col gap-2 lg:flex-row lg:items-center">
         <div class="relative min-w-0 flex-1">
@@ -235,10 +247,14 @@
                 </Select.Root>
             {/if}
         </div>
+
+        {#if !showCompletionFilters}
+            {@render summary()}
+        {/if}
     </div>
 
+    {#if showCompletionFilters}
     <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-3">
-        {#if showCompletionFilters}
             <fieldset class="flex items-center gap-1.5">
                 <legend class="float-left mr-1 text-xs text-muted-foreground">Mine</legend>
                 <label class={chipClass}>
@@ -284,16 +300,8 @@
                     </label>
                 </fieldset>
             {/if}
-        {/if}
 
-        <div class="ml-auto flex items-center gap-3">
-            <span class="text-xs text-muted-foreground tabular-nums" aria-live="polite">
-                {filtered.length} of {challenges.length}
-            </span>
-            <Button variant="ghost" size="sm" onclick={clearFilters} disabled={!hasActiveFilters}>
-                <X />
-                Clear
-            </Button>
-        </div>
+        {@render summary()}
     </div>
+    {/if}
 </div>
