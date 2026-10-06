@@ -1,5 +1,6 @@
 <script lang="ts">
     import UploadSection from '$lib/components/file_upload.svelte';
+    import AdminTabHeader from '$lib/components/admin-tab-header.svelte';
     import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 
     let uploadsDisabled = $state(false);
@@ -15,17 +16,19 @@
     } = $props();
 </script>
 
-<div>
+<AdminTabHeader title="File uploads" count={uploaded_files.archives.length + uploaded_files.bins.length + uploaded_files.jail_confs.length} />
+
+<div class="space-y-4">
     {#if uploadsDisabled}
-        <div class="mb-4 flex items-center justify-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-500" role="alert">
+        <div class="mb-4 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning" role="alert">
             <TriangleAlert class="h-4 w-4 shrink-0" />
-            <strong>Uploads Disabled:</strong> File uploads are currently disabled during the event.
+            <strong>Uploads disabled:</strong> File uploads are currently disabled during the event.
         </div>
     {/if}
 
     <UploadSection
-        summaryText="Upload Compressed CTF Challenge Files (zip)"
-        cardTitle="Upload Challenge"
+        summaryText="Challenge archives (.zip)"
+        cardTitle="Upload challenge archive"
         formAction="?/upload_files"
         fieldName="challenge_archives"
         accepted_files={".zip"}
@@ -34,8 +37,8 @@
     />
 
     <UploadSection
-        summaryText="Upload CTF Executable Files"
-        cardTitle="Upload CTF Binary"
+        summaryText="Executable files"
+        cardTitle="Upload executable"
         formAction="?/upload_exec_files"
         fieldName="bins"
         {uploadsDisabled}
@@ -43,8 +46,8 @@
     />
 
     <UploadSection
-        summaryText="Upload nsjail Configurations"
-        cardTitle="Upload nsjail Configs"
+        summaryText="nsjail configurations (.json)"
+        cardTitle="Upload nsjail configuration"
         formAction="?/upload_jail_conf"
         fieldName="jail_confs"
         accepted_files={".json"}

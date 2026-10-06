@@ -23,7 +23,6 @@
     });
 </script>
 
-<div class="border-t border-border px-4 py-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">Score over time</div>
 <div class="overflow-x-auto px-4 pt-3 pb-2">
     {#if chart}
         <svg viewBox="0 0 380 150" class="block h-auto w-full min-w-[260px]" role="img" aria-label="Team score over time, cumulative">
@@ -35,23 +34,23 @@
             <text x={X0 - 4} y={(Y0 + YTOP) / 2 + 3} text-anchor="end" class="fill-muted-foreground" style="font-size:8px;">{Math.round(chart.maxScore / 2).toLocaleString()}</text>
             <text x={X0 - 4} y={YTOP + 3} text-anchor="end" class="fill-muted-foreground" style="font-size:8px;">{chart.maxScore.toLocaleString()}</text>
 
-            <path d={chart.area} fill="var(--seq-2)" opacity="0.55" stroke="none"/>
-            <path d={chart.line} fill="none" stroke="var(--seq-4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d={chart.area} fill="var(--brand-blue)" opacity="0.14" stroke="none"/>
+            <path d={chart.line} fill="none" stroke="var(--brand-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 
             {#each chart.points as p}
-                <circle cx={p.x} cy={p.y} r="2.2" fill="var(--seq-4)"/>
+                <circle cx={p.x} cy={p.y} r="2.2" fill="var(--brand-blue)"/>
                 <circle cx={p.x} cy={p.y} r="8" fill="transparent" class="cursor-default">
                     <title>{new Date(p.t).toLocaleString()}: {p.score.toLocaleString()} pts</title>
                 </circle>
             {/each}
 
-            <circle cx={chart.last.x} cy={chart.last.y} r="4" fill="var(--seq-4)" stroke="var(--card)" stroke-width="2"/>
+            <circle cx={chart.last.x} cy={chart.last.y} r="4" fill="var(--brand-blue)" stroke="var(--card)" stroke-width="2"/>
             <text x={chart.last.x - 4} y={chart.last.y - 8} text-anchor="end" class="fill-foreground font-semibold" style="font-size:9px;">{chart.last.score.toLocaleString()} pts</text>
 
             <text x={X0} y={Y0 + 16} class="fill-muted-foreground" style="font-size:8px;">Start</text>
             <text x={X1} y={Y0 + 16} text-anchor="end" class="fill-muted-foreground" style="font-size:8px;">Now</text>
         </svg>
     {:else}
-        <p class="py-6 text-center text-sm text-muted-foreground">No solves yet</p>
+        <p class="py-10 text-center text-sm text-muted-foreground">No solves yet</p>
     {/if}
 </div>

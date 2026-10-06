@@ -8,10 +8,9 @@
     import { Button } from '$lib/components/ui/button';
     import { Input } from '$lib/components/ui/input';
     import { Label } from '$lib/components/ui/label';
-    import { Badge } from '$lib/components/ui/badge';
-    import * as Card from '$lib/components/ui/card';
+    import AdminTabHeader from '$lib/components/admin-tab-header.svelte';
+    import Panel from '$lib/components/panel.svelte';
     import { Separator } from '$lib/components/ui/separator';
-    import Power from '@lucide/svelte/icons/power';
     import Save from '@lucide/svelte/icons/save';
     import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
     import CircleAlert from '@lucide/svelte/icons/circle-alert';
@@ -67,11 +66,8 @@
     }
 </script>
 
-<div>
-    <div class="mb-4 flex items-center gap-2.5">
-        <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
-        <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Configuration</h2>
-    </div>
+<div class="mx-auto w-full max-w-xl">
+    <AdminTabHeader title="Configuration" />
 
     {#if !config}
         <div class="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -82,29 +78,14 @@
         <Feedback {success} {warning} {error} />
 
         {#if isDirty}
-            <div class="mx-auto mb-4 flex max-w-[35rem] items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-500">
+            <div class="mb-4 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
                 <TriangleAlert class="h-4 w-4 shrink-0" />
-                You have unsaved changes &mdash; click <strong class="mx-1">Save changes</strong> to apply them.
+                <span>You have unsaved changes. Save to apply them.</span>
             </div>
         {/if}
 
-        <Card.Root class="mx-auto max-w-[35rem] border-border bg-card {isDirty ? 'border-amber-500/50' : ''}">
-            <Card.Header class="flex-row items-center justify-between space-y-0 border-b border-border pb-3">
-                <Card.Title class="text-sm font-medium">Event Configuration</Card.Title>
-                <div class="flex items-center gap-2">
-                    {#if isDirty}
-                        <Badge class="bg-amber-500/15 text-amber-500">Unsaved</Badge>
-                    {/if}
-                    <Badge variant={event_status ? 'default' : 'secondary'}>
-                        Event: {event_status ? "Active" : "Inactive"}
-                    </Badge>
-                    <Badge variant={gym_status ? 'default' : 'secondary'}>
-                        Gym: {gym_status ? "Active" : "Inactive"}
-                    </Badge>
-                </div>
-            </Card.Header>
-
-            <Card.Content class="pt-4">
+        <Panel class={isDirty ? 'border-warning/50' : ''}>
+            <div class="p-4 sm:p-5">
                 <form method="POST" action="?/update_config" use:enhance={() => {
                     return async ({ result, update }) => {
                         await update();
@@ -123,11 +104,11 @@
                 }}>
 
                     <div class="mb-3 flex flex-col gap-1.5">
-                        <Label for="start-date" class="text-xs font-medium text-muted-foreground">Event Start</Label>
+                        <Label for="start-date" class="text-xs font-medium text-muted-foreground">Event start</Label>
                         <Input
                             type="datetime-local"
                             id="start-date"
-                            class={currentStart !== originalStart ? 'border-amber-500/60' : ''}
+                            class={currentStart !== originalStart ? 'border-warning/60' : ''}
                             name="start-date"
                             bind:value={currentStart}
                             required
@@ -135,11 +116,11 @@
                     </div>
 
                     <div class="mb-3 flex flex-col gap-1.5">
-                        <Label for="event-length" class="text-xs font-medium text-muted-foreground">Event Length (days)</Label>
+                        <Label for="event-length" class="text-xs font-medium text-muted-foreground">Event length (days)</Label>
                         <Input
                             type="number"
                             id="event-length"
-                            class={currentLength !== originalLength ? 'border-amber-500/60' : ''}
+                            class={currentLength !== originalLength ? 'border-warning/60' : ''}
                             name="event-length"
                             bind:value={currentLength}
                             min={1}
@@ -152,41 +133,46 @@
 
                     <Separator class="my-3" />
 
-                    <div class="flex gap-2">
-                        <Button
-                            type="button"
-                            variant={event_status ? 'default' : 'outline'}
-                            class="w-1/2"
-                            onclick={() => { event_status = !event_status }}
-                        >
-                            <Power class="h-3.5 w-3.5" />
-                            {event_status ? "Disable Event" : "Enable Event"}
-                        </Button>
-
-                        <Button
-                            type="button"
-                            variant={gym_status ? 'default' : 'outline'}
-                            class="w-1/2"
-                            onclick={() => { gym_status = !gym_status }}
-                        >
-                            <Power class="h-3.5 w-3.5" />
-                            {gym_status ? "Disable Gym" : "Enable Gym"}
-                        </Button>
+                    <div class="space-y-4 py-1">
+                        <div class="flex items-center justify-between gap-4">
+                            <div>
+                                <p id="event-state-label" class="text-sm font-medium">Event</p>
+                                <p class="mt-0.5 text-xs text-muted-foreground">Competition access</p>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-sm {event_status ? 'text-brand-green' : 'text-muted-foreground'}">{event_status ? 'On' : 'Off'}</span>
+                                <button type="button" role="switch" aria-checked={event_status} aria-labelledby="event-state-label" class="relative h-6 w-11 shrink-0 rounded-full border border-transparent transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 {event_status ? 'bg-primary' : 'bg-input'}" onclick={() => { event_status = !event_status }}>
+                                    <span class="absolute top-0.5 left-0.5 size-5 rounded-full bg-background transition-transform {event_status ? 'translate-x-5' : ''}"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between gap-4">
+                            <div>
+                                <p id="gym-state-label" class="text-sm font-medium">Gym</p>
+                                <p class="mt-0.5 text-xs text-muted-foreground">Practice challenge access</p>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-sm {gym_status ? 'text-brand-green' : 'text-muted-foreground'}">{gym_status ? 'On' : 'Off'}</span>
+                                <button type="button" role="switch" aria-checked={gym_status} aria-labelledby="gym-state-label" class="relative h-6 w-11 shrink-0 rounded-full border border-transparent transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 {gym_status ? 'bg-primary' : 'bg-input'}" onclick={() => { gym_status = !gym_status }}>
+                                    <span class="absolute top-0.5 left-0.5 size-5 rounded-full bg-background transition-transform {gym_status ? 'translate-x-5' : ''}"></span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <Button
                         type="submit"
                         variant={isDirty ? 'default' : 'outline'}
-                        class="mt-2 w-full"
+                        class="mt-5 w-full"
                         disabled={!isDirty}
                     >
-                        <Save class="h-3.5 w-3.5" />
+                        <Save />
                         Save changes
                     </Button>
 
                 </form>
-            </Card.Content>
-        </Card.Root>
+            </div>
+        </Panel>
     {/if}
 
 </div>

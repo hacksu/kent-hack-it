@@ -4,15 +4,18 @@
     import type { RegistryImages } from '$lib/server/registry';
 
     import { Button } from '$lib/components/ui/button';
-    import { Badge } from '$lib/components/ui/badge';
-    import * as Card from '$lib/components/ui/card';
     import * as Dialog from '$lib/components/ui/dialog';
+    import * as Table from '$lib/components/ui/table';
     import ChallengeFilters from '$lib/components/challenge-filters.svelte';
+    import Feedback from '$lib/components/feedback.svelte';
+    import Panel from '$lib/components/panel.svelte';
+    import { difficultyTone } from '$lib/difficulty';
     import Pencil from '@lucide/svelte/icons/pencil';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import Power from '@lucide/svelte/icons/power';
     import FlaskConical from '@lucide/svelte/icons/flask-conical';
     import Rss from '@lucide/svelte/icons/rss';
+    import Star from '@lucide/svelte/icons/star';
 
     let result: {
         success?:boolean,
@@ -88,15 +91,25 @@
     } = $props();
 
     let filteredChallenges = $state<ChallengeData[]>([]);
+
+    const counts = $derived({
+        live: challenges.filter((c) => !c.is_gym).length,
+        gym: challenges.filter((c) => c.is_gym).length,
+        disabled: challenges.filter((c) => !c.is_active).length,
+    });
+
+    const headClass = "h-9 text-xs font-medium text-muted-foreground";
+    const chipClass = "inline-flex h-5 items-center gap-1 rounded-full border px-2 text-[0.6875rem] font-medium";
 </script>
 
 <!-- START OF PANEL -->
 
 <Dialog.Root open={showEditPanel} onOpenChange={(open) => { if (!open) exitPanel(); }}>
     <Dialog.Content class="max-h-[90vh] max-w-2xl overflow-y-auto bg-card p-0 sm:max-w-2xl">
+        <Dialog.Title class="sr-only">Edit {originalData?.name ?? "challenge"}</Dialog.Title>
         {#key `${originalData?.id}:${showEditPanel}`}
             <ChallengeForm
-                title="Edit Challenge"
+                title="Edit challenge"
                 action_target="?/edit_challenge"
                 subaction_target={undefined}
                 challenge={originalData}
@@ -120,114 +133,173 @@
 
 <!-- END OF PANEL -->
 
-<div>
+{#snippet statusChips(challenge: ChallengeData)}
+    <span class="flex flex-wrap items-center gap-1.5">
+        {#if challenge.is_gym}
+            <span class="{chipClass} border-brand-blue/30 bg-brand-blue/10 text-brand-blue">
+                <FlaskConical class="size-3" />Gym
+            </span>
+        {:else}
+            <span class="{chipClass} border-brand-green/30 bg-brand-green/10 text-brand-green">
+                <Rss class="size-3" />Live
+            </span>
+        {/if}
+        {#if !challenge.is_active}
+            <span class="{chipClass} border-warning/30 bg-warning/10 text-warning">
+                <Power class="size-3" />Disabled
+            </span>
+        {/if}
+    </span>
+{/snippet}
+
+<div class="space-y-4">
     <!-- button fetch -->
-    {#if result?.success}
-        <div class="mx-auto mb-3 max-w-[37.5rem] rounded-lg border border-brand-green/40 bg-brand-green/10 px-3 py-2.5 text-center text-sm text-foreground">
-            {result.message}
-        </div>
-    {:else if result?.error}
-        <div class="mx-auto mb-3 max-w-[37.5rem] rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-center text-sm text-destructive">
-            {result.error}
-        </div>
-    {/if}
+    <Feedback
+        success={result?.success ? (result.message ?? '') : ''}
+        warning=""
+        error={!result?.success && result?.error ? result.error : ''}
+    />
 
     <!-- form feedback -->
-    {#if form?.result?.success}
-        <div class="mx-auto mb-3 max-w-[37.5rem] rounded-lg border border-brand-green/40 bg-brand-green/10 px-3 py-2.5 text-center text-sm text-foreground">
-            {form.result.message}
-        </div>
-    {:else if form?.result?.error}
-        <div class="mx-auto mb-3 max-w-[37.5rem] rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-center text-sm text-destructive">
-            {form.result.error}
-        </div>
-    {/if}
+    <Feedback
+        success={form?.result?.success ? form.result.message : ''}
+        warning=""
+        error={!form?.result?.success && form?.result?.error ? form.result.error : ''}
+    />
 
-    <div class="mb-3 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2.5">
-            <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
-            <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Current Challenges</h2>
-        </div>
-        <Badge variant="secondary">
-            {filteredChallenges.length} of {challenges.length} Challenge{challenges.length !== 1 ? 's' : ''}
-        </Badge>
-    </div>
+    <ChallengeFilters
+        challenges={challenges}
+        bind:filtered={filteredChallenges}
+        showGymFilter={true}
+    />
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
+    <Panel title="Challenges">
+        {#snippet actions()}
+            <span class="font-mono text-xs text-muted-foreground tabular-nums">
+                {counts.live} live
+                <span class="px-1 text-border" aria-hidden="true">/</span>{counts.gym} gym
+                <span class="px-1 text-border" aria-hidden="true">/</span>
+                <span class={counts.disabled > 0 ? 'text-warning' : ''}>{counts.disabled} disabled</span>
+            </span>
+        {/snippet}
 
-        <ChallengeFilters
-            challenges={challenges}
-            bind:filtered={filteredChallenges}
-            showGymFilter={true}
-        />
+        <Table.Root>
+            <Table.Header>
+                <Table.Row class="hover:bg-transparent">
+                    <Table.Head class="{headClass} w-full pl-4">Challenge</Table.Head>
+                    <Table.Head class="{headClass} w-px px-4 hidden md:table-cell">Status</Table.Head>
+                    <Table.Head class="{headClass} w-px px-4 hidden lg:table-cell">Category</Table.Head>
+                    <Table.Head class="{headClass} w-px px-4 hidden md:table-cell">Difficulty</Table.Head>
+                    <Table.Head class="{headClass} w-px px-4 hidden text-right md:table-cell">Points</Table.Head>
+                    <Table.Head class="{headClass} w-px px-4 hidden text-right md:table-cell">Rating</Table.Head>
+                    <Table.Head class="{headClass} w-px pr-4 text-right"><span class="sr-only">Actions</span></Table.Head>
+                </Table.Row>
+            </Table.Header>
+            <Table.Body>
+                {#each filteredChallenges as challenge (challenge.id)}
+                    {@const tone = difficultyTone(challenge.difficulty)}
+                    <Table.Row>
+                        <Table.Cell class="max-w-0 py-2.5 pl-4">
+                            <div class="min-w-0 {challenge.is_active ? '' : 'opacity-60'}">
+                                <p class="truncate text-sm font-medium text-foreground">{challenge.name}</p>
+                                <p class="truncate text-xs text-muted-foreground">
+                                    <span class="lg:hidden">{challenge.category}&nbsp;·&nbsp;</span>by {challenge.written_by || 'Unknown author'}
+                                </p>
+                            </div>
+                            <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 md:hidden">
+                                {@render statusChips(challenge)}
+                                <span class="flex items-center gap-1.5 text-xs font-medium {tone.text}">
+                                    <span class="size-1.5 rounded-full {tone.dot}"></span>{challenge.difficulty}
+                                </span>
+                                <span class="font-mono text-xs text-muted-foreground tabular-nums">{challenge.points} pts</span>
+                                <span class="flex items-center gap-1 font-mono text-xs text-muted-foreground tabular-nums">
+                                    <Star class="size-3 fill-gold text-gold" />{Number(challenge.rating).toFixed(1)}
+                                </span>
+                            </div>
+                        </Table.Cell>
+                        <Table.Cell class="hidden px-4 py-2.5 md:table-cell">
+                            {@render statusChips(challenge)}
+                        </Table.Cell>
+                        <Table.Cell class="hidden px-4 py-2.5 text-sm text-muted-foreground lg:table-cell {challenge.is_active ? '' : 'opacity-60'}">
+                            {challenge.category}
+                        </Table.Cell>
+                        <Table.Cell class="hidden px-4 py-2.5 md:table-cell {challenge.is_active ? '' : 'opacity-60'}">
+                            <span class="flex items-center gap-1.5 text-sm font-medium {tone.text}">
+                                <span class="size-1.5 rounded-full {tone.dot}"></span>{challenge.difficulty}
+                            </span>
+                        </Table.Cell>
+                        <Table.Cell class="hidden px-4 py-2.5 text-right font-mono text-sm text-foreground tabular-nums md:table-cell {challenge.is_active ? '' : 'opacity-60'}">
+                            {challenge.points}
+                        </Table.Cell>
+                        <Table.Cell class="hidden px-4 py-2.5 text-right md:table-cell {challenge.is_active ? '' : 'opacity-60'}">
+                            <span class="inline-flex items-center gap-1 font-mono text-sm text-muted-foreground tabular-nums">
+                                <Star class="size-3.5 fill-gold text-gold" />{Number(challenge.rating).toFixed(1)}
+                            </span>
+                        </Table.Cell>
+                        <Table.Cell class="py-2.5 pr-3 text-right align-top md:align-middle">
+                            <div class="grid grid-cols-[repeat(2,1.75rem)] gap-0.5 md:flex md:items-center md:justify-end">
+                                <!-- Enable / Disable -->
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    class="text-muted-foreground"
+                                    aria-label="{challenge.is_active ? 'Disable' : 'Enable'} {challenge.name}"
+                                    title={challenge.is_active ? 'Disable' : 'Enable'}
+                                    onclick={() => { toggleChallenge(challenge.id, challenge.name, { is_active: !challenge.is_active, is_gym: challenge.is_gym ?? false }) }}
+                                >
+                                    <Power />
+                                </Button>
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {#each filteredChallenges as challenge}
-            <Card.Root class="gap-2 border-border bg-card p-3">
+                                <!-- Is Live / Is Gym -->
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    class="text-muted-foreground"
+                                    aria-label="{challenge.is_gym ? 'Set live' : 'Set gym'}: {challenge.name}"
+                                    title={challenge.is_gym ? 'Set live' : 'Set gym'}
+                                    onclick={() => { toggleChallenge(challenge.id, challenge.name, { is_active: challenge.is_active ?? false, is_gym: !challenge.is_gym }) }}
+                                >
+                                    {#if challenge.is_gym}
+                                        <Rss />
+                                    {:else}
+                                        <FlaskConical />
+                                    {/if}
+                                </Button>
 
-                <div class="flex items-center justify-between gap-2">
-                    <!-- Enable / Disable -->
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class={challenge.is_active ? 'border-destructive/40 text-destructive hover:bg-destructive/10' : 'border-brand-green/40 text-brand-green hover:bg-brand-green/10'}
-                        onclick={() => { toggleChallenge(challenge.id, challenge.name, { is_active: !challenge.is_active, is_gym: challenge.is_gym ?? false }) }}
-                    >
-                        <Power class="h-3.5 w-3.5" />
-                        {challenge.is_active ? 'Disable' : 'Enable'}
-                    </Button>
+                                <span class="mx-1 hidden h-4 w-px bg-border md:block" aria-hidden="true"></span>
 
-                    <!-- Is Live / Is Gym -->
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class={challenge.is_gym ? 'text-muted-foreground' : 'border-brand-blue/40 text-brand-blue hover:bg-brand-blue/10'}
-                        onclick={() => { toggleChallenge(challenge.id, challenge.name, { is_active: challenge.is_active ?? false, is_gym: !challenge.is_gym }) }}
-                    >
-                        {#if challenge.is_gym}
-                            <Rss class="h-3.5 w-3.5" />
-                        {:else}
-                            <FlaskConical class="h-3.5 w-3.5" />
-                        {/if}
-                        {challenge.is_gym ? 'Set Live' : 'Set Gym'}
-                    </Button>
-                </div>
+                                <!-- Edit / Delete -->
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label="Edit {challenge.name}"
+                                    title="Edit"
+                                    onclick={() => { openPanel(challenge) }}
+                                >
+                                    <Pencil />
+                                </Button>
 
-                <!-- Challenge Info -->
-                <div>
-                    <h6 class="mb-1 font-semibold text-foreground">{challenge.name}</h6>
-                    <p class="text-xs text-muted-foreground">
-                        {challenge.category} | Difficulty: {challenge.difficulty}
-                    </p>
-
-                    <p class="mt-1 text-xs text-brand-blue">
-                        By: {challenge.written_by || 'Unknown Author'}
-                    </p>
-
-                    <p class="mt-2 text-xs text-muted-foreground">
-                        ⭐ {Number(challenge.rating).toFixed(1)} / 5
-                    </p>
-
-                    <p class="text-xs text-muted-foreground">
-                        Points: {challenge.points}
-                    </p>
-                </div>
-
-                <!-- Edit / Delete -->
-                <div class="flex items-center justify-between gap-2 pt-1">
-                    <Button variant="outline" size="sm" onclick={() => { openPanel(challenge) }}>
-                        <Pencil class="h-3.5 w-3.5" />
-                        Edit
-                    </Button>
-
-                    <Button variant="destructive" size="sm" onclick={() => { deleteChallenge(challenge.id, challenge.name) }}>
-                        <Trash2 class="h-3.5 w-3.5" />
-                        Delete
-                    </Button>
-                </div>
-
-            </Card.Root>
-        {/each}
-        </div>
-    </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    class="text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+                                    aria-label="Delete {challenge.name}"
+                                    title="Delete"
+                                    onclick={() => { deleteChallenge(challenge.id, challenge.name) }}
+                                >
+                                    <Trash2 />
+                                </Button>
+                            </div>
+                        </Table.Cell>
+                    </Table.Row>
+                {:else}
+                    <Table.Row class="hover:bg-transparent">
+                        <Table.Cell colspan={7} class="py-10 text-center text-sm text-muted-foreground">
+                            {challenges.length === 0 ? "No challenges yet. Add one from the Create tab." : "No challenges match your filters."}
+                        </Table.Cell>
+                    </Table.Row>
+                {/each}
+            </Table.Body>
+        </Table.Root>
+    </Panel>
 </div>

@@ -2,8 +2,10 @@
     import { Input } from "$lib/components/ui/input";
     import * as Table from "$lib/components/ui/table";
     import * as Collapsible from "$lib/components/ui/collapsible";
-    import * as Carousel from "$lib/components/ui/carousel";
-    import Trophy from "@lucide/svelte/icons/trophy";
+    import { Button } from "$lib/components/ui/button";
+    import PageHeader from "$lib/components/page-header.svelte";
+    import Panel from "$lib/components/panel.svelte";
+    import Search from "@lucide/svelte/icons/search";
     import ChevronDown from "@lucide/svelte/icons/chevron-down";
     import Podium from "$lib/components/leaderboard/podium.svelte";
 
@@ -57,91 +59,115 @@
     }
 </script>
 
-<main class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 md:py-10">
-    <Carousel.Root class="w-full max-w-full" opts={{ align: "start", dragFree: true }}>
-        <Carousel.Content class="-ml-2">
+<main class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 md:py-8">
+    <PageHeader
+        eyebrow="Past events"
+        title={data.year === "unknown" ? "Leaderboard history" : `Leaderboard · ${data.year}`}
+        description="Explore the final standings from previous events."
+    >
+        {#snippet actions()}
+            <Button href="/leaderboard" variant="outline">Live leaderboard</Button>
+        {/snippet}
+    </PageHeader>
+
+    {#if data.evt_archives.length > 0}
+        <nav aria-label="Archived event years" class="mb-6 flex flex-wrap items-center gap-2">
+            <span class="eyebrow mr-1">Year</span>
             {#each data.evt_archives as evt}
-                <Carousel.Item class="basis-auto pl-2">
-                    <a
-                        href="/history?year={evt}"
-                        class="flex h-full items-center rounded-full border border-border bg-card px-4 py-2 text-sm whitespace-nowrap hover:bg-muted/40"
-                    >
-                        {evt}
-                    </a>
-                </Carousel.Item>
+                <a
+                    href="/history?year={evt}"
+                    aria-current={data.year === evt ? "page" : undefined}
+                    class="rounded-full border px-3 py-1.5 font-mono text-sm tabular-nums transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring {data.year === evt ? 'border-brand-green/40 bg-brand-green/10 font-semibold text-brand-green' : 'border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground'}"
+                >
+                    {evt}
+                </a>
             {/each}
-        </Carousel.Content>
-        <Carousel.Previous />
-        <Carousel.Next />
-    </Carousel.Root>
+        </nav>
+    {/if}
 
     {#if data.history}
-        <div class="text-center">
-            <h2 class="font-mono text-2xl font-bold text-foreground">KHI {data.year} Leaderboard</h2>
-            <div class="mt-4 flex justify-center">
-                <Input type="text" placeholder="Search by name..." bind:value={searchValue} class="max-w-sm inputText" />
-            </div>
-        </div>
+        <Podium top3={rankedBoard.slice(0, 3)} />
 
-        <div class="mt-8">
-            <Podium top3={rankedBoard.slice(0, 3)} />
-        </div>
-
-        <div class="mt-6 grid grid-cols-1 items-start gap-5 lg:grid-cols-1">
-            <div class="flex flex-col gap-4">
-                <div class="rounded-2xl border border-border bg-card">
-                    <div class="flex items-center gap-2 border-b border-border px-4 py-3">
-                        <Trophy class="h-4.5 w-4.5 text-[#BA7517]" />
-                        <span class="font-medium text-foreground">Leaderboard</span>
-                    </div>
-                    <Table.Root>
-                        <Table.Body>
-                            {#each filtered as entry (entry.name)}
-                                {@const hasMembers = !!entry.members?.length}
-                                {@const isOpen = openMembers.has(entry.name)}
-                                <Table.Row class="border-border transition-colors hover:bg-muted/40">
-                                    <Table.Cell class="w-12 py-3 pl-4 text-center align-middle font-mono text-sm text-muted-foreground">
-                                        {entry.rank}
-                                    </Table.Cell>
-                                    <Table.Cell class="py-3 align-middle text-sm text-foreground/90">
-                                        {#if hasMembers}
-                                            <Collapsible.Root open={isOpen} onOpenChange={() => toggleMembers(entry.name)}>
-                                                <Collapsible.Trigger class="flex items-center gap-1.5">
-                                                    <span>{entry.name}</span>
-                                                    <ChevronDown
-                                                        class="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform {isOpen ? 'rotate-180' : ''}"
-                                                    />
-                                                </Collapsible.Trigger>
-                                                <Collapsible.Content class="mt-2 flex flex-wrap gap-1.5">
-                                                    {#each entry.members ?? [] as member}
-                                                        <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                                                            {member}
-                                                        </span>
-                                                    {/each}
-                                                </Collapsible.Content>
-                                            </Collapsible.Root>
-                                        {:else}
-                                            <span>{entry.name}</span>
-                                        {/if}
-                                    </Table.Cell>
-                                    <Table.Cell class="w-20 py-3 text-right align-middle font-mono text-xs text-muted-foreground">
-                                        {gapToNext.has(entry.name) ? `↓ ${gapToNext.get(entry.name)!.toLocaleString()}` : ''}
-                                    </Table.Cell>
-                                    <Table.Cell class="w-28 py-3 pr-4 text-right align-middle">
-                                        <span class="inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-normal whitespace-nowrap text-muted-foreground">
-                                            {entry.score.toLocaleString()} pts
-                                        </span>
-                                    </Table.Cell>
-                                </Table.Row>
-                            {/each}
-                        </Table.Body>
-                    </Table.Root>
+        <Panel title="Rankings" class="mt-4">
+            {#snippet actions()}
+                <div class="relative">
+                    <Search class="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search by name…"
+                        aria-label="Search by name or member"
+                        bind:value={searchValue}
+                        class="h-7 w-44 pl-7 text-sm sm:w-56"
+                    />
                 </div>
-            </div>
-        </div>
+            {/snippet}
+            <Table.Root>
+                <Table.Header>
+                    <Table.Row class="hover:bg-transparent">
+                        <Table.Head class="h-9 w-14 pl-4 text-xs font-medium text-muted-foreground">Rank</Table.Head>
+                        <Table.Head class="h-9 text-xs font-medium text-muted-foreground">Name</Table.Head>
+                        <Table.Head class="h-9 text-right text-xs font-medium text-muted-foreground" title="Points behind the rank above">Gap</Table.Head>
+                        <Table.Head class="h-9 pr-4 text-right text-xs font-medium text-muted-foreground">Score</Table.Head>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    {#each filtered as entry (entry.name)}
+                        {@const hasMembers = !!entry.members?.length}
+                        {@const isOpen = openMembers.has(entry.name)}
+                        <Table.Row>
+                            <Table.Cell class="py-2.5 pl-4 align-top font-mono text-sm tabular-nums {entry.rank <= 3 ? 'font-semibold text-foreground' : 'text-muted-foreground'}">
+                                {entry.rank}
+                            </Table.Cell>
+                            <Table.Cell class="max-w-0 py-2.5 text-sm text-foreground">
+                                {#if hasMembers}
+                                    <Collapsible.Root open={isOpen} onOpenChange={() => toggleMembers(entry.name)}>
+                                        <Collapsible.Trigger class="flex w-full min-w-0 items-center gap-1.5 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                            <span class="truncate">{entry.name}</span>
+                                            <ChevronDown class="size-3.5 shrink-0 text-muted-foreground transition-transform {isOpen ? 'rotate-180' : ''}" />
+                                        </Collapsible.Trigger>
+                                        <Collapsible.Content class="mt-2 flex flex-wrap gap-1.5">
+                                            {#each entry.members ?? [] as member}
+                                                <span class="max-w-full truncate rounded-full border border-border bg-background/50 px-2 py-0.5 text-xs text-muted-foreground">
+                                                    {member}
+                                                </span>
+                                            {/each}
+                                        </Collapsible.Content>
+                                    </Collapsible.Root>
+                                {:else}
+                                    <span class="block truncate">{entry.name}</span>
+                                {/if}
+                            </Table.Cell>
+                            <Table.Cell class="py-2.5 text-right align-top font-mono text-xs text-muted-foreground tabular-nums">
+                                {gapToNext.get(entry.name) ? `−${gapToNext.get(entry.name)!.toLocaleString()}` : gapToNext.has(entry.name) ? "tied" : ""}
+                            </Table.Cell>
+                            <Table.Cell class="py-2.5 pr-4 text-right align-top font-mono text-sm font-medium text-foreground tabular-nums">
+                                {entry.score.toLocaleString()}
+                            </Table.Cell>
+                        </Table.Row>
+                    {:else}
+                        <Table.Row class="hover:bg-transparent">
+                            <Table.Cell colspan={4} class="py-10 text-center text-sm text-muted-foreground">
+                                {rankedBoard.length === 0 ? "No scores were archived for this event." : "No one matches your search."}
+                            </Table.Cell>
+                        </Table.Row>
+                    {/each}
+                </Table.Body>
+            </Table.Root>
+        </Panel>
     {:else}
-        <div class="text-center">
-            <h2 class="font-mono text-2xl font-bold text-foreground">Event Leaderboard not Found</h2>
-        </div>
+        <Panel title="Archives">
+            <div class="px-4 py-10">
+                {#if data.year !== "unknown"}
+                    <p class="text-sm font-medium text-foreground">No leaderboard found for {data.year}.</p>
+                    <p class="mt-1 text-sm text-muted-foreground">{data.evt_archives.length > 0 ? "Choose another year above to view its standings." : "No event leaderboards have been archived yet."}</p>
+                {:else if data.evt_archives.length === 0}
+                    <p class="text-sm font-medium text-foreground">No archives yet.</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Past event standings will appear here once a leaderboard is archived.</p>
+                {:else}
+                    <p class="text-sm font-medium text-foreground">Choose an event year.</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Select a year above to view its final leaderboard.</p>
+                {/if}
+            </div>
+        </Panel>
     {/if}
 </main>

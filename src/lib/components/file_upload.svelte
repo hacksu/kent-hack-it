@@ -2,7 +2,9 @@
     import Feedback from '$lib/components/feedback.svelte';
     import { handleFormResult } from "$lib/browser_utils";
     import { enhance } from "$app/forms";
-    import * as Card from "$lib/components/ui/card";
+    import Panel from "$lib/components/panel.svelte";
+    import { Label } from "$lib/components/ui/label";
+    import FileIcon from "@lucide/svelte/icons/file";
     import { Input } from "$lib/components/ui/input";
     import { Button } from "$lib/components/ui/button";
     import ChevronDown from "@lucide/svelte/icons/chevron-down";
@@ -104,109 +106,81 @@
     }
 </script>
 
-<details class="group">
-    <summary class="flex cursor-pointer list-none items-center justify-between rounded-lg border border-border bg-card px-3.5 py-2.5 font-mono text-sm font-medium text-foreground select-none [&::-webkit-details-marker]:hidden">
-        <span>{summaryText}</span>
-        <ChevronDown class="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+
+<details class="group overflow-hidden rounded-xl border border-border bg-card">
+    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold select-none outline-none hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+        <span class="min-w-0 flex-1">{summaryText}</span>
+        <span class="shrink-0 rounded-full bg-muted px-2 py-0.5 font-mono text-xs font-normal text-muted-foreground tabular-nums" aria-label="Uploaded files">{uploaded_files.length}</span>
+        <ChevronDown class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
     </summary>
 
-    <div class="mt-4 flex justify-center">
-        <div class={`w-full max-w-md ${uploadsDisabled ? 'opacity-50' : ''}`}>
-            <Card.Root class="border border-border bg-card">
-                <Card.Content>
-                    <h3 class="mb-4 text-center font-mono text-lg font-bold text-foreground">{cardTitle}</h3>
+    <div class="space-y-4 border-t border-border p-4 {uploadsDisabled ? 'opacity-50' : ''}">
+        <Feedback success={success} warning={warning} error={error} />
 
-                    <Feedback success={success} warning={warning} error={error} />
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            action={formAction}
+            class="space-y-3"
+            use:enhance={() => {
+                return async ({ result, update }) => {
+                    await update();
+                    selectedFiles = [];
 
-                    <form
-                        method="POST"
-                        enctype="multipart/form-data"
-                        action={formAction}
-                        use:enhance={() => {
-                            return async ({ result, update }) => {
-                                await update();
-                                selectedFiles = [];
+                    if (fileInput) {
+                        fileInput.value = "";
+                    }
 
-                                if (fileInput) {
-                                    fileInput.value = "";
-                                }
+                    const formResult = await handleFormResult(result);
+                    success = formResult.success;
+                    warning = formResult.warning;
+                    error = formResult.error;
 
-                                const formResult = await handleFormResult(result);
-                                success = formResult.success;
-                                warning = formResult.warning;
-                                error = formResult.error;
+                    setTimeout(clearResult, 5000);
+                };
+            }}
+        >
+            <div class="space-y-1.5">
+                <Label for={`upload-${fieldName}`}>{cardTitle}</Label>
+                <Input
+                    id={`upload-${fieldName}`}
+                    name={fieldName}
+                    type="file"
+                    accept={accepted_files}
+                    multiple
+                    oninput={handleFileInput}
+                    disabled={uploadsDisabled || uploading}
+                    bind:ref={fileInput}
+                    class="min-w-0 cursor-pointer"
+                />
+                <p class="text-xs text-muted-foreground">Up to <span class="font-mono tabular-nums">{MAX_UPLOAD_SIZE_MB}</span> MB per file{accepted_files ? ` · ${accepted_files}` : ''}.</p>
+                {#if selectedFiles.length > 0}
+                    <p class="text-xs break-words text-muted-foreground">
+                        Selected <span class="font-mono tabular-nums">{selectedFiles.length}</span> file{selectedFiles.length !== 1 ? 's' : ''}: {selectedFiles.map(f => f.name).join(', ')}
+                    </p>
+                {/if}
+            </div>
 
-                                setTimeout(clearResult, 5000);
-                            };
-                        }}
-                    >
-                        <div class="mb-3">
-                            <Input
-                                name={fieldName}
-                                type="file"
-                                accept={accepted_files}
-                                multiple
-                                oninput={handleFileInput}
-                                disabled={uploadsDisabled || uploading}
-                                bind:ref={fileInput}
-                                class="cursor-pointer"
-                            />
+            <Button type="submit" disabled={uploadsDisabled || selectedFiles.length === 0 || uploading}>
+                {#if uploading}<LoaderCircle class="animate-spin" />{/if}
+                {uploading ? "Uploading…" : `Upload${selectedFiles.length > 0 ? ` ${selectedFiles.length} file${selectedFiles.length !== 1 ? 's' : ''}` : ' files'}`}
+            </Button>
+        </form>
 
-                            {#if selectedFiles.length > 0}
-                                <small class="mt-2 block text-xs text-muted-foreground">
-                                    Selected {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''}:
-                                    {selectedFiles.map(f => f.name).join(', ')}
-                                </small>
-                            {/if}
-                        </div>
-
-                        <Button
-                            type="submit"
-                            class="w-full gap-2"
-                            disabled={uploadsDisabled || selectedFiles.length === 0 || uploading}
-                        >
-                            {#if uploading}
-                                <LoaderCircle class="h-4 w-4 animate-spin" />
-                            {/if}
-                            {uploading ? "Uploading..." : `Upload ${selectedFiles.length > 0 ? `${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}` : ''}`}
-                        </Button>
-                    </form>
-                </Card.Content>
-            </Card.Root>
-        </div>
-    </div>
-
-    <div class="mt-6">
-        <h3 class="mb-3 text-center font-mono text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-            Current Uploads
-        </h3>
-        <div class="flex justify-center">
-            <ul class="flex w-auto min-w-[300px] max-w-[600px] flex-col gap-2">
+        <Panel title="Current uploads">
+            <ul class="divide-y divide-border">
                 {#each uploaded_files as file}
-                    <li
-                        class="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-sm"
-                    >
-                        <a
-                            href={`/api/download/${file}?t=${f_type}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="min-w-0 flex-1 truncate text-muted-foreground no-underline! transition-colors hover:text-brand-blue!"
-                        >
-                            {file}
-                        </a>
-
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            class="shrink-0 gap-1.5"
-                            onclick={() => handleDelete(file)}
-                        >
-                            <Trash2 class="h-3.5 w-3.5" /> Delete
+                    <li class="flex items-center gap-2 px-3 py-2 text-sm">
+                        <FileIcon class="size-4 shrink-0 text-muted-foreground" />
+                        <a href={`/api/download/${file}?t=${f_type}`} target="_blank" rel="noopener noreferrer" class="link min-w-0 flex-1 truncate" title={file}>{file}</a>
+                        <Button variant="ghost" size="icon-sm" class="shrink-0 text-muted-foreground hover:bg-destructive/15 hover:text-destructive" aria-label="Delete file {file}" title="Delete file {file}" onclick={() => handleDelete(file)}>
+                            <Trash2 />
                         </Button>
                     </li>
+                {:else}
+                    <li class="px-3 py-6 text-center text-sm text-muted-foreground">No files uploaded yet.</li>
                 {/each}
             </ul>
-        </div>
-        <div class="pb-16"></div>
+        </Panel>
     </div>
 </details>

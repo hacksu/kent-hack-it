@@ -6,14 +6,17 @@
     import { handleFormResult } from "$lib/browser_utils.js";
 
     import { Button } from "$lib/components/ui/button";
-    import { Badge } from "$lib/components/ui/badge";
     import { Input } from "$lib/components/ui/input";
     import { Label } from "$lib/components/ui/label";
-    import * as Card from "$lib/components/ui/card";
+    import PageHeader from "$lib/components/page-header.svelte";
+    import Panel from "$lib/components/panel.svelte";
+    import UserAvatar from "$lib/components/user-avatar.svelte";
     import Crown from "@lucide/svelte/icons/crown";
     import LogOut from "@lucide/svelte/icons/log-out";
     import Check from "@lucide/svelte/icons/check";
     import X from "@lucide/svelte/icons/x";
+    import Search from "@lucide/svelte/icons/search";
+    import UserMinus from "@lucide/svelte/icons/user-minus";
 
     import ChallengesProgressBar from "$lib/components/challenges-progress-bar.svelte";
     import ScoreOverTimeChart from "$lib/components/team/score-over-time-chart.svelte";
@@ -90,220 +93,220 @@
 
     const { data } = $props();
 
-    const sectionLabelClass = "mb-2 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase";
-    const panelHeaderClass = "flex items-center justify-between border-b border-border px-4 py-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase";
-
     const dashboard = $derived(data.dashboard);
+
+    let teamSearch = $state("");
+    const visibleTeams = $derived(
+        (data.teams ?? []).filter((team: { name: string }) =>
+            team.name.toLowerCase().includes(teamSearch.trim().toLowerCase())
+        )
+    );
+
+    // Shared use:enhance handler for the join / create forms.
+    const submitWithFeedback = () => {
+        return async ({ result, update }: { result: any; update: () => Promise<void> }) => {
+            await update();
+
+            const formResult = await handleFormResult(result);
+            success = formResult.success;
+            warning = formResult.warning;
+            error = formResult.error;
+
+            await invalidateAll();
+            setTimeout(clearResult, 5000);
+        };
+    };
 </script>
 
+{#snippet stat(label: string, value: string, suffix: string = "", accent: boolean = false)}
+    <div class="rounded-xl border border-border bg-card px-4 py-3.5">
+        <p class="eyebrow">{label}</p>
+        <p class="mt-1 font-mono text-2xl font-semibold tabular-nums {accent ? 'text-brand-green' : 'text-foreground'}">
+            {value}<span class="ml-1 text-sm font-normal text-muted-foreground">{suffix}</span>
+        </p>
+    </div>
+{/snippet}
+
 {#if data.team}
-<div class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+{@const team = data.team}
+<main class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 md:py-8">
+    <PageHeader
+        eyebrow="Your team"
+        title={team.name}
+        description="{team.members.length + 1} of 4 members"
+    >
+        {#snippet actions()}
+            <form
+                method="POST"
+                action="?/leave_team"
+                use:enhance={({ cancel }) => {
+                    if (!window.confirm(`Leave ${team.name}?`)) cancel();
+                }}
+            >
+                <input type="hidden" name="team_id" value={team.id} />
+                <Button type="submit" variant="outline">
+                    <LogOut />
+                    Leave team
+                </Button>
+            </form>
+        {/snippet}
+    </PageHeader>
+
     <Feedback success={success} warning={warning} error={error}  />
 
-    <div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+    {#if dashboard}
+        <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {@render stat("Rank", dashboard.rank ? `#${dashboard.rank}` : "—", "", true)}
+            {@render stat("Score", dashboard.score.toLocaleString(), "pts")}
+            {@render stat("Solved", String(dashboard.solved), `/ ${dashboard.total}`)}
+        </div>
+    {/if}
 
-        <Card.Root class="overflow-hidden border border-border bg-card h-full flex flex-col">
-            <div class="flex items-center justify-between border-b border-border px-4 py-3">
-                <div>
-                    <span class="font-medium text-foreground">{data.team.name}</span>
-                    <p class="text-xs text-muted-foreground">{data.team.members.length + 1} / 4 members</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    {#if dashboard}
-                        <Badge variant="secondary">Rank #{dashboard.rank}</Badge>
-                    {/if}
-                    <form method="POST" action="?/leave_team" use:enhance>
-                        <input type="hidden" name="team_id" value={data.team.id} />
-                        <Button type="submit" variant="outline" size="icon-sm" title="Leave team" aria-label="Leave team">
-                            <LogOut class="h-3.5 w-3.5" />
-                        </Button>
-                    </form>
-                </div>
-            </div>
+    <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
 
-            <div class="border-b border-border px-4 pt-4 pb-3">
-                <p class={sectionLabelClass}>Leader</p>
-                <div class="flex items-center gap-2">
-                    {#if data.team.leader.image}
-                        <img
-                            src={data.team.leader.image}
-                            alt={data.team.leader.name}
-                            class="h-8 w-8 rounded-full border border-border object-cover"
-                            referrerpolicy="no-referrer"
-                            crossorigin="anonymous"
-                        />
-                    {:else}
-                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-blue text-xs font-medium text-[#08131f]">
-                            {data.team.leader.name.slice(0, 2).toUpperCase()}
-                        </div>
-                    {/if}
-                    <div>
-                        <p class="text-sm font-medium text-foreground">{data.team.leader.name}</p>
+        <Panel title="Roster">
+            <ul class="divide-y divide-border">
+                <li class="flex items-center gap-3 px-4 py-3">
+                    <UserAvatar name={team.leader.name} image={team.leader.image} class="size-9" />
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium text-foreground">{team.leader.name}</p>
                         <p class="text-xs text-muted-foreground">Team leader</p>
                     </div>
-                    <Crown class="ml-auto h-4 w-4 text-[#BA7517]" />
-                </div>
-            </div>
+                    <Crown class="size-4 text-gold" aria-label="Leader" />
+                </li>
 
-            <div class="border-b border-border px-4 pt-4 pb-3">
-                <p class={sectionLabelClass}>Members</p>
-                {#if data.team.members.length === 0}
-                    <p class="text-sm text-muted-foreground">No other members yet.</p>
-                {:else}
-                    {@const teamId = data.team.id}
-                    <div class="flex flex-col gap-2.5">
-                        {#each data.team.members as member}
-                            <div class="flex items-center gap-4">
-                                {#if member.image}
-                                    <img
-                                        src={member.image}
-                                        alt={member.name}
-                                        class="h-8 w-8 rounded-full border border-border object-cover"
-                                        referrerpolicy="no-referrer"
-                                        crossorigin="anonymous"
-                                    />
-                                {:else}
-                                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-medium text-secondary-foreground">
-                                        {member.name.slice(0, 2).toUpperCase()}
-                                    </div>
-                                {/if}
+                {#each team.members as member}
+                    <li class="flex items-center gap-3 px-4 py-3">
+                        <UserAvatar name={member.name} image={member.image} class="size-9" />
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-medium text-foreground">{member.name}</p>
+                            <p class="text-xs text-muted-foreground">Member</p>
+                        </div>
 
-                                <p class="text-sm font-medium text-foreground">{member.name}</p>
+                        {#if data.is_leader}
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                class="text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+                                title="Remove {member.name}"
+                                aria-label="Remove {member.name}"
+                                onclick={ () => { RemoveMember(member.id, member.name, team.id) } }
+                            >
+                                <UserMinus />
+                            </Button>
+                        {/if}
+                    </li>
+                {/each}
 
-                                {#if data.is_leader}
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        class="ml-auto"
-                                        onclick={ () => { RemoveMember(member.id, member.name, teamId) } }
-                                    >
-                                        Remove
-                                    </Button>
-                                {/if}
-                            </div>
-                        {/each}
-                    </div>
-                {/if}
-            </div>
+                {#each Array(Math.max(0, 3 - team.members.length)) as _}
+                    <li class="flex items-center gap-3 px-4 py-3">
+                        <span class="size-9 shrink-0 rounded-full border border-dashed border-input"></span>
+                        <p class="text-sm text-muted-foreground">Open slot</p>
+                    </li>
+                {/each}
+            </ul>
 
             {#if data.is_leader}
-                <div class="px-4 pt-4 pb-3">
-                    <p class={sectionLabelClass}>Join Requests</p>
-                    {#if data.team.requests.length === 0}
-                        <p class="text-sm text-muted-foreground">No pending requests.</p>
+                <div class="border-t border-border">
+                    <div class="flex items-center justify-between px-4 pt-3 pb-1">
+                        <h3 class="eyebrow">Join requests</h3>
+                        {#if team.requests.length > 0}
+                            <span class="rounded-full bg-brand-blue/15 px-1.5 font-mono text-xs font-medium text-brand-blue tabular-nums">
+                                {team.requests.length}
+                            </span>
+                        {/if}
+                    </div>
+                    {#if team.requests.length === 0}
+                        <p class="px-4 pt-1 pb-4 text-sm text-muted-foreground">No pending requests.</p>
+                    {:else}
+                        <ul class="pb-1">
+                            {#each team.requests as req}
+                                <li class="flex items-center gap-3 px-4 py-2.5">
+                                    <UserAvatar name={req.name} image={req.image} />
+                                    <p class="min-w-0 flex-1 truncate text-sm text-foreground">{req.name}</p>
+
+                                    <div class="flex items-center gap-1.5">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onclick={ () => { DeclineRequest(req.id, req.checksum, req.name) } }
+                                        >
+                                            <X />
+                                            Decline
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            onclick={ () => { AcceptRequest(req.id, req.checksum, req.name) } }
+                                        >
+                                            <Check />
+                                            Accept
+                                        </Button>
+                                    </div>
+                                </li>
+                            {/each}
+                        </ul>
                     {/if}
-                    {#each data.team.requests as req}
-                        <div class="flex items-center gap-2 py-1">
-                            {#if req.image}
-                                <img
-                                    src={req.image}
-                                    alt={req.name}
-                                    class="h-8 w-8 rounded-full border border-border object-cover"
-                                    referrerpolicy="no-referrer"
-                                    crossorigin="anonymous"
-                                />
-                            {:else}
-                                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-medium text-secondary-foreground">
-                                    {req.name.slice(0, 2).toUpperCase()}
-                                </div>
-                            {/if}
-
-                            <p class="text-sm text-foreground">{req.name}</p>
-
-                            <div class="ml-auto flex items-center gap-1.5">
-                                <Button
-                                    variant="outline"
-                                    size="icon-sm"
-                                    title="Decline"
-                                    class="text-destructive hover:text-destructive"
-                                    onclick={ () => { DeclineRequest(req.id, req.checksum, req.name) } }
-                                >
-                                    <X class="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="icon-sm"
-                                    title="Accept"
-                                    class="text-brand-green hover:text-brand-green"
-                                    onclick={ () => { AcceptRequest(req.id, req.checksum, req.name) } }
-                                >
-                                    <Check class="h-3.5 w-3.5" />
-                                </Button>
-                            </div>
-                        </div>
-                    {/each}
                 </div>
             {/if}
-        </Card.Root>
+        </Panel>
 
-        <Card.Root class="overflow-hidden border border-border bg-card h-full flex flex-col">
-            <div class={panelHeaderClass}>Performance</div>
-
+        <Panel title="Score over time">
             {#if dashboard}
-                <div class="grid grid-cols-3 gap-px bg-border">
-                    <div class="flex flex-col gap-0.5 bg-card px-4 py-3">
-                        <span class="font-mono text-[0.62rem] tracking-widest text-muted-foreground uppercase">Score</span>
-                        <span class="text-lg font-bold tabular-nums text-foreground">{dashboard.score.toLocaleString()} <span class="text-[0.62rem] font-medium text-muted-foreground">pts</span></span>
-                    </div>
-                    <div class="flex flex-col gap-0.5 bg-card px-4 py-3">
-                        <span class="font-mono text-[0.62rem] tracking-widest text-muted-foreground uppercase">Rank</span>
-                        <span class="text-lg font-bold tabular-nums text-brand-blue">#{dashboard.rank || '—'}</span>
-                    </div>
-                    <div class="flex flex-col gap-0.5 bg-card px-4 py-3">
-                        <span class="font-mono text-[0.62rem] tracking-widest text-muted-foreground uppercase">Solved</span>
-                        <span class="text-lg font-bold tabular-nums text-foreground">{dashboard.solved} <span class="text-[0.62rem] font-medium text-muted-foreground">/ {dashboard.total}</span></span>
-                    </div>
-                </div>
-
-                <ChallengesProgressBar solved={dashboard.solved} total={dashboard.total} />
                 <ScoreOverTimeChart scoreHistory={dashboard.scoreHistory} />
+                <div class="border-t border-border">
+                    <ChallengesProgressBar solved={dashboard.solved} total={dashboard.total} />
+                </div>
+            {:else}
+                <p class="px-4 py-10 text-center text-sm text-muted-foreground">No performance data yet.</p>
             {/if}
-        </Card.Root>
+        </Panel>
     </div>
 
     {#if dashboard && (dashboard.categories.length > 0 || dashboard.members.length > 0)}
-    <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-
-        <Card.Root class="overflow-hidden border border-border bg-card">
-            <div class={panelHeaderClass}>Category strength</div>
+    <div class="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+        <Panel title="Category strength">
             <CategoryStrengthChart categories={dashboard.categories} />
-        </Card.Root>
+        </Panel>
 
-        <Card.Root class="overflow-hidden border border-border bg-card">
-            <div class={panelHeaderClass}>Who&rsquo;s carrying the team</div>
+        <Panel title="Who&rsquo;s carrying the team">
             <ContributionDonut members={dashboard.members} score={dashboard.score} />
-        </Card.Root>
+        </Panel>
     </div>
     {/if}
 
-</div>
+</main>
 {:else}
-<div class="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
+<main class="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 md:py-8">
+    <PageHeader
+        eyebrow="Team"
+        title="Find your team"
+        description="Join an existing team or start your own. Teams have up to 4 members, and you can also compete solo."
+    />
+
     <Feedback success={success} warning={warning} error={error}  />
 
-    <div class="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-2">
+    <div class="grid grid-cols-1 items-start gap-4 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
 
-        <div class="flex flex-col border-b border-border sm:border-r sm:border-b-0">
-            <div class={panelHeaderClass}>Join a team</div>
-            <div class="max-h-[440px] flex-1 overflow-y-auto">
-                {#each data.teams as team}
-                    <div class="flex items-center justify-between border-b border-border px-4 py-2.5">
-                        <span class="text-sm text-foreground">{team.name}</span>
-                        <form method="POST" action="?/request_join" use:enhance={() => {
-                            return async ({ result, update }) => {
-                                await update();
-
-                                const formResult = await handleFormResult(result);
-                                success = formResult.success;
-                                warning = formResult.warning;
-                                error = formResult.error;
-
-                                await invalidateAll();
-                                setTimeout(clearResult, 5000);
-                            };
-                        }}>
+        <Panel title="Join a team">
+            <div class="border-b border-border p-3">
+                <div class="relative">
+                    <Search class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        class="pl-8"
+                        placeholder="Search teams…"
+                        aria-label="Search teams"
+                        bind:value={teamSearch}
+                    />
+                </div>
+            </div>
+            <ul class="max-h-[26rem] divide-y divide-border overflow-y-auto">
+                {#each visibleTeams as team (team.id)}
+                    <li class="flex items-center justify-between gap-3 px-4 py-2.5">
+                        <span class="min-w-0 truncate text-sm font-medium text-foreground">{team.name}</span>
+                        <form method="POST" action="?/request_join" use:enhance={submitWithFeedback}>
                             {#if team.pending}
-                                <span class="text-xs text-muted-foreground">Pending</span>
+                                <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Request pending</span>
                             {:else}
                                 <input type="hidden" name="team_id" value={team.id} />
                                 <Button variant="outline" size="sm" type="submit">
@@ -311,54 +314,40 @@
                                 </Button>
                             {/if}
                         </form>
-                    </div>
+                    </li>
+                {:else}
+                    <li class="px-4 py-10 text-center text-sm text-muted-foreground">
+                        {data.teams.length === 0 ? "No teams yet. Be the first to create one." : "No teams match your search."}
+                    </li>
                 {/each}
-            </div>
-        </div>
+            </ul>
+        </Panel>
 
-        <div class="flex flex-col">
-            <div class={panelHeaderClass}>Create a team</div>
-            <div class="flex flex-1 flex-col p-4">
-                <form
-                    method="POST"
-                    action="?/create_team"
-                    class="flex flex-1 flex-col gap-4"
-                    use:enhance={() => {
-                        return async ({ result, update }) => {
-                            await update();
-
-                            const formResult = await handleFormResult(result);
-                            success = formResult.success;
-                            warning = formResult.warning;
-                            error = formResult.error;
-
-                            await invalidateAll();
-                            setTimeout(clearResult, 5000);
-                        };
-                    }}
-                >
-                    <div class="space-y-1.5">
-                        <Label for="team-name" class="text-muted-foreground">Team name</Label>
-                        <Input
-                            type="text"
-                            id="team-name"
-                            name="name"
-                            class="inputText"
-                            placeholder="Enter team name" required
-                        />
-                    </div>
-                    <div class="mt-auto">
-                        <Button
-                            type="submit"
-                            class="w-full bg-gradient-to-r from-brand-green to-brand-blue font-semibold text-[#08131f]! hover:brightness-105"
-                        >
-                            Create team
-                        </Button>
-                    </div>
-                </form>
-            </div>
-        </div>
+        <Panel title="Create a team">
+            <form
+                method="POST"
+                action="?/create_team"
+                class="flex flex-col gap-4 p-4"
+                use:enhance={submitWithFeedback}
+            >
+                <div class="space-y-1.5">
+                    <Label for="team-name">Team name</Label>
+                    <Input
+                        type="text"
+                        id="team-name"
+                        name="name"
+                        placeholder="Enter team name"
+                        autocomplete="off"
+                        required
+                    />
+                    <p class="text-xs text-muted-foreground">You'll be the team leader and approve who joins.</p>
+                </div>
+                <Button type="submit" size="lg" class="w-full">
+                    Create team
+                </Button>
+            </form>
+        </Panel>
 
     </div>
-</div>
+</main>
 {/if}
