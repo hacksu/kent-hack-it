@@ -4,8 +4,10 @@
     import Feedback from '$lib/components/feedback.svelte';
     import { Input } from '$lib/components/ui/input';
     import { Button } from '$lib/components/ui/button';
-    import { Badge } from '$lib/components/ui/badge';
-    import * as Card from '$lib/components/ui/card';
+    import AdminTabHeader from '$lib/components/admin-tab-header.svelte';
+    import Panel from '$lib/components/panel.svelte';
+    import UserAvatar from '$lib/components/user-avatar.svelte';
+    import Search from '@lucide/svelte/icons/search';
     import Trash2 from '@lucide/svelte/icons/trash-2';
 
     function clearResult() {
@@ -53,72 +55,40 @@
     );
 </script>
 
-<div>
-    <div class="mb-3 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2.5">
-            <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
-            <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Registered Players</h2>
+<AdminTabHeader title="Registered players" count={searchTerm ? `${filteredUsers.length} / ${users.length}` : users.length}>
+    {#snippet actions()}
+        <div class="relative w-full sm:w-64">
+            <Search class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input type="search" class="pl-8" placeholder="Search by username…" aria-label="Search players" bind:value={searchTerm} />
         </div>
+    {/snippet}
+</AdminTabHeader>
 
-        <Feedback {success} {warning} {error} />
+<Feedback {success} {warning} {error} />
 
-        <Badge variant="secondary">
-            {users.length} Player{users.length !== 1 ? 's' : ''}
-        </Badge>
+<Panel>
+    <div class="hidden grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(0,1fr)_2rem] gap-4 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground md:grid" aria-hidden="true">
+        <span>Player</span><span>Email</span><span>Team</span><span></span>
     </div>
-
-    <div class="mb-4">
-        <Input
-            type="text"
-            class="inputText"
-            placeholder="Search players by username..."
-            bind:value={searchTerm}
-        />
-    </div>
-
-    <!-- User Cards -->
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-
-        {#each filteredUsers as user}
-            <Card.Root class="justify-between border-border bg-card p-3 text-sm">
-                <!-- Top: Avatar + Username -->
-                <div class="mb-2 flex items-center gap-2">
-                    <img
-                        src={user.image}
-                        alt="{user.name}'s avatar"
-                        class="h-9 w-9 rounded-full border border-border object-cover"
-                        referrerpolicy="no-referrer"
-                        crossorigin="anonymous"
-                    />
-                    <h6 class="truncate text-sm font-bold text-foreground">
-                        {user.name}
-                    </h6>
+    <ul class="divide-y divide-border">
+        {#each filteredUsers as user (user.id)}
+            <li class="grid grid-cols-[minmax(0,1fr)_2rem] items-center gap-x-4 gap-y-1 px-4 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(0,1fr)_2rem]">
+                <div class="flex min-w-0 items-center gap-3">
+                    <UserAvatar name={user.name} image={user.image} />
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-medium" title={user.name}>{user.name}</p>
+                        <p class="truncate text-xs text-muted-foreground md:hidden" title={user.email}>{user.email}</p>
+                        <p class="truncate text-xs text-muted-foreground md:hidden" title={user.team_name}>Team: {user.team_name || '—'}</p>
+                    </div>
                 </div>
-
-                <!-- Details -->
-                <div class="ml-0.5">
-                    <p class="mb-1 text-muted-foreground">
-                        <strong class="text-foreground">Email:</strong> {user.email}
-                    </p>
-                    <p class="text-muted-foreground">
-                        <strong class="text-foreground">Team:</strong> {user.team_name || "—"}
-                    </p>
-                </div>
-
-                <!-- Action -->
-                <div class="mt-2">
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        class="w-full"
-                        onclick={() => { console.log(user); deleteUser(user.id, user.name) }}
-                    >
-                        <Trash2 class="h-3.5 w-3.5" />
-                        Remove
-                    </Button>
-                </div>
-            </Card.Root>
+                <span class="hidden truncate text-sm text-muted-foreground md:block" title={user.email}>{user.email}</span>
+                <span class="hidden truncate text-sm text-muted-foreground md:block" title={user.team_name}>{user.team_name || '—'}</span>
+                <Button variant="ghost" size="icon-sm" class="text-muted-foreground hover:bg-destructive/15 hover:text-destructive" aria-label="Remove player {user.name}" title="Remove player {user.name}" onclick={() => { console.log(user); deleteUser(user.id, user.name) }}>
+                    <Trash2 />
+                </Button>
+            </li>
+        {:else}
+            <li class="px-4 py-10 text-center text-sm text-muted-foreground">{users.length === 0 ? 'No registered players yet.' : 'No players match your search.'}</li>
         {/each}
-
-    </div>
-</div>
+    </ul>
+</Panel>

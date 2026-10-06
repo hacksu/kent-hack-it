@@ -1,5 +1,7 @@
 <script lang="ts">
     import { invalidateAll } from '$app/navigation';
+    import AdminTabHeader from '$lib/components/admin-tab-header.svelte';
+    import Panel from '$lib/components/panel.svelte';
     import Feedback from '$lib/components/feedback.svelte';
     import { Button } from '$lib/components/ui/button';
     import { Badge } from '$lib/components/ui/badge';
@@ -59,8 +61,8 @@
                 ? 'border-brand-blue/40 bg-brand-blue/10 text-brand-blue'
                 : 'border-border text-muted-foreground hover:border-brand-blue/30 hover:text-brand-blue',
             web: active
-                ? 'border-amber-500/40 bg-amber-500/10 text-amber-500'
-                : 'border-border text-muted-foreground hover:border-amber-500/30 hover:text-amber-500',
+                ? 'border-warning/40 bg-warning/10 text-warning'
+                : 'border-border text-muted-foreground hover:border-warning/30 hover:text-warning',
         };
         return colors[type];
     }
@@ -89,7 +91,7 @@
 
     function typeBadgeClass(type: string) {
         if (type === 'ssh') return 'border-brand-blue/40 bg-brand-blue/10 text-brand-blue';
-        if (type === 'web') return 'border-amber-500/40 bg-amber-500/10 text-amber-500';
+        if (type === 'web') return 'border-warning/40 bg-warning/10 text-warning';
         return 'border-brand-green/40 bg-brand-green/10 text-brand-green';
     }
 
@@ -198,127 +200,120 @@
     }
 </script>
 
-<div>
-    <div class="mb-3 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2.5">
-            <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
-            <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Active Instances</h2>
-        </div>
+<div class="space-y-4">
+    <AdminTabHeader title="Active instances" count={activeTypes.size < TYPES.length ? `${filteredInstances.length} / ${instances.length}` : instances.length}>
+        {#snippet actions()}
+            {#each TYPES as type}
+                <button
+                    type="button"
+                    class="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium uppercase transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 {chipClass(type)}"
+                    aria-pressed={activeTypes.has(type)}
+                    onclick={() => toggleType(type)}
+                >
+                    {type}
+                    <span class="font-mono text-xs tabular-nums opacity-70">{typeCounts[type]}</span>
+                </button>
+            {/each}
+        {/snippet}
+    </AdminTabHeader>
 
-        <Feedback {success} warning={""} {error} />
+    <Feedback {success} warning={""} {error} />
 
-        <Badge variant="secondary">
-            {filteredInstances.length}{activeTypes.size < TYPES.length ? ` / ${instances.length}` : ''} Instance{filteredInstances.length !== 1 ? 's' : ''}
-        </Badge>
-    </div>
-
-    <div class="mb-4 flex flex-wrap items-center gap-2">
-        {#each TYPES as type}
-            <button
-                type="button"
-                class="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors {chipClass(type)}"
-                aria-pressed={activeTypes.has(type)}
-                onclick={() => toggleType(type)}
-            >
-                {type}
-                <span class="text-[0.65rem] tabular-nums opacity-70">{typeCounts[type]}</span>
-            </button>
-        {/each}
-    </div>
-
-    {#if instances.length === 0}
-        <p class="text-sm text-muted-foreground italic">No active instances.</p>
-    {:else if filteredInstances.length === 0}
-        <p class="text-sm text-muted-foreground italic">No instances match the current filter.</p>
-    {:else}
-        <div class="overflow-x-auto rounded-lg border border-border">
-            <Table.Root>
-                <Table.Header>
-                    <Table.Row class="hover:bg-transparent">
-                        <Table.Head>Type</Table.Head>
-                        <Table.Head>Player</Table.Head>
-                        <Table.Head>Challenge</Table.Head>
-                        <Table.Head>ID</Table.Head>
-                        <Table.Head>Port</Table.Head>
-                        <Table.Head>Password</Table.Head>
-                        <Table.Head>Time Remaining</Table.Head>
-                        <Table.Head></Table.Head>
-                    </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                    {#each filteredInstances as instance (`${instance.type}-${instance.uid ?? instance.challenge_id}`)}
-                        <Table.Row>
-                            <Table.Cell>
-                                <Badge variant="outline" class={typeBadgeClass(instance.type)}>{instance.type}</Badge>
-                            </Table.Cell>
-                            <Table.Cell class="text-foreground">{instance.type === 'web' ? 'Shared' : instance.player_name}</Table.Cell>
-                            <Table.Cell class="text-muted-foreground">{instance.challenge_name ?? "—"}</Table.Cell>
-                            <Table.Cell class="font-mono text-xs text-muted-foreground">{shortId(instance)}</Table.Cell>
-                            <Table.Cell class="font-mono text-xs text-muted-foreground">{instance.port}</Table.Cell>
-                            <Table.Cell class="font-mono text-xs text-muted-foreground select-all">{instance.type === 'ssh' ? instance.password : "—"}</Table.Cell>
-                            <Table.Cell class="font-mono text-xs {timeRemaining(instance) === 'expired' ? 'text-destructive' : 'text-foreground'}">
-                                {timeRemaining(instance)}
-                            </Table.Cell>
-                            <Table.Cell class="text-right">
-                                <div class="flex justify-end gap-2">
-                                    {#if instance.type === 'web'}
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onclick={() => restartInstance(instance)}
-                                        >
-                                            <RotateCw class="h-3.5 w-3.5" />
-                                            Restart
-                                        </Button>
-                                    {/if}
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onclick={() => stopInstance(instance)}
-                                    >
-                                        <CircleStop class="h-3.5 w-3.5" />
-                                        Stop
-                                    </Button>
-                                </div>
-                            </Table.Cell>
+    <Panel>
+        {#if instances.length === 0}
+            <p class="px-4 py-10 text-center text-sm text-muted-foreground">No active instances.</p>
+        {:else if filteredInstances.length === 0}
+            <p class="px-4 py-10 text-center text-sm text-muted-foreground">No instances match the current filter.</p>
+        {:else}
+            <div class="overflow-x-auto">
+                <Table.Root>
+                    <Table.Header>
+                        <Table.Row class="hover:bg-transparent">
+                            <Table.Head class="h-9 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4">Type</Table.Head>
+                            <Table.Head class="h-9 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4">Player</Table.Head>
+                            <Table.Head class="h-9 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4">Challenge</Table.Head>
+                            <Table.Head class="h-9 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4">ID</Table.Head>
+                            <Table.Head class="h-9 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4">Port</Table.Head>
+                            <Table.Head class="h-9 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4">Password</Table.Head>
+                            <Table.Head class="h-9 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4">Time remaining</Table.Head>
+                            <Table.Head class="h-9 pr-4 text-right text-xs font-medium text-muted-foreground">Actions</Table.Head>
                         </Table.Row>
-                    {/each}
-                </Table.Body>
-            </Table.Root>
-        </div>
-    {/if}
+                    </Table.Header>
+                    <Table.Body>
+                        {#each filteredInstances as instance (`${instance.type}-${instance.uid ?? instance.challenge_id}`)}
+                            <Table.Row>
+                                <Table.Cell class="py-2.5 first:pl-4 last:pr-4">
+                                    <Badge variant="outline" class={typeBadgeClass(instance.type)}>{instance.type}</Badge>
+                                </Table.Cell>
+                                <Table.Cell class="max-w-48 text-foreground"><span class="block truncate" title={instance.player_name}>{instance.type === 'web' ? 'Shared' : instance.player_name}</span></Table.Cell>
+                                <Table.Cell class="max-w-64 text-muted-foreground"><span class="block truncate" title={instance.challenge_name}>{instance.challenge_name ?? "—"}</span></Table.Cell>
+                                <Table.Cell class="font-mono text-xs tabular-nums text-muted-foreground">{shortId(instance)}</Table.Cell>
+                                <Table.Cell class="font-mono text-xs tabular-nums text-muted-foreground">{instance.port}</Table.Cell>
+                                <Table.Cell class="font-mono text-xs tabular-nums text-muted-foreground select-all">{instance.type === 'ssh' ? instance.password : "—"}</Table.Cell>
+                                <Table.Cell class="font-mono text-xs tabular-nums {timeRemaining(instance) === 'expired' ? 'text-destructive' : 'text-foreground'}">
+                                    {timeRemaining(instance)}
+                                </Table.Cell>
+                                <Table.Cell class="pr-4 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        {#if instance.type === 'web'}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onclick={() => restartInstance(instance)}
+                                            >
+                                                <RotateCw />
+                                                Restart
+                                            </Button>
+                                        {/if}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            class="text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+                                            aria-label={`Stop ${instance.challenge_name ?? instance.player_name} instance`}
+                                            title="Stop instance"
+                                            onclick={() => stopInstance(instance)}
+                                        >
+                                            <CircleStop />
+                                        </Button>
+                                    </div>
+                                </Table.Cell>
+                            </Table.Row>
+                        {/each}
+                    </Table.Body>
+                </Table.Root>
+            </div>
+        {/if}
+
+    </Panel>
 
     {#if notRunningWeb.length > 0}
-        <div class="mt-6 mb-3 flex items-center gap-2.5">
-            <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
-            <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Not Running (Web)</h2>
-        </div>
-
-        <div class="overflow-x-auto rounded-lg border border-border">
+        <Panel title="Web challenges without an instance">
             <Table.Root>
                 <Table.Header>
                     <Table.Row class="hover:bg-transparent">
-                        <Table.Head>Challenge</Table.Head>
-                        <Table.Head>Status</Table.Head>
-                        <Table.Head></Table.Head>
+                        <Table.Head class="h-9 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4">Challenge</Table.Head>
+                        <Table.Head class="h-9 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4 hidden sm:table-cell">Status</Table.Head>
+                        <Table.Head class="h-9 pr-4 text-right text-xs font-medium text-muted-foreground">Actions</Table.Head>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
                     {#each notRunningWeb as challenge (challenge.id)}
                         <Table.Row>
-                            <Table.Cell class="text-foreground">{challenge.name}</Table.Cell>
-                            <Table.Cell>
+                            <Table.Cell class="max-w-0 pl-4 text-foreground"><span class="block truncate" title={challenge.name}>{challenge.name}</span>
+                                <span class="mt-0.5 block text-xs text-muted-foreground sm:hidden">{challenge.is_active ? 'Active, no instance' : 'Disabled'}</span>
+                            </Table.Cell>
+                            <Table.Cell class="hidden py-2.5 first:pl-4 last:pr-4 sm:table-cell">
                                 <Badge variant={challenge.is_active ? "secondary" : "outline"}>
                                     {challenge.is_active ? "Active, no instance" : "Disabled"}
                                 </Badge>
                             </Table.Cell>
-                            <Table.Cell class="text-right">
+                            <Table.Cell class="pr-4 text-right">
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onclick={() => startInstance(challenge)}
                                 >
-                                    <Play class="h-3.5 w-3.5" />
+                                    <Play />
                                     Start
                                 </Button>
                             </Table.Cell>
@@ -326,34 +321,32 @@
                     {/each}
                 </Table.Body>
             </Table.Root>
-        </div>
+        </Panel>
     {/if}
 
     {#if debugCandidates.length > 0}
-        <div class="mt-6 mb-3 flex items-center gap-2.5">
-            <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
-            <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Debug Instance (NC / SSH)</h2>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3">
-            <select
-                bind:value={selectedDebugKey}
-                class="min-w-64 flex-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-sm text-foreground"
-            >
-                <option value="" disabled>Select a challenge to start as yourself...</option>
-                {#each debugCandidates as candidate (candidate.key)}
-                    <option value={candidate.key}>{candidate.label}</option>
-                {/each}
-            </select>
-            <Button
-                variant="outline"
-                size="sm"
-                disabled={!selectedDebugKey}
-                onclick={startDebugInstance}
-            >
-                <Play class="h-3.5 w-3.5" />
-                Start
-            </Button>
-        </div>
+        <Panel title="Debug instance (NC / SSH)">
+            <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+                <select
+                    aria-label="Challenge for debug instance"
+                    bind:value={selectedDebugKey}
+                    class="h-9 w-full min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                    <option value="" disabled>Select a challenge to start as yourself...</option>
+                    {#each debugCandidates as candidate (candidate.key)}
+                        <option value={candidate.key}>{candidate.label}</option>
+                    {/each}
+                </select>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!selectedDebugKey}
+                    onclick={startDebugInstance}
+                >
+                    <Play />
+                    Start
+                </Button>
+            </div>
+        </Panel>
     {/if}
 </div>
