@@ -3,6 +3,7 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
 
+/* Kept for generated shadcn-svelte primitives; the app is dark-only. */
 @custom-variant dark (&:is(.dark *));
 
 /* bits-ui exposes state as data-state="..."; the generated ui/ components
@@ -119,65 +120,8 @@
 }
 
 :root {
-	--radius: 0.5rem;
-	color-scheme: light;
-	--background: oklch(0.985 0.003 255);
-	--foreground: oklch(0.21 0.025 262);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.21 0.025 262);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.21 0.025 262);
-	/* Deeper brand variants so they hold contrast on light surfaces */
-	--brand-green: oklch(0.52 0.13 158);
-	--brand-blue: oklch(0.5 0.19 262);
-	--primary: oklch(0.52 0.13 158);
-	--primary-foreground: oklch(0.99 0 0);
-	--secondary: oklch(0.955 0.006 255);
-	--secondary-foreground: oklch(0.25 0.025 262);
-	--muted: oklch(0.955 0.006 255);
-	--muted-foreground: oklch(0.48 0.02 262);
-	--accent: oklch(0.94 0.008 255);
-	--accent-foreground: oklch(0.25 0.025 262);
-	--destructive: oklch(0.56 0.22 27);
-	--destructive-foreground: oklch(0.985 0 0);
-	--warning: oklch(0.6 0.14 70);
-	--gold: oklch(0.66 0.14 80);
-	--border: oklch(0.91 0.008 255);
-	--input: oklch(0.87 0.01 255);
-	--ring: oklch(0.52 0.13 158);
-	/* Terminal blocks stay dark in both themes */
-	--terminal: oklch(0.19 0.025 262);
-	--terminal-foreground: oklch(0.93 0.01 255);
-	--diff-simple: oklch(0.5 0.03 255);
-	--diff-easy: oklch(0.52 0.13 158);
-	--diff-medium: oklch(0.5 0.19 262);
-	--diff-hard: oklch(0.6 0.14 70);
-	--diff-extreme: oklch(0.56 0.22 27);
-	--chart-1: oklch(0.52 0.13 158);
-	--chart-2: oklch(0.5 0.19 262);
-	--chart-3: oklch(0.66 0.14 80);
-	--chart-4: oklch(0.55 0.2 303);
-	--chart-5: oklch(0.58 0.2 16);
-	--sidebar: oklch(0.97 0.005 255);
-	--sidebar-foreground: oklch(0.25 0.025 262);
-	--sidebar-primary: oklch(0.52 0.13 158);
-	--sidebar-primary-foreground: oklch(0.99 0 0);
-	--sidebar-accent: oklch(0.93 0.008 255);
-	--sidebar-accent-foreground: oklch(0.25 0.025 262);
-	--sidebar-border: oklch(0.91 0.008 255);
-	--sidebar-ring: oklch(0.52 0.13 158);
-	--series-1: #2a78d6;
-	--series-2: #eb6834;
-	--series-3: #1baf7a;
-	--series-4: #eda100;
-	--seq-1: color-mix(in oklch, var(--brand-blue) 14%, var(--card));
-	--seq-2: color-mix(in oklch, var(--brand-blue) 34%, var(--card));
-	--seq-3: color-mix(in oklch, var(--brand-blue) 58%, var(--card));
-	--seq-4: color-mix(in oklch, var(--brand-blue) 85%, var(--card));
-}
-
-.dark {
 	color-scheme: dark;
+	--radius: 0.5rem;
 	/* Ink navy: four surface steps (background < sidebar < card < popover) */
 	--background: oklch(0.165 0.022 262);
 	--foreground: oklch(0.95 0.008 255);
@@ -227,8 +171,11 @@
 	--series-2: #d95926;
 	--series-3: #199e70;
 	--series-4: #c98500;
+	--seq-1: color-mix(in oklch, var(--brand-blue) 14%, var(--card));
+	--seq-2: color-mix(in oklch, var(--brand-blue) 34%, var(--card));
+	--seq-3: color-mix(in oklch, var(--brand-blue) 58%, var(--card));
+	--seq-4: color-mix(in oklch, var(--brand-blue) 85%, var(--card));
 }
-
 @layer base {
 	* {
 		border-color: var(--border);
@@ -257,7 +204,7 @@
 		cursor: pointer;
 	}
 
-	/* Thin, theme-matched scrollbars */
+	/* Thin scrollbars matched to the dark surfaces */
 	* {
 		scrollbar-width: thin;
 		scrollbar-color: var(--input) transparent;

@@ -24,7 +24,7 @@
                     onclick={async () => await authClient.signIn.social({ provider })}
                     class="h-11 w-full justify-center gap-2.5 text-sm"
                 >
-                    <img src={icon} alt="" width="18" height="18" class="dark:invert" />
+                    <img src={icon} alt="" width="18" height="18" class="invert" />
                     Continue with {name === "Github" ? "GitHub" : name}
                 </Button>
             {/each}

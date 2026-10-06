@@ -108,7 +108,7 @@
     }
 
     const selectClass =
-        "dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-full rounded-lg border bg-transparent px-2.5 py-1 text-base outline-none transition-colors md:text-sm";
+        "bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-full rounded-lg border px-2.5 py-1 text-base outline-none transition-colors md:text-sm";
     const fileLabelClass =
         "flex max-w-full cursor-pointer items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground transition-colors select-none hover:bg-accent has-checked:border-brand-green/40 has-checked:bg-brand-green/10 has-focus-visible:ring-3 has-focus-visible:ring-ring/40";
     const helpClass = "text-xs text-muted-foreground";
