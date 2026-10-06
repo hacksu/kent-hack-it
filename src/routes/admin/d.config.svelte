@@ -4,7 +4,7 @@
     import { untrack } from 'svelte';
 
     import Feedback from '$lib/components/feedback.svelte';
-    import { handleFormResult } from "$lib/utilities";
+    import { handleFormResult } from "$lib/browser_utils";
     import { Button } from '$lib/components/ui/button';
     import { Input } from '$lib/components/ui/input';
     import { Label } from '$lib/components/ui/label';

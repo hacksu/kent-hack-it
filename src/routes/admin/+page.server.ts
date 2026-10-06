@@ -20,7 +20,7 @@ import { join, basename } from "path";
 
 // importing interface alias
 import type { ChallengeForm } from "$lib/database/db";
-import { SHA256 } from '$lib/utilities';
+import { SHA256 } from '$lib/server_utils';
 import { encryptFlag } from '$lib/server/flag-crypto';
 import { MAX_UPLOAD_FILE_SIZE } from '$lib/upload-limits';
 

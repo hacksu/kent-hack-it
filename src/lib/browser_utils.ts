@@ -1,26 +1,5 @@
 import type { ActionResult } from "@sveltejs/kit";
 
-export function randomString(length: number = 12): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    return Array.from(crypto.getRandomValues(new Uint8Array(length)))
-        .map(b => chars[b % chars.length])
-        .join('');
-}
-
-/**
- * Hash a given message using SHA-256
- * 
- * @param message 
- * @returns SHA-256 hash string
- */
-export async function SHA256(message: string): Promise<string> {
-    const msgBuffer = new TextEncoder().encode(message);
-    // no import needed for `crypto.subtle`
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 /**
  * Reviews the result from a form's use:enhance and returns
  * the Feedback success, error, warning messages
@@ -58,3 +37,17 @@ export async function handleFormResult(result: ActionResult<Record<string, unkno
 
     return {success, warning, error};
 }
+
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type WithoutChild<T> = T extends { child?: any } ? Omit<T, "child"> : T;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type WithoutChildren<T> = T extends { children?: any } ? Omit<T, "children"> : T;
+export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;
+export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & { ref?: U | null };

@@ -6,9 +6,9 @@
     import Feedback from "$lib/components/feedback.svelte";
     import CommandLine from "$lib/components/command-line.svelte";
 
-    import { type ViewableChallengeData } from "$lib/database/db.js";
+    import { type ViewableChallengeData } from "$lib/database/db";
     import { difficultyTone } from "$lib/difficulty";
-    import { handleFormResult } from "$lib/utilities.js";
+    import { handleFormResult } from "$lib/browser_utils.js";
 
     import { Button } from "$lib/components/ui/button";
     import { Input } from "$lib/components/ui/input";

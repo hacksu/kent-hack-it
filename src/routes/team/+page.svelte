@@ -3,7 +3,7 @@
     import { invalidateAll } from '$app/navigation';
 
     import Feedback from '$lib/components/feedback.svelte';
-    import { handleFormResult } from "$lib/utilities.js";
+    import { handleFormResult } from "$lib/browser_utils.js";
 
     import { Button } from "$lib/components/ui/button";
     import { Input } from "$lib/components/ui/input";

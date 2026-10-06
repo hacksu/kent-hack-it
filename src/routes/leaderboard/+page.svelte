@@ -1,6 +1,13 @@
 <script lang="ts">
+    import { enhance } from "$app/forms";
+    import { invalidateAll } from "$app/navigation";
+    import { handleFormResult } from "$lib/browser_utils.js";
+
+    import { Button } from "$lib/components/ui/button";
     import { Input } from "$lib/components/ui/input";
+    import { Label } from "$lib/components/ui/label";
     import * as Table from "$lib/components/ui/table";
+    import Feedback from "$lib/components/feedback.svelte";
     import PageHeader from "$lib/components/page-header.svelte";
     import Panel from "$lib/components/panel.svelte";
     import Search from "@lucide/svelte/icons/search";
@@ -8,7 +15,16 @@
     import ScoreRaceChart from "$lib/components/leaderboard/score-race-chart.svelte";
 
     const { data } = $props();
+
+    function clearResult() {
+        error = warning = success = "";
+    }
+
+    let error = $state("");
+    let warning = $state("");
+    let success = $state("");
     let searchValue = $state("");
+    let yearValue = $state<number>(0);
 
     const filtered = $derived(
         data.board.filter((entry: any) => {
@@ -26,19 +42,24 @@
 </script>
 
 <main class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 md:py-8">
+    <Feedback success={success} warning={warning} error={error} />
+
     <PageHeader
         eyebrow="Standings"
         title="Leaderboard"
         description="Live rankings for this year's event."
     >
         {#snippet actions()}
-            {#if data.user_placement}
-                <div class="flex items-center gap-3 rounded-lg border border-brand-green/30 bg-brand-green/8 px-3 py-1.5">
-                    <span class="eyebrow">Your placement</span>
-                    <span class="font-mono text-base font-semibold text-brand-green tabular-nums">#{data.user_placement.rank}</span>
-                    <span class="font-mono text-xs text-muted-foreground tabular-nums">{data.user_placement.score.toLocaleString()} pts</span>
-                </div>
-            {/if}
+            <div class="flex flex-wrap items-center gap-2">
+                <Button href="/history" variant="outline">History</Button>
+                {#if data.user_placement}
+                    <div class="flex items-center gap-3 rounded-lg border border-brand-green/30 bg-brand-green/8 px-3 py-1.5">
+                        <span class="eyebrow">Your placement</span>
+                        <span class="font-mono text-base font-semibold text-brand-green tabular-nums">#{data.user_placement.rank}</span>
+                        <span class="font-mono text-xs text-muted-foreground tabular-nums">{data.user_placement.score.toLocaleString()} pts</span>
+                    </div>
+                {/if}
+            </div>
         {/snippet}
     </PageHeader>
 
@@ -100,8 +121,48 @@
             </Table.Root>
         </Panel>
 
-        <Panel title="Score race">
-            <ScoreRaceChart series={data.scoreRace} />
-        </Panel>
+        <div class="min-w-0 space-y-4">
+            <Panel title="Score race">
+                <ScoreRaceChart series={data.scoreRace} />
+            </Panel>
+
+            {#if data.isAdmin}
+                <Panel title="Archive">
+                    <div class="p-4">
+                        <p class="mb-4 text-sm text-muted-foreground">Save these standings to the leaderboard history.</p>
+                        <form
+                            method="POST"
+                            action="?/archive_leaderboard"
+                            class="flex flex-wrap items-end gap-3"
+                            use:enhance={({ formData }) => {
+                                if (!window.confirm(`Do you want to archive this leaderboard for KHI ${yearValue}`)) {
+                                    return;
+                                }
+
+                                formData.set('leaderboard', JSON.stringify({ board: data.board }));
+
+                                return async ({ result, update }) => {
+                                    await update();
+
+                                    const formResult = await handleFormResult(result);
+                                    success = formResult.success;
+                                    warning = formResult.warning;
+                                    error = formResult.error;
+
+                                    await invalidateAll();
+                                    setTimeout(clearResult, 5000);
+                                };
+                            }}
+                        >
+                            <div class="flex flex-col gap-1.5">
+                                <Label for="year" class="text-xs text-muted-foreground">Year</Label>
+                                <Input type="number" id="year" name="year" bind:value={yearValue} class="w-24 font-mono tabular-nums" />
+                            </div>
+                            <Button type="submit">Archive</Button>
+                        </form>
+                    </div>
+                </Panel>
+            {/if}
+        </div>
     </div>
 </main>
