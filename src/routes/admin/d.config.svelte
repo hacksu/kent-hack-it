@@ -86,7 +86,7 @@
 
         <Panel class={isDirty ? 'border-warning/50' : ''}>
             <div class="p-4 sm:p-5">
-                <form method="POST" action="?/update_config" use:enhance={() => {
+                <form autocomplete="off" method="POST" action="?/update_config" use:enhance={() => {
                     return async ({ result, update }) => {
                         await update();
 

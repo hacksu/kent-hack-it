@@ -5,6 +5,7 @@
 	let {
 		ref = $bindable(null),
 		value = $bindable(),
+		autocomplete = "off",
 		class: className,
 		"data-slot": dataSlot = "textarea",
 		...restProps
@@ -19,5 +20,6 @@
 		className
 	)}
 	bind:value
+	{autocomplete}
 	{...restProps}
 ></textarea>

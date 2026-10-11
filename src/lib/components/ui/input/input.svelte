@@ -12,6 +12,7 @@
 	let {
 		ref = $bindable(null),
 		value = $bindable(),
+		autocomplete = "off",
 		type,
 		files = $bindable(),
 		class: className,
@@ -31,6 +32,7 @@
 		type="file"
 		bind:files
 		bind:value
+		{autocomplete}
 		{...restProps}
 	/>
 {:else}
@@ -43,6 +45,7 @@
 		)}
 		{type}
 		bind:value
+		{autocomplete}
 		{...restProps}
 	/>
 {/if}

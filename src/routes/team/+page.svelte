@@ -136,7 +136,7 @@
         description="{team.members.length + 1} of 4 members"
     >
         {#snippet actions()}
-            <form
+            <form autocomplete="off"
                 method="POST"
                 action="?/leave_team"
                 use:enhance={({ cancel }) => {
@@ -304,7 +304,7 @@
                 {#each visibleTeams as team (team.id)}
                     <li class="flex items-center justify-between gap-3 px-4 py-2.5">
                         <span class="min-w-0 truncate text-sm font-medium text-foreground">{team.name}</span>
-                        <form method="POST" action="?/request_join" use:enhance={submitWithFeedback}>
+                        <form autocomplete="off" method="POST" action="?/request_join" use:enhance={submitWithFeedback}>
                             {#if team.pending}
                                 <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Request pending</span>
                             {:else}
@@ -324,7 +324,7 @@
         </Panel>
 
         <Panel title="Create a team">
-            <form
+            <form autocomplete="off"
                 method="POST"
                 action="?/create_team"
                 class="flex flex-col gap-4 p-4"

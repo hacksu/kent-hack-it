@@ -6,6 +6,7 @@
     import { Button } from '$lib/components/ui/button';
     import { Badge } from '$lib/components/ui/badge';
     import * as Table from '$lib/components/ui/table';
+    import * as Select from '$lib/components/ui/select';
     import CircleStop from '@lucide/svelte/icons/circle-stop';
     import RotateCw from '@lucide/svelte/icons/rotate-cw';
     import Play from '@lucide/svelte/icons/play';
@@ -327,16 +328,21 @@
     {#if debugCandidates.length > 0}
         <Panel title="Debug instance (NC / SSH)">
             <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-                <select
-                    aria-label="Challenge for debug instance"
-                    bind:value={selectedDebugKey}
-                    class="h-9 w-full min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                >
-                    <option value="" disabled>Select a challenge to start as yourself...</option>
-                    {#each debugCandidates as candidate (candidate.key)}
-                        <option value={candidate.key}>{candidate.label}</option>
-                    {/each}
-                </select>
+                <Select.Root type="single" bind:value={selectedDebugKey}>
+                    <Select.Trigger
+                        aria-label="Challenge for debug instance"
+                        class="h-9 w-full min-w-0 flex-1"
+                    >
+                        <span class="truncate">
+                            {debugCandidates.find(candidate => candidate.key === selectedDebugKey)?.label ?? "Select a challenge to start as yourself..."}
+                        </span>
+                    </Select.Trigger>
+                    <Select.Content>
+                        {#each debugCandidates as candidate (candidate.key)}
+                            <Select.Item value={candidate.key}>{candidate.label}</Select.Item>
+                        {/each}
+                    </Select.Content>
+                </Select.Root>
                 <Button
                     variant="outline"
                     size="sm"

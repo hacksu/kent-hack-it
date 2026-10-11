@@ -107,8 +107,6 @@
         }
     }
 
-    const selectClass =
-        "bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-full rounded-lg border px-2.5 py-1 text-base outline-none transition-colors md:text-sm";
     const fileLabelClass =
         "flex max-w-full cursor-pointer items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground transition-colors select-none hover:bg-accent has-checked:border-brand-green/40 has-checked:bg-brand-green/10 has-focus-visible:ring-3 has-focus-visible:ring-ring/40";
     const helpClass = "text-xs text-muted-foreground";
@@ -125,7 +123,7 @@
 {/snippet}
 
 <!-- use:enhance allows us to track the result from the form POST -->
-<form class="@container flex min-w-0 flex-col" method="POST" action={action_target} use:enhance={() => {
+<form autocomplete="off" class="@container flex min-w-0 flex-col" method="POST" action={action_target} use:enhance={() => {
     return async ({ result, update }) => {
         await update();
         if (result.type === 'success' && result.data) {
@@ -406,12 +404,17 @@
                         placeholder="e.g. khi-ssh/go1:latest"
                     />
                 {:else}
-                    <select id="image-ref" name="image_ref" class={selectClass} bind:value={imageRef}>
-                        <option value="">None</option>
-                        {#each imageRefOptions as img}
-                            <option value={img}>{img}</option>
-                        {/each}
-                    </select>
+                    <Select.Root type="single" name="image_ref" bind:value={imageRef}>
+                        <Select.Trigger id="image-ref" class="w-full min-w-0">
+                            <span class="truncate">{imageRef || "None"}</span>
+                        </Select.Trigger>
+                        <Select.Content>
+                            <Select.Item value="">None</Select.Item>
+                            {#each imageRefOptions as img}
+                                <Select.Item value={img}>{img}</Select.Item>
+                            {/each}
+                        </Select.Content>
+                    </Select.Root>
                 {/if}
             </div>
 
@@ -440,12 +443,17 @@
                         placeholder="e.g. khi-web/profilepeek:latest"
                     />
                 {:else}
-                    <select id="web-image-ref" name="web_image_ref" class={selectClass} bind:value={webImageRef}>
-                        <option value="">None</option>
-                        {#each webImageRefOptions as img}
-                            <option value={img}>{img}</option>
-                        {/each}
-                    </select>
+                    <Select.Root type="single" name="web_image_ref" bind:value={webImageRef}>
+                        <Select.Trigger id="web-image-ref" class="w-full min-w-0">
+                            <span class="truncate">{webImageRef || "None"}</span>
+                        </Select.Trigger>
+                        <Select.Content>
+                            <Select.Item value="">None</Select.Item>
+                            {#each webImageRefOptions as img}
+                                <Select.Item value={img}>{img}</Select.Item>
+                            {/each}
+                        </Select.Content>
+                    </Select.Root>
                 {/if}
             </div>
         </div>
@@ -501,7 +509,7 @@
     </section>
 
     <!-- Points (not visible to viewer) -->
-    <input
+    <input autocomplete="off"
         type="number"
         name="points"
         hidden
@@ -509,7 +517,7 @@
 
     {#if challenge?.id}
         <!-- need the challenge id in order to update it -->
-        <input
+        <input autocomplete="off"
             type="text"
             name="id"
             value={challenge.id}

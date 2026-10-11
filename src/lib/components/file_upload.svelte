@@ -117,7 +117,7 @@
     <div class="space-y-4 border-t border-border p-4 {uploadsDisabled ? 'opacity-50' : ''}">
         <Feedback success={success} warning={warning} error={error} />
 
-        <form
+        <form autocomplete="off"
             method="POST"
             enctype="multipart/form-data"
             action={formAction}

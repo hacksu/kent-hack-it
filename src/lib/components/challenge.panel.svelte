@@ -185,7 +185,7 @@
                             {@render countdown(timeLeft)}
                         </div>
                         <CommandLine value={instance_infomation} />
-                        <form method="POST" action="?/create_instance" class="mt-2" use:enhance={submit({ refreshInstance: true })}>
+                        <form autocomplete="off" method="POST" action="?/create_instance" class="mt-2" use:enhance={submit({ refreshInstance: true })}>
                             <input type="hidden" name="cid" value={cid} />
                             <Button type="submit" variant="outline" size="sm">
                                 <RotateCw />
@@ -199,7 +199,7 @@
                             <p class={sectionTitleClass}>Remote instance</p>
                             <p class="text-xs text-muted-foreground">Starts a private netcat endpoint for you.</p>
                         </div>
-                        <form method="POST" action="?/create_instance" use:enhance={submit({ confirmOther: true, refreshInstance: true })}>
+                        <form autocomplete="off" method="POST" action="?/create_instance" use:enhance={submit({ confirmOther: true, refreshInstance: true })}>
                             <input type="hidden" name="cid" value={cid} />
                             <Button type="submit" variant="secondary">
                                 <Play />
@@ -220,7 +220,7 @@
                             <CommandLine value={ssh_command} />
                             <p class="mt-2 mb-1 text-xs text-muted-foreground">Password</p>
                             <CommandLine value={ssh_password} prompt="" label="Copy password" />
-                            <form method="POST" action="?/create_ssh_instance" class="mt-2" use:enhance={submit({ refreshInstance: true })}>
+                            <form autocomplete="off" method="POST" action="?/create_ssh_instance" class="mt-2" use:enhance={submit({ refreshInstance: true })}>
                                 <input type="hidden" name="cid" value={cid} />
                                 <Button type="submit" variant="outline" size="sm">
                                     <RotateCw />
@@ -234,7 +234,7 @@
                                 <p class={sectionTitleClass}>SSH instance</p>
                                 <p class="text-xs text-muted-foreground">Starts a private machine you can SSH into.</p>
                             </div>
-                            <form method="POST" action="?/create_ssh_instance" use:enhance={submit({ confirmOther: true, refreshInstance: true })}>
+                            <form autocomplete="off" method="POST" action="?/create_ssh_instance" use:enhance={submit({ confirmOther: true, refreshInstance: true })}>
                                 <input type="hidden" name="cid" value={cid} />
                                 <Button type="submit" variant="secondary">
                                     <Play />
@@ -306,7 +306,7 @@
             <div class="border-t border-border bg-background/40 px-5 py-4">
                 <Feedback {success} {warning} {error} />
 
-                <form method="POST" action="?/submit_flag" use:enhance={submit()}>
+                <form autocomplete="off" method="POST" action="?/submit_flag" use:enhance={submit()}>
                     <input type="hidden" name="cid" value={cid} />
                     <div class="flex gap-2">
                         <div class="relative flex-1">
@@ -330,7 +330,7 @@
                 </form>
 
                 {#if !hasRated(cid) && solved}
-                    <form method="POST" action="?/submit_rating" use:enhance={submit()}>
+                    <form autocomplete="off" method="POST" action="?/submit_rating" use:enhance={submit()}>
                         <input type="hidden" name="cid" value={cid} />
                         <input type="hidden" name="rating" value={selectedRating} />
 

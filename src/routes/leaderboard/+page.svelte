@@ -130,7 +130,7 @@
                 <Panel title="Archive">
                     <div class="p-4">
                         <p class="mb-4 text-sm text-muted-foreground">Save these standings to the leaderboard history.</p>
-                        <form
+                        <form autocomplete="off"
                             method="POST"
                             action="?/archive_leaderboard"
                             class="flex flex-wrap items-end gap-3"
