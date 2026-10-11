@@ -78,9 +78,9 @@ export const load = async ({ parent }) => {
 const PointValues = {
     "simple": 100,
     "easy": 200,
-    "medium": 300,
-    "hard": 400,
-    "extreme": 500,
+    "medium": 350,
+    "hard": 550,
+    "extreme": 800,
 };
 
 async function CreatChallenge(request: Request, is_gym: boolean) {
