@@ -2,8 +2,12 @@
     import { invalidateAll } from '$app/navigation';
 
     import Feedback from '$lib/components/feedback.svelte';
+    import { Input } from '$lib/components/ui/input';
     import { Button } from '$lib/components/ui/button';
-    import * as Table from '$lib/components/ui/table';
+    import AdminTabHeader from '$lib/components/admin-tab-header.svelte';
+    import Panel from '$lib/components/panel.svelte';
+    import UserAvatar from '$lib/components/user-avatar.svelte';
+    import Search from '@lucide/svelte/icons/search';
     import Trash2 from '@lucide/svelte/icons/trash-2';
 
     function clearResult() {
@@ -39,57 +43,33 @@
     }
 
     const { admins } = $props();
+    let searchTerm = $state("");
+    const filteredAdmins = $derived(admins.filter((admin: any) => admin.name.toLowerCase().includes(searchTerm.toLowerCase())));
 </script>
 
-<div>
-    <div class="mb-4 flex items-center gap-2.5">
-        <span class="h-3 w-0.5 rounded-full bg-gradient-to-b from-brand-green to-brand-blue"></span>
-        <h2 class="font-mono text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">Current Admins</h2>
-    </div>
+<AdminTabHeader title="Administrators" count={searchTerm ? `${filteredAdmins.length} / ${admins.length}` : admins.length}>
+    {#snippet actions()}
+        <div class="relative w-full sm:w-64">
+            <Search class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input type="search" class="pl-8" placeholder="Search by name…" aria-label="Search administrators" bind:value={searchTerm} />
+        </div>
+    {/snippet}
+</AdminTabHeader>
 
-    <Feedback {success} {warning} {error} />
+<Feedback {success} {warning} {error} />
 
-    <div class="overflow-hidden rounded-xl border border-border">
-        <Table.Root>
-            <Table.Header>
-                <Table.Row class="hover:bg-transparent">
-                    <Table.Head>Admin</Table.Head>
-                    <Table.Head class="w-24 text-right">Actions</Table.Head>
-                </Table.Row>
-            </Table.Header>
-            <Table.Body>
-                {#each admins as admin, index (index)}
-                    <Table.Row>
-                        <Table.Cell>
-                            <div class="flex items-center gap-3">
-                                <img
-                                    src={admin.image}
-                                    alt="{admin.name}'s avatar"
-                                    class="h-9 w-9 shrink-0 rounded-full border border-border object-cover"
-                                    referrerpolicy="no-referrer"
-                                    crossorigin="anonymous"
-                                />
-                                <span class="font-medium text-foreground">{admin.name}</span>
-                            </div>
-                        </Table.Cell>
-                        <Table.Cell class="text-right">
-                            <!--
-                                when admins are removed
-                                the logout button does
-                                not update to show login
-                            -->
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onclick={() => { deleteAdmin(admin.id, admin.name) }}
-                            >
-                                <Trash2 class="h-3.5 w-3.5" />
-                                Delete
-                            </Button>
-                        </Table.Cell>
-                    </Table.Row>
-                {/each}
-            </Table.Body>
-        </Table.Root>
-    </div>
-</div>
+<Panel>
+    <ul class="divide-y divide-border">
+        {#each filteredAdmins as admin, index (index)}
+            <li class="flex items-center gap-3 px-4 py-3">
+                <UserAvatar name={admin.name} image={admin.image} />
+                <span class="min-w-0 flex-1 truncate text-sm font-medium" title={admin.name}>{admin.name}</span>
+                <Button variant="ghost" size="icon-sm" class="text-muted-foreground hover:bg-destructive/15 hover:text-destructive" aria-label="Remove administrator {admin.name}" title="Remove administrator {admin.name}" onclick={() => { deleteAdmin(admin.id, admin.name) }}>
+                    <Trash2 />
+                </Button>
+            </li>
+        {:else}
+            <li class="px-4 py-10 text-center text-sm text-muted-foreground">{admins.length === 0 ? 'No administrators found.' : 'No administrators match your search.'}</li>
+        {/each}
+    </ul>
+</Panel>

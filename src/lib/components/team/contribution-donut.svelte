@@ -1,9 +1,11 @@
 <script lang="ts">
     const {
-        members, score,
+        members, score, unit = "total pts",
     }: {
         members: { name: string; points: number; pct: number }[];
         score: number;
+        /** Caption under the centre total. */
+        unit?: string;
     } = $props();
 
     const R = 66;
@@ -29,31 +31,31 @@
 </script>
 
 {#if segments.length > 0}
-    <div class="flex justify-center px-4 pt-5">
-        <svg viewBox="0 0 220 220" class="h-auto w-full max-w-[240px]" role="img" aria-label="Donut chart of team score by member">
-            <circle cx="110" cy="110" r={R} fill="none" stroke="var(--muted)" stroke-width="26"/>
+    <div class="flex flex-col items-center gap-5 px-4 py-5 sm:flex-row sm:justify-center sm:gap-8">
+        <svg viewBox="0 0 220 220" class="h-auto w-40 shrink-0" role="img" aria-label="Donut chart of team contribution by member">
+            <circle cx="110" cy="110" r={R} fill="none" stroke="var(--muted)" stroke-width="22"/>
             <g transform="rotate(-90 110 110)">
                 {#each segments as seg, i}
-                    <circle cx="110" cy="110" r={R} fill="none" stroke={seg.color} stroke-width="26"
+                    <circle cx="110" cy="110" r={R} fill="none" stroke={seg.color} stroke-width="22"
                             stroke-dasharray={seg.dash} stroke-dashoffset={seg.offset} class="cursor-default">
-                        <title>{members[i].name}: {members[i].points.toLocaleString()} pts ({members[i].pct}%)</title>
+                        <title>{members[i].name}: {members[i].points.toLocaleString()} ({members[i].pct}%)</title>
                     </circle>
                 {/each}
             </g>
-            <text x="110" y="105" text-anchor="middle" class="fill-foreground" style="font-size:26px; font-weight:700;">{score.toLocaleString()}</text>
-            <text x="110" y="126" text-anchor="middle" class="fill-muted-foreground" style="font-size:11px;">total pts</text>
+            <text x="110" y="108" text-anchor="middle" class="fill-foreground font-mono" style="font-size:28px; font-weight:600;">{score.toLocaleString()}</text>
+            <text x="110" y="130" text-anchor="middle" class="fill-muted-foreground" style="font-size:13px;">{unit}</text>
         </svg>
-    </div>
-    <div class="flex flex-col gap-2.5 px-5 py-5">
-        {#each members as m, i}
-            <div class="flex items-center gap-2.5">
-                <span class="h-3 w-3 shrink-0 rounded-full" style="background:{COLORS[i % COLORS.length]};"></span>
-                <span class="text-base font-medium text-foreground">{m.name}</span>
-                <span class="ml-auto text-base text-foreground">{m.points.toLocaleString()}</span>
-                <span class="w-11 text-right text-sm text-muted-foreground">({m.pct}%)</span>
-            </div>
-        {/each}
+        <ul class="flex w-full min-w-0 flex-col gap-2 sm:max-w-64 sm:flex-1">
+            {#each members as m, i}
+                <li class="flex items-center gap-2.5 text-sm">
+                    <span class="size-2.5 shrink-0 rounded-[3px]" style="background:{COLORS[i % COLORS.length]};"></span>
+                    <span class="min-w-0 flex-1 truncate text-foreground">{m.name}</span>
+                    <span class="pl-3 font-mono text-foreground tabular-nums">{m.points.toLocaleString()}</span>
+                    <span class="w-10 text-right font-mono text-xs text-muted-foreground tabular-nums">{m.pct}%</span>
+                </li>
+            {/each}
+        </ul>
     </div>
 {:else}
-    <p class="px-4 py-6 text-center text-sm text-muted-foreground">No solves yet</p>
+    <p class="px-4 py-8 text-center text-sm text-muted-foreground">No solves yet</p>
 {/if}

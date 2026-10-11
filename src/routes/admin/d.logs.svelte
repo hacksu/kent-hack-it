@@ -1,6 +1,8 @@
 <script lang="ts">
     import type { LogEntry } from '$lib/parse_log';
 
+    import AdminTabHeader from '$lib/components/admin-tab-header.svelte';
+    import Panel from '$lib/components/panel.svelte';
     import { Input } from '$lib/components/ui/input';
     import * as Select from '$lib/components/ui/select';
     import * as Table from '$lib/components/ui/table';
@@ -57,7 +59,7 @@
     function statusClass(status: number) {
         if (status < 300) return 'text-brand-green';
         if (status < 400) return 'text-brand-blue';
-        if (status < 500) return 'text-amber-500';
+        if (status < 500) return 'text-warning';
         return 'text-destructive';
     }
 
@@ -65,9 +67,9 @@
         return {
             get: 'text-brand-blue',
             post: 'text-brand-green',
-            put: 'text-amber-500',
+            put: 'text-warning',
             delete: 'text-destructive',
-            patch: 'text-purple-400',
+            patch: 'text-warning',
         }[method.toLowerCase()] ?? 'text-foreground';
     }
 
@@ -88,105 +90,108 @@
     ];
 </script>
 
-<div class="flex max-h-[75dvh] flex-col overflow-hidden text-sm">
-    <!-- filters -->
-    <div class="flex flex-shrink-0 flex-wrap items-center gap-2 border-b border-border pb-3">
-        <Input
-            class="min-w-[11rem] flex-1"
-            placeholder="Search IP or URI…"
-            bind:value={search}
-        />
+<AdminTabHeader title="Request logs" count={`${filtered.length} / ${entries.length}`} />
 
-        <Select.Root type="single" bind:value={methodFilter}>
-            <Select.Trigger class="w-36 text-muted-foreground">
-                {methodFilter === 'all' ? 'All methods' : methodFilter}
-            </Select.Trigger>
-            <Select.Content>
-                {#each methods as m}
-                    <Select.Item value={m}>{m === 'all' ? 'All methods' : m}</Select.Item>
-                {/each}
-            </Select.Content>
-        </Select.Root>
+<Panel>
+    <div class="flex flex-col text-sm">
+        <!-- filters -->
+        <div class="flex flex-shrink-0 flex-wrap items-center gap-2 border-b border-border p-3">
+            <Input
+                type="search" aria-label="Search logs by IP or URI" class="min-w-0 w-full sm:min-w-64 sm:flex-1"
+                placeholder="Search IP or URI…"
+                bind:value={search}
+            />
 
-        <Select.Root type="single" bind:value={statusFilter}>
-            <Select.Trigger class="w-32 text-muted-foreground">
-                {statusFilter === 'all' ? 'All status' : statusFilter}
-            </Select.Trigger>
-            <Select.Content>
-                {#each statusGroups as s}
-                    <Select.Item value={s}>{s === 'all' ? 'All status' : s}</Select.Item>
-                {/each}
-            </Select.Content>
-        </Select.Root>
+            <Select.Root type="single" bind:value={methodFilter}>
+                <Select.Trigger aria-label="Request method" class="w-36 text-muted-foreground">
+                    {methodFilter === 'all' ? 'All methods' : methodFilter}
+                </Select.Trigger>
+                <Select.Content>
+                    {#each methods as m}
+                        <Select.Item value={m}>{m === 'all' ? 'All methods' : m}</Select.Item>
+                    {/each}
+                </Select.Content>
+            </Select.Root>
 
-        <div class="flex items-center gap-1">
-            <Input class="w-20 inputText" type="number" placeholder="Min RT" bind:value={minRt} min="0" step="0.001" />
-            <span class="text-muted-foreground">–</span>
-            <Input class="w-20 inputText" type="number" placeholder="Max RT" bind:value={maxRt} min="0" step="0.001" />
-            <span class="text-xs text-muted-foreground">s</span>
+            <Select.Root type="single" bind:value={statusFilter}>
+                <Select.Trigger aria-label="Response status" class="w-32 text-muted-foreground">
+                    {statusFilter === 'all' ? 'All status' : statusFilter}
+                </Select.Trigger>
+                <Select.Content>
+                    {#each statusGroups as s}
+                        <Select.Item value={s}>{s === 'all' ? 'All status' : s}</Select.Item>
+                    {/each}
+                </Select.Content>
+            </Select.Root>
+
+            <div class="flex items-center gap-1">
+                <Input class="w-20" type="number" aria-label="Minimum request time in seconds" placeholder="Min RT" bind:value={minRt} min="0" step="0.001" />
+                <span class="text-muted-foreground">–</span>
+                <Input class="w-20" type="number" aria-label="Maximum request time in seconds" placeholder="Max RT" bind:value={maxRt} min="0" step="0.001" />
+                <span class="text-xs text-muted-foreground">s</span>
+            </div>
+
+            <Select.Root type="single" bind:value={uaFilter}>
+                <Select.Trigger aria-label="User agent" class="w-full text-muted-foreground sm:w-40">
+                    {uaFilter === 'all' ? 'All agents' : uaFilter}
+                </Select.Trigger>
+                <Select.Content>
+                    {#each userAgents as ua}
+                        <Select.Item value={ua}>{ua === 'all' ? 'All agents' : ua}</Select.Item>
+                    {/each}
+                </Select.Content>
+            </Select.Root>
+
         </div>
 
-        <Select.Root type="single" bind:value={uaFilter}>
-            <Select.Trigger class="w-40 text-muted-foreground">
-                {uaFilter === 'all' ? 'All agents' : uaFilter}
-            </Select.Trigger>
-            <Select.Content>
-                {#each userAgents as ua}
-                    <Select.Item value={ua}>{ua === 'all' ? 'All agents' : ua}</Select.Item>
-                {/each}
-            </Select.Content>
-        </Select.Root>
-
-        <span class="ml-auto font-mono text-xs text-muted-foreground tabular-nums">{filtered.length} / {entries.length}</span>
+        <!-- table -->
+        <div class="max-h-[65dvh] overflow-auto">
+            {#if filtered.length > 0}
+                <Table.Root>
+                    <Table.Header class="sticky top-0 z-10 bg-card">
+                        <Table.Row class="hover:bg-transparent">
+                            {#each columns as [key, label]}
+                                <Table.Head
+                                    class="h-9 text-xs font-medium whitespace-nowrap text-muted-foreground first:pl-4"
+                                    aria-sort={sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                                >
+                                    <button type="button" class="inline-flex items-center gap-1 rounded outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Sort by ${label}`} onclick={() => toggleSort(key)}>
+                                        {label}
+                                        {#if sortKey === key}
+                                            {#if sortDir === 'asc'}
+                                                <ArrowUp class="h-3 w-3" />
+                                            {:else}
+                                                <ArrowDown class="h-3 w-3" />
+                                            {/if}
+                                        {:else}
+                                            <ArrowUpDown class="h-3 w-3 opacity-50" />
+                                        {/if}
+                                    </button>
+                                </Table.Head>
+                            {/each}
+                            <Table.Head class="h-9 pr-4 text-xs font-medium whitespace-nowrap text-muted-foreground">User agent</Table.Head>
+                        </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                        {#each filtered as e}
+                            <Table.Row>
+                                <Table.Cell class="py-2.5 pl-4 font-mono text-xs whitespace-nowrap tabular-nums">{e.time}</Table.Cell>
+                                <Table.Cell class="font-mono text-xs whitespace-nowrap tabular-nums">{e.ip}</Table.Cell>
+                                <Table.Cell class="font-mono text-xs whitespace-nowrap tabular-nums {methodClass(e.method)}">{e.method}</Table.Cell>
+                                <Table.Cell class="max-w-[16rem] p-0">
+                                    <div class="overflow-x-auto px-2 py-1.5 font-mono text-xs whitespace-nowrap tabular-nums" title={e.uri}>{e.uri}</div>
+                                </Table.Cell>
+                                <Table.Cell class="font-mono text-xs whitespace-nowrap tabular-nums {statusClass(e.status)}">{e.status}</Table.Cell>
+                                <Table.Cell class="font-mono text-xs whitespace-nowrap tabular-nums">{formatBytes(e.bytesSent)}</Table.Cell>
+                                <Table.Cell class="font-mono text-xs whitespace-nowrap tabular-nums">{e.requestTime.toFixed(3)}</Table.Cell>
+                                <Table.Cell class="max-w-[12.5rem] overflow-hidden text-xs text-ellipsis whitespace-nowrap text-muted-foreground" title={e.userAgent}>{e.userAgent}</Table.Cell>
+                            </Table.Row>
+                        {/each}
+                    </Table.Body>
+                </Table.Root>
+            {:else}
+                <p class="px-4 py-10 text-center text-sm text-muted-foreground">{entries.length === 0 ? 'No request logs yet.' : 'No entries match the current filters.'}</p>
+            {/if}
+        </div>
     </div>
-
-    <!-- table -->
-    <div class="flex-1 overflow-auto">
-        <Table.Root>
-            <Table.Header class="sticky top-0 z-10 bg-card">
-                <Table.Row class="hover:bg-transparent">
-                    {#each columns as [key, label]}
-                        <Table.Head
-                            class="cursor-pointer text-xs whitespace-nowrap select-none {sortKey === key ? 'text-foreground' : ''}"
-                            onclick={() => toggleSort(key)}
-                        >
-                            <span class="inline-flex items-center gap-1">
-                                {label}
-                                {#if sortKey === key}
-                                    {#if sortDir === 'asc'}
-                                        <ArrowUp class="h-3 w-3" />
-                                    {:else}
-                                        <ArrowDown class="h-3 w-3" />
-                                    {/if}
-                                {:else}
-                                    <ArrowUpDown class="h-3 w-3 opacity-50" />
-                                {/if}
-                            </span>
-                        </Table.Head>
-                    {/each}
-                    <Table.Head class="text-xs whitespace-nowrap">User agent</Table.Head>
-                </Table.Row>
-            </Table.Header>
-            <Table.Body>
-                {#each filtered as e}
-                    <Table.Row>
-                        <Table.Cell class="font-mono text-xs whitespace-nowrap">{e.time}</Table.Cell>
-                        <Table.Cell class="font-mono text-xs whitespace-nowrap">{e.ip}</Table.Cell>
-                        <Table.Cell class="font-mono text-xs whitespace-nowrap {methodClass(e.method)}">{e.method}</Table.Cell>
-                        <Table.Cell class="max-w-[16rem] p-0">
-                            <div class="overflow-x-auto px-2 py-1.5 font-mono text-xs whitespace-nowrap" title={e.uri}>{e.uri}</div>
-                        </Table.Cell>
-                        <Table.Cell class="font-mono text-xs whitespace-nowrap {statusClass(e.status)}">{e.status}</Table.Cell>
-                        <Table.Cell class="font-mono text-xs whitespace-nowrap">{formatBytes(e.bytesSent)}</Table.Cell>
-                        <Table.Cell class="font-mono text-xs whitespace-nowrap">{e.requestTime.toFixed(3)}</Table.Cell>
-                        <Table.Cell class="max-w-[12.5rem] overflow-hidden text-xs text-ellipsis whitespace-nowrap text-muted-foreground" title={e.userAgent}>{e.userAgent}</Table.Cell>
-                    </Table.Row>
-                {:else}
-                    <Table.Row>
-                        <Table.Cell colspan={8} class="py-8 text-center text-muted-foreground">No entries match the current filters.</Table.Cell>
-                    </Table.Row>
-                {/each}
-            </Table.Body>
-        </Table.Root>
-    </div>
-</div>
+</Panel>

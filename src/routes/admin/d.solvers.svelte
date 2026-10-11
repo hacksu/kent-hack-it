@@ -1,78 +1,61 @@
 <script lang="ts">
     import { Badge } from '$lib/components/ui/badge';
-    import * as Card from '$lib/components/ui/card';
+    import Panel from '$lib/components/panel.svelte';
+    import AdminTabHeader from '$lib/components/admin-tab-header.svelte';
+    import UserAvatar from '$lib/components/user-avatar.svelte';
+    import { difficultyTone } from '$lib/difficulty';
+    import Star from '@lucide/svelte/icons/star';
     import ChallengeFilters from '$lib/components/challenge-filters.svelte';
 
     const { solvers, challenges } = $props();
 
     let filteredChallenges = $state<typeof challenges>([]);
 
-    function difficultyClass(difficulty: string) {
-        return {
-            'Extreme': 'bg-destructive/15 text-destructive',
-            'Hard': 'bg-amber-500/15 text-amber-500',
-            'Medium': 'bg-brand-blue/15 text-brand-blue',
-            'Easy': 'bg-brand-green/15 text-brand-green',
-            'Simple': 'bg-muted text-muted-foreground',
-        }[difficulty] ?? 'bg-secondary text-secondary-foreground';
-    }
 </script>
 
-<div class="flex flex-col gap-4 lg:flex-row">
+<AdminTabHeader title="Challenge solvers" count={`${filteredChallenges.length} / ${challenges.length}`} />
 
-    <!-- Filter Sidebar -->
-    <div class="lg:w-64 lg:shrink-0">
-        <ChallengeFilters
-            challenges={challenges}
-            bind:filtered={filteredChallenges}
-            showGymFilter={true}
-        />
-    </div>
+<div class="space-y-4">
+    <ChallengeFilters challenges={challenges} bind:filtered={filteredChallenges} showGymFilter={true} />
 
-    <!-- Challenge Cards -->
-    <div class="flex-1">
-        {#if filteredChallenges.length === 0}
-            <div class="py-16 text-center">
-                <p class="text-muted-foreground">No challenges found</p>
-            </div>
+    <div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {#each filteredChallenges as challenge (challenge.id)}
+            {@const challengeSolvers = solvers[challenge.id] ?? []}
+            <Panel>
+                <div class="space-y-2 border-b border-border p-4">
+                    <div class="flex min-w-0 items-start justify-between gap-2">
+                        <h3 class="min-w-0 truncate text-sm font-semibold" title={challenge.name}>{challenge.name}</h3>
+                        <Badge variant="outline" class={difficultyTone(challenge.difficulty).badge}>{challenge.difficulty}</Badge>
+                    </div>
+                    <p class="truncate text-xs text-muted-foreground" title={challenge.written_by ?? 'Unknown author'}>By {challenge.written_by ?? 'Unknown author'}</p>
+                    <div class="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span class="min-w-0 truncate">{challenge.category}</span>
+                        <span class="flex shrink-0 items-center gap-1 font-mono tabular-nums">
+                            <Star class="size-3 fill-gold text-gold" aria-label="Rating" />
+                            {Number(challenge.rating ?? 0).toFixed(1)}
+                        </span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-4 pt-3 pb-1">
+                    <p class="eyebrow">Solvers</p>
+                    <span class="font-mono text-xs text-muted-foreground tabular-nums">{challengeSolvers.length}</span>
+                </div>
+                <ol class="max-h-64 overflow-y-auto px-4 pb-3">
+                    {#each challengeSolvers as username, index}
+                        <li class="flex items-center gap-2 py-1.5">
+                            <span class="w-5 shrink-0 font-mono text-xs text-muted-foreground tabular-nums">{index + 1}</span>
+                            <UserAvatar name={username} class="size-6 text-[0.625rem]" />
+                            <span class="min-w-0 truncate text-sm" title={username}>{username}</span>
+                        </li>
+                    {:else}
+                        <li class="py-3 text-sm text-muted-foreground">No solvers yet.</li>
+                    {/each}
+                </ol>
+            </Panel>
         {:else}
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {#each filteredChallenges as challenge (challenge.id)}
-                    {@const challengeSolvers = solvers[challenge.id] ?? []}
-                    <Card.Root class="gap-0 overflow-hidden border-border bg-card py-0">
-                        <div class="flex items-center justify-between gap-2 bg-gradient-to-r from-brand-blue/25 to-brand-blue/10 px-3 py-2">
-                            <span class="truncate text-sm font-medium text-foreground">{challenge.name}</span>
-                            <Badge class={difficultyClass(challenge.difficulty)}>{challenge.difficulty}</Badge>
-                        </div>
-
-                        <div class="flex flex-1 flex-col p-3">
-                            <p class="mb-1 text-xs text-muted-foreground">
-                                By {challenge.written_by ?? 'Unknown'}
-                            </p>
-                            <p class="mb-2 text-xs text-muted-foreground">
-                                {challenge.category}
-                                &nbsp;|&nbsp;
-                                ⭐ {Number(challenge.rating ?? 0).toFixed(1)}
-                            </p>
-
-                            <div class="mb-2 flex items-center gap-2">
-                                <Badge variant="secondary">{challengeSolvers.length} solve{challengeSolvers.length !== 1 ? 's' : ''}</Badge>
-                            </div>
-
-                            {#if challengeSolvers.length > 0}
-                                <ol class="flex-1 list-decimal space-y-1 pl-4 text-xs text-muted-foreground">
-                                    {#each challengeSolvers as username}
-                                        <li>{username}</li>
-                                    {/each}
-                                </ol>
-                            {:else}
-                                <p class="mt-auto text-xs text-muted-foreground italic">No solvers yet</p>
-                            {/if}
-                        </div>
-                    </Card.Root>
-                {/each}
-            </div>
-        {/if}
+            <Panel class="sm:col-span-2 xl:col-span-3">
+                <p class="px-4 py-10 text-center text-sm text-muted-foreground">{challenges.length === 0 ? 'No challenges yet.' : 'No challenges match your filters.'}</p>
+            </Panel>
+        {/each}
     </div>
-
 </div>

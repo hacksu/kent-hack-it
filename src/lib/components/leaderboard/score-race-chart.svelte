@@ -34,17 +34,13 @@
     });
 </script>
 
-<div class="border-t border-border px-4 py-3 font-mono text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-    Score race
-</div>
-
 {#if chart}
-    <div class="flex flex-col gap-1.5 px-4 pt-3">
+    <div class="flex flex-col gap-2 px-4 pt-4">
         {#each chart.lines as l}
-            <div class="flex items-center gap-2 text-xs">
-                <span class="h-2 w-2 shrink-0 rounded-[2px]" style="background:{l.color};"></span>
+            <div class="flex items-center gap-2.5 text-sm">
+                <span class="size-2.5 shrink-0 rounded-[3px]" style="background:{l.color};"></span>
                 <span class="min-w-0 flex-1 truncate text-foreground">{l.name}</span>
-                <span class="font-mono text-muted-foreground">
+                <span class="font-mono text-xs text-muted-foreground tabular-nums">
                     {(l.last?.score ?? 0).toLocaleString()}
                 </span>
             </div>
@@ -85,5 +81,5 @@
         </svg>
     </div>
 {:else}
-    <p class="py-6 text-center text-sm text-muted-foreground">No solves yet</p>
+    <p class="px-4 py-10 text-center text-sm text-muted-foreground">No solves yet</p>
 {/if}

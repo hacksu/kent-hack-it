@@ -1,5 +1,6 @@
 <script lang="ts">
     import ChallengeForm from '$lib/components/challenge.form.svelte';
+    import Feedback from '$lib/components/feedback.svelte';
     import type { RegistryImages } from '$lib/server/registry';
 
     let result = $state<{success: boolean, message?: string, error?: string} | undefined>(undefined);
@@ -23,34 +24,34 @@
     } = $props();
 </script>
 
-<div id="feedback-display">
-    {#if result?.success}
-        <div class="mx-auto max-w-[37.5rem] rounded-lg border border-brand-green/40 bg-brand-green/10 px-3 py-2.5 text-center text-sm text-foreground">
-            {result.message}
-        </div>
-    {:else if result?.error}
-        <div class="mx-auto max-w-[37.5rem] rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-center text-sm text-destructive">
-            {result.error}
-        </div>
-    {/if}
-</div>
+<div class="mx-auto w-full max-w-3xl">
+    <div id="feedback-display">
+        <Feedback
+            success={result?.success ? (result.message ?? '') : ''}
+            warning=""
+            error={!result?.success && result?.error ? result.error : ''}
+        />
+    </div>
 
-<ChallengeForm
-    title="Create a New Challenge"
-    action_target="?/add_event"
-    subaction_target="?/add_gym"
-    challenge={undefined}
-    onSubmit={(data: { success: boolean, message?: string, error?: string }|undefined) => {
-        if (data) {
-            result = data;
-        } else {
-            result = { success: false, error: 'An error occurred' };
-        }
-        scrollToFeedback();
-        setTimeout(clearResult, 5000);
-    }}
-    result={form}
-    uploaded_files={uploaded_files}
-    registry_images={registry_images}
-    requireFlag={true}
-/>
+    <div class="overflow-clip rounded-xl border border-border bg-card">
+        <ChallengeForm
+            title="Create a new challenge"
+            action_target="?/add_event"
+            subaction_target="?/add_gym"
+            challenge={undefined}
+            onSubmit={(data: { success: boolean, message?: string, error?: string }|undefined) => {
+                if (data) {
+                    result = data;
+                } else {
+                    result = { success: false, error: 'An error occurred' };
+                }
+                scrollToFeedback();
+                setTimeout(clearResult, 5000);
+            }}
+            result={form}
+            uploaded_files={uploaded_files}
+            registry_images={registry_images}
+            requireFlag={true}
+        />
+    </div>
+</div>

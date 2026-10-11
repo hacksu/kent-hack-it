@@ -1,5 +1,6 @@
 <script>
     import { onMount } from 'svelte';
+    import LoaderCircle from "@lucide/svelte/icons/loader-circle";
 
     function redir() {
         window.location.href = "https://discord.gg/rJDdvnt";
@@ -11,17 +12,10 @@
     });
 </script>
 
-<main class="flex min-h-[60vh] items-center justify-center px-4 py-10 text-center">
-    <div class="space-y-2">
-        <p class="text-muted-foreground">You are being redirected in 5 seconds...</p>
-        <p class="text-muted-foreground">
-            If redirection failed
-            <a
-                href="https://discord.gg/rJDdvnt"
-                class="text-brand-blue! underline underline-offset-4 hover:text-brand-green!"
-            >
-                click here
-            </a>.
-        </p>
-    </div>
+<main class="flex min-h-[70vh] flex-col items-center justify-center gap-3 px-4 py-16 text-center">
+    <LoaderCircle class="size-5 animate-spin text-muted-foreground" />
+    <p class="text-sm text-muted-foreground">Taking you to Discord…</p>
+    <p class="text-sm text-muted-foreground">
+        Not redirected? <a href="https://discord.gg/rJDdvnt" class="link">Open Discord</a>.
+    </p>
 </main>

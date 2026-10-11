@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { cn, type WithElementRef, type WithoutChildren } from "$lib/utils.js";
+	import { cn, type WithElementRef, type WithoutChildren } from "$lib/browser_utils.js";
 	import type { HTMLTextareaAttributes } from "svelte/elements";
 
 	let {
 		ref = $bindable(null),
 		value = $bindable(),
+		autocomplete = "off",
 		class: className,
 		"data-slot": dataSlot = "textarea",
 		...restProps
@@ -19,5 +20,6 @@
 		className
 	)}
 	bind:value
+	{autocomplete}
 	{...restProps}
 ></textarea>

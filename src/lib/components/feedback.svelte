@@ -8,23 +8,30 @@
             warning:string,
             error:string
         } = $props();
+
+    const baseClass = "mb-3 flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm";
 </script>
 
-{#if error}
-    <div class="mb-3 flex items-start gap-2.5 rounded-lg border border-destructive/40 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
-        <CircleAlert class="mt-0.5 h-4 w-4 shrink-0" />
-        <span>{error}</span>
-    </div>
-{/if}
-{#if success}
-    <div class="mb-3 flex items-start gap-2.5 rounded-lg border border-brand-green/40 bg-brand-green/10 px-3.5 py-2.5 text-sm text-brand-green">
-        <CircleCheck class="mt-0.5 h-4 w-4 shrink-0" />
-        <span>{success}</span>
-    </div>
-{/if}
-{#if warning}
-    <div class="mb-3 flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-2.5 text-sm text-amber-400">
-        <TriangleAlert class="mt-0.5 h-4 w-4 shrink-0" />
-        <span>{warning}</span>
-    </div>
-{/if}
+<!-- Always-present live regions so screen readers announce results as they arrive -->
+<div role="alert" class="contents">
+    {#if error}
+        <div class="{baseClass} border-destructive/40 bg-destructive/10 text-destructive">
+            <CircleAlert class="mt-0.5 size-4 shrink-0" />
+            <span>{error}</span>
+        </div>
+    {/if}
+</div>
+<div role="status" class="contents">
+    {#if success}
+        <div class="{baseClass} border-brand-green/40 bg-brand-green/10 text-brand-green">
+            <CircleCheck class="mt-0.5 size-4 shrink-0" />
+            <span>{success}</span>
+        </div>
+    {/if}
+    {#if warning}
+        <div class="{baseClass} border-warning/40 bg-warning/10 text-warning">
+            <TriangleAlert class="mt-0.5 size-4 shrink-0" />
+            <span>{warning}</span>
+        </div>
+    {/if}
+</div>
