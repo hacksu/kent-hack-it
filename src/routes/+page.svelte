@@ -63,13 +63,6 @@
 
     const live = $derived(countdownLabel === "Event ends in");
 
-    // Dynamic event year info
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    const eventYear = currentMonth < 9 ? currentYear : currentYear + 1;
-    const eventMonthLabel = currentMonth < 9 ? "this" : "next";
-
     const highlights = [
         {
             icon: Flag,
@@ -191,7 +184,8 @@
                 of problem-solving, teamwork, and fun!
             </p>
             <p class="rounded-lg border border-brand-green/25 bg-brand-green/8 px-4 py-3 text-foreground">
-                Our {eventYear} event will take place in {eventMonthLabel} October. More details to come soon.
+                Our 2026 event runs <strong class="font-semibold">October 13th&ndash;20th</strong>. Prize money
+                will be awarded to the top teams, with details to come soon.
             </p>
             <p>
                 Interested in other HacKSU events? Check out our yearly hackathon
