@@ -9,6 +9,7 @@
     import { Button } from "$lib/components/ui/button";
     import * as Select from '$lib/components/ui/select';
     import { difficultyTone } from "$lib/difficulty";
+    import RegistryImageSelect from "$lib/components/registry-image-select.svelte";
     import Eye from "@lucide/svelte/icons/eye";
     import EyeOff from "@lucide/svelte/icons/eye-off";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
@@ -404,17 +405,13 @@
                         placeholder="e.g. khi-ssh/go1:latest"
                     />
                 {:else}
-                    <Select.Root type="single" name="image_ref" bind:value={imageRef}>
-                        <Select.Trigger id="image-ref" class="w-full min-w-0">
-                            <span class="truncate">{imageRef || "None"}</span>
-                        </Select.Trigger>
-                        <Select.Content>
-                            <Select.Item value="">None</Select.Item>
-                            {#each imageRefOptions as img}
-                                <Select.Item value={img}>{img}</Select.Item>
-                            {/each}
-                        </Select.Content>
-                    </Select.Root>
+                    <RegistryImageSelect
+                        id="image-ref"
+                        name="image_ref"
+                        label="SSH instance image"
+                        options={imageRefOptions}
+                        bind:value={imageRef}
+                    />
                 {/if}
             </div>
 
@@ -443,17 +440,13 @@
                         placeholder="e.g. khi-web/profilepeek:latest"
                     />
                 {:else}
-                    <Select.Root type="single" name="web_image_ref" bind:value={webImageRef}>
-                        <Select.Trigger id="web-image-ref" class="w-full min-w-0">
-                            <span class="truncate">{webImageRef || "None"}</span>
-                        </Select.Trigger>
-                        <Select.Content>
-                            <Select.Item value="">None</Select.Item>
-                            {#each webImageRefOptions as img}
-                                <Select.Item value={img}>{img}</Select.Item>
-                            {/each}
-                        </Select.Content>
-                    </Select.Root>
+                    <RegistryImageSelect
+                        id="web-image-ref"
+                        name="web_image_ref"
+                        label="Web instance image"
+                        options={webImageRefOptions}
+                        bind:value={webImageRef}
+                    />
                 {/if}
             </div>
         </div>
