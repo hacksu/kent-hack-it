@@ -283,22 +283,24 @@
                     </div>
                 {/if}
 
-                <!-- Hints: collapsed by default so they are not spoiled at a glance -->
+                <!-- Each hint stays hidden until its own disclosure is opened. -->
                 {#if challengeInfo.hints && challengeInfo.hints.length > 0}
-                    <details class="group rounded-lg border border-border">
-                        <summary class="flex list-none items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors select-none hover:text-foreground [&::-webkit-details-marker]:hidden">
-                            <Lightbulb class="size-4" />
-                            {challengeInfo.hints.length === 1 ? 'Show hint' : `Show ${challengeInfo.hints.length} hints`}
-                        </summary>
-                        <ol class="space-y-1.5 border-t border-border p-3">
+                    {#key challengeInfo.id}
+                        <ol class="space-y-2" aria-label="Challenge hints">
                             {#each challengeInfo.hints as hint, i}
-                                <li class="flex gap-2.5 text-sm text-foreground/90">
-                                    <span class="font-mono text-xs leading-5 text-muted-foreground tabular-nums">{i + 1}.</span>
-                                    <span>{hint}</span>
+                                <li>
+                                    <details class="group rounded-lg border border-border">
+                                        <summary class="flex list-none items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors select-none hover:text-foreground [&::-webkit-details-marker]:hidden">
+                                            <Lightbulb class="size-4" />
+                                            <span class="group-open:hidden">Show hint {i + 1}</span>
+                                            <span class="hidden group-open:inline">Hide hint {i + 1}</span>
+                                        </summary>
+                                        <p class="border-t border-border p-3 text-sm text-foreground/90">{hint}</p>
+                                    </details>
                                 </li>
                             {/each}
                         </ol>
-                    </details>
+                    {/key}
                 {/if}
             </div>
 
