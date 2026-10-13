@@ -74,8 +74,8 @@ function buildNsjailCmd(jailDir, jail_conf) {
         "-l", "/tmp/nsjail.log",                 // general logging for debugging
 
         "--cwd", "/",                            // jail-root == chal_dir, so this is correct post-chroot
-        "-U", "99999:33:1",
-        "-G", "99999:33:1",
+        "-U", "99999:99999:1",
+        "-G", "99999:99999:1",
 
         // --- resource limits ---
         "--rlimit_as", "512",
@@ -200,6 +200,7 @@ async function CreateJail(jailDir, flag_value) {
         }
     }
     
+    await fs.chmod(jailDir, 0o777);
 
     // write flag inside jail
     const flagFile = path.join(jailDir, "flag.txt");
