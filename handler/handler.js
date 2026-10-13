@@ -249,8 +249,8 @@ export async function CreateInstance(name, nsjail_conf, flag_value) {
     );
     const jail_conf = JSON.parse(await fs.readFile(nsjail_conf_path, 'utf-8'));
 
-    // create jail-cell based on challenge name provided
-    const jailDir = path.join("/jail", name);
+    const safeName = name.replace(/[^\w-]/g, "_");
+    const jailDir = path.join("/jail", safeName);
 
     {
         console.log(`[*] Generating jail for '${name}'...`);
@@ -264,7 +264,7 @@ export async function CreateInstance(name, nsjail_conf, flag_value) {
     // in order to properly execute nsjail through socat we are
     // providing socat a bash file because the nsjail command
     // will be large
-    const jobFile = path.join("/app/jobs", name + ".sh");
+    const jobFile = path.join("/app/jobs", safeName + ".sh");
     const jailcmd = buildNsjailCmd(jailDir, jail_conf);
     if (jailcmd.length === 0) {
         return { success: false, rc: 500, error: `Invalid nsjail configuration provided! --> ${nsjail_conf_path}` };
