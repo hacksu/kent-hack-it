@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { execSync, spawn } from 'child_process';
+import { spawn } from 'child_process';
 
 import {
     GetUnusedPort, buildRbinds,
@@ -43,6 +43,7 @@ function buildNsjailCmd(jailDir, jail_conf) {
     let nsjail_cmd = [
         "/usr/bin/nsjail",
         "-Mo",                                      // standalone-once: exit after one connection, no session reuse
+        "-Q",                                       // run in QUIET mode
         "--chroot", jailDir                         // jail root IS the challenge dir — nothing outside is reachable
     ];
 
@@ -324,6 +325,8 @@ export async function CreateInstance(name, nsjail_conf, flag_value) {
         }
     }, SESSION_TIMEOUT_MS);
     timer.unref();
+    
+    console.log(`[!] CPID: ${proc.pid} created successfully!`);
 
     return {
         success: true,
