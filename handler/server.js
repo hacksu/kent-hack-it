@@ -1,9 +1,6 @@
 import express from 'express'
 import { exit } from 'process';
-import { access, chmod } from "fs/promises";
-import { join, basename, normalize } from "path";
 
-import { CheckFile } from './utils_h.js';
 import {
     CreateInstance,
     MIN_PORT, MAX_PORT,
@@ -53,5 +50,6 @@ app.post('/kill', async (req, res) => {
 });
 
 app.listen(port, "0.0.0.0", () => {
-    console.log("Handler is listening on port", port)
+    console.log("[+] Handler is listening on port", port);
+    console.log(" |___ jail logs location at /tmp/nsjail.log");
 });

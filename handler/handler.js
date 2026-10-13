@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { execSync, spawn } from 'child_process';
+import { spawn } from 'child_process';
 
 import {
     GetUnusedPort, buildRbinds,
@@ -43,6 +43,7 @@ function buildNsjailCmd(jailDir, jail_conf) {
     let nsjail_cmd = [
         "/usr/bin/nsjail",
         "-Mo",                                      // standalone-once: exit after one connection, no session reuse
+        "-Q",                                       // run in QUIET mode
         "--chroot", jailDir                         // jail root IS the challenge dir — nothing outside is reachable
     ];
 
@@ -74,8 +75,8 @@ function buildNsjailCmd(jailDir, jail_conf) {
         "-l", "/tmp/nsjail.log",                 // general logging for debugging
 
         "--cwd", "/",                            // jail-root == chal_dir, so this is correct post-chroot
-        "-U", "99999:33:1",
-        "-G", "99999:33:1",
+        "-U", "99999:99999:1",
+        "-G", "99999:99999:1",
 
         // --- resource limits ---
         "--rlimit_as", "512",
@@ -200,6 +201,7 @@ async function CreateJail(jailDir, flag_value) {
         }
     }
     
+    await fs.chmod(jailDir, 0o777);
 
     // write flag inside jail
     const flagFile = path.join(jailDir, "flag.txt");
@@ -248,8 +250,8 @@ export async function CreateInstance(name, nsjail_conf, flag_value) {
     );
     const jail_conf = JSON.parse(await fs.readFile(nsjail_conf_path, 'utf-8'));
 
-    // create jail-cell based on challenge name provided
-    const jailDir = path.join("/jail", name);
+    const safeName = name.replace(/[^\w-]/g, "_");
+    const jailDir = path.join("/jail", safeName);
 
     {
         console.log(`[*] Generating jail for '${name}'...`);
@@ -263,7 +265,7 @@ export async function CreateInstance(name, nsjail_conf, flag_value) {
     // in order to properly execute nsjail through socat we are
     // providing socat a bash file because the nsjail command
     // will be large
-    const jobFile = path.join("/app/jobs", name + ".sh");
+    const jobFile = path.join("/app/jobs", safeName + ".sh");
     const jailcmd = buildNsjailCmd(jailDir, jail_conf);
     if (jailcmd.length === 0) {
         return { success: false, rc: 500, error: `Invalid nsjail configuration provided! --> ${nsjail_conf_path}` };
@@ -323,6 +325,8 @@ export async function CreateInstance(name, nsjail_conf, flag_value) {
         }
     }, SESSION_TIMEOUT_MS);
     timer.unref();
+    
+    console.log(`[!] CPID: ${proc.pid} created successfully!`);
 
     return {
         success: true,
