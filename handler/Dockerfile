@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
-RUN git clone --depth 1 https://github.com/google/nsjail.git
+RUN git clone --revision=4ff54a6 --depth 1 https://github.com/google/nsjail.git
 WORKDIR /build/nsjail
 RUN make -j"$(nproc)"
 
