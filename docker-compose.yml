@@ -153,6 +153,9 @@ services:
       SSH_IMAGE_REGISTRY: ${SSH_IMAGE_REGISTRY:-}
       SSH_REGISTRY_USER: ${SSH_REGISTRY_USER:-}
       SSH_REGISTRY_PASSWORD: ${SSH_REGISTRY_PASSWORD:-}
+      
+
+      PROD: ${PROD:-false}
     volumes:
       - khi_uploads:/app/uploads
       - khi_ctf_exec_files:/app/ctf
