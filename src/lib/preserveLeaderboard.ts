@@ -1,6 +1,5 @@
 import { FindMembers, type LeaderboardEntry } from "./database/db";
-import { writeFile } from 'fs/promises';
-import * as path from 'path';
+import { WriteArchiveFile, WriteMode } from "./archiveFile";
 
 /*
 -------- LAYOUT --------
@@ -17,7 +16,7 @@ import * as path from 'path';
 }
 */
 
-export async function ArchiveLeaderboard(year: number, board: LeaderboardEntry[]) {
+export async function ArchiveLeaderboard(year: number, board: LeaderboardEntry[], mode: WriteMode = WriteMode.Overwrite) {
     try {
         let entries = [];
         for (const entry of board) {
@@ -30,8 +29,12 @@ export async function ArchiveLeaderboard(year: number, board: LeaderboardEntry[]
         
         const base_dir = "/app/khi_history/";
         const data = JSON.stringify({ "board": entries });
-        const fpath = path.join(base_dir, `${year}.json`);
-        await writeFile(fpath, data);
+        const written = await WriteArchiveFile(base_dir, year, data, mode);
+        if (!written) {
+            const message = `KHI ${year} was already archived, keeping the existing file`;
+            console.log(`[*] ${message}`);
+            return { success: true, message }
+        }
 
         return { success: true, message: `KHI ${year} leaderboard archived!` }
     } catch (e:any) {
