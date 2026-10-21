@@ -44,13 +44,14 @@ export const actions = {
         const formData = Object.fromEntries(form.entries()) as Record<string, string>;
 
         try {
-            if (!formData.year || !formData.leaderboard) {
-                return fail(500, { error: 'An error occurred' });
+            const year = Number(formData.year);
+            if (!formData.leaderboard || !Number.isInteger(year) || year < 1 || year > 9999) {
+                return fail(400, { error: 'A valid year is required' });
             }
 
-            console.log(`[!] Admin is creating a leaderboard archive for KHI ${formData.year}`);
+            console.log(`[!] Admin is creating a leaderboard archive for KHI ${year}`);
             const leaderboard = JSON.parse(formData.leaderboard);
-            const result = await ArchiveLeaderboard(Number(formData.year), leaderboard.board);
+            const result = await ArchiveLeaderboard(year, leaderboard.board);
 
             if (!result.success) {
                 return fail(409, { error: result.error });

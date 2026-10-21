@@ -24,7 +24,7 @@
     let warning = $state("");
     let success = $state("");
     let searchValue = $state("");
-    let yearValue = $state<number>(0);
+    let yearValue = $state<number>(new Date().getFullYear());
 
     const filtered = $derived(
         data.board.filter((entry: any) => {
@@ -134,8 +134,9 @@
                             method="POST"
                             action="?/archive_leaderboard"
                             class="flex flex-wrap items-end gap-3"
-                            use:enhance={({ formData }) => {
+                            use:enhance={({ formData, cancel }) => {
                                 if (!window.confirm(`Do you want to archive this leaderboard for KHI ${yearValue}`)) {
+                                    cancel();
                                     return;
                                 }
 
