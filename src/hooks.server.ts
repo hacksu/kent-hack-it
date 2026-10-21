@@ -7,6 +7,7 @@ import cron from 'node-cron';
 import { setTimeout } from 'node:timers/promises';
 import { GetEventDate } from '$lib/server_utils';
 import { ArchiveLeaderboard } from '$lib/preserveLeaderboard';
+import { WriteMode } from '$lib/archiveFile';
 import { GetLeaderboard } from '$lib/database/db';
 
 declare global {
@@ -49,11 +50,11 @@ function runBackgroundJob() {
             return
         }
 
-        let result = await ArchiveLeaderboard(currYear, leaderboard);
+        let result = await ArchiveLeaderboard(currYear, leaderboard, WriteMode.KeepExisting);
         retry = 0;
         while (!result.success && retry < 5) {
             console.warn("[!] Auto-Archive Failed, retrying...");
-            result = await ArchiveLeaderboard(currYear, leaderboard);
+            result = await ArchiveLeaderboard(currYear, leaderboard, WriteMode.KeepExisting);
             ++retry;
             
             // Sleep for 2000 milliseconds
@@ -64,7 +65,7 @@ function runBackgroundJob() {
             return
         }
 
-        console.log(`[+] KHI ${currYear} leaderboard has been auto-archived!`)
+        console.log(`[+] KHI ${currYear} auto-archive finished`)
     });
 }
 
