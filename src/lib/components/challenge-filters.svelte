@@ -46,9 +46,11 @@
         return DIFFICULTY_ORDER.filter((d) => unique.has(d));
     });
 
+    const normalizeAuthor = (a: string) => a.trim().toLowerCase();
+
     let availableAuthors = $derived(
         [...new Set<string>(
-            challenges.map((c) => c.written_by).filter((a): a is string => !!a)
+            challenges.map((c) => c.written_by).filter((a): a is string => !!a).map(normalizeAuthor)
         )].sort()
     );
 
@@ -85,7 +87,7 @@
         }
 
         if (filters.author) {
-            result = result.filter((c) => c.written_by === filters.author);
+            result = result.filter((c) => !!c.written_by && normalizeAuthor(c.written_by) === filters.author);
         }
 
         if (showGymFilter && filters.gymStatus) {
