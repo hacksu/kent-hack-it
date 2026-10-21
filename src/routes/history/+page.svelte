@@ -43,18 +43,17 @@
     );
 
     const gapToNext = $derived.by(() => {
-        const gaps = new Map<string, number>();
+        const gaps = new Map<number, number>();
         rankedBoard.forEach((entry: RankedEntry, i: number) => {
-            if (i > 0) gaps.set(entry.name, rankedBoard[i - 1].score - entry.score);
+            if (i > 0) gaps.set(entry.rank, rankedBoard[i - 1].score - entry.score);
         });
         return gaps;
     });
 
-    // Tracks which team rows have their member list expanded
-    let openMembers = $state(new Set<string>());
-    function toggleMembers(name: string) {
+    let openMembers = $state(new Set<number>());
+    function toggleMembers(rank: number) {
         const next = new Set(openMembers);
-        next.has(name) ? next.delete(name) : next.add(name);
+        next.has(rank) ? next.delete(rank) : next.add(rank);
         openMembers = next;
     }
 </script>
@@ -111,16 +110,16 @@
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                    {#each filtered as entry (entry.name)}
+                    {#each filtered as entry (entry.rank)}
                         {@const hasMembers = !!entry.members?.length}
-                        {@const isOpen = openMembers.has(entry.name)}
+                        {@const isOpen = openMembers.has(entry.rank)}
                         <Table.Row>
                             <Table.Cell class="py-2.5 pl-4 align-top font-mono text-sm tabular-nums {entry.rank <= 3 ? 'font-semibold text-foreground' : 'text-muted-foreground'}">
                                 {entry.rank}
                             </Table.Cell>
                             <Table.Cell class="max-w-0 py-2.5 text-sm text-foreground">
                                 {#if hasMembers}
-                                    <Collapsible.Root open={isOpen} onOpenChange={() => toggleMembers(entry.name)}>
+                                    <Collapsible.Root open={isOpen} onOpenChange={() => toggleMembers(entry.rank)}>
                                         <Collapsible.Trigger class="flex w-full min-w-0 items-center gap-1.5 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring">
                                             <span class="truncate">{entry.name}</span>
                                             <ChevronDown class="size-3.5 shrink-0 text-muted-foreground transition-transform {isOpen ? 'rotate-180' : ''}" />
@@ -138,7 +137,7 @@
                                 {/if}
                             </Table.Cell>
                             <Table.Cell class="py-2.5 text-right align-top font-mono text-xs text-muted-foreground tabular-nums">
-                                {gapToNext.get(entry.name) ? `−${gapToNext.get(entry.name)!.toLocaleString()}` : gapToNext.has(entry.name) ? "tied" : ""}
+                                {gapToNext.get(entry.rank) ? `−${gapToNext.get(entry.rank)!.toLocaleString()}` : gapToNext.has(entry.rank) ? "tied" : ""}
                             </Table.Cell>
                             <Table.Cell class="py-2.5 pr-4 text-right align-top font-mono text-sm font-medium text-foreground tabular-nums">
                                 {entry.score.toLocaleString()}

@@ -13,7 +13,7 @@
 
 {#if top3.length > 0}
     <ol class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end">
-        {#each top3 as entry, i (entry.name)}
+        {#each top3 as entry, i (i)}
             {@const place = PLACES[i]}
             <li
                 class="flex items-center gap-4 rounded-xl border bg-gradient-to-b to-card to-70% px-5 py-4 sm:flex-col sm:gap-0 sm:text-center {place.ring} {place.wash} {place.order} {place.pad}"
